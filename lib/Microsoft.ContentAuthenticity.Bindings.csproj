@@ -5,10 +5,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CppSharp" Version="1.1.5.3168" />
   </ItemGroup>
-
+  <ItemGroup>
+	  <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/c2pa_c.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

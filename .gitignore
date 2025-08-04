@@ -2,3 +2,4 @@ target/
 obj/
 bin/
 generated/
+.vs/

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Cli": {
+      "commandName": "Project",
+      "commandLineArgs": "read -i $(SolutionDir)\\c2pa-rs\\sdk\\tests\\fixtures\\CACAE-uri-CA.jpg"
+    }
+  }
+}

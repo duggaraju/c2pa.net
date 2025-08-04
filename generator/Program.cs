@@ -1,9 +1,10 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using System.Diagnostics;
 using CppSharp;
 using CppSharp.AST;
 using CppSharp.Generators;
 using CppSharp.Passes;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 var library = new Library();
 ConsoleDriver.Run(library);
@@ -46,19 +47,18 @@ class Library : ILibrary
         var options = driver.Options;
         options.GeneratorKind = GeneratorKind.CSharp;
         options.Encoding = System.Text.Encoding.UTF8;
-        options.OutputDir = Path.Combine(baseDir, "lib/generated");
+        options.OutputDir = Path.Combine(baseDir, "lib", "generated");
         options.CheckSymbols = false;
         var module = options.AddModule("C2paBindings");
-        var path = Path.Combine(baseDir, "c2pa-rs/target/debug");        
+        var path = Path.Combine(baseDir, "c2pa-rs", "target", "debug");        
         module.IncludeDirs.Add(path);
         module.Headers.Add("c2pa.h");
         module.LibraryDirs.Add(path);
-#if WINDOWS
-        module.Libraries.Add("c2pa_c.dll");
-#else
-        module.Libraries.Add("libc2pa_c.so");
-#endif
-        module.OutputNamespace = "Microsoft.ContentAuthenticty.Bindings";
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            module.Libraries.Add("c2pa_c.dll");
+        else
+            module.Libraries.Add("libc2pa_c.so");
+        module.OutputNamespace = "Microsoft.ContentAuthenticity.Bindings";
     }
 
     public void SetupPasses(Driver driver)

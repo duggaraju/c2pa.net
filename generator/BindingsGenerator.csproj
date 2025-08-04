@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <Platforms>x64</Platforms>
     <CargoOutput>$(MSBuildThisFileDirectory)../c2pa-rs/target/$(Configuration.ToLower())/</CargoOutput>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,7 +16,7 @@
     <PropertyGroup>
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
     </PropertyGroup>
-    <Exec Command="cargo build $(CargoArgs)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs" />
+    <Exec Command="cargo build $(CargoArgs) --features rust_native_crypto" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/c2pa_c_ffi" />
   </Target>
   <Target Name="GenerateBindings" AfterTargets="Build" Outputs="$(MSBuildThisFileDirectory)../lib/generated/C2paBindings.cs" Inputs="$(CargoOutput)c2pa.h">
     <Exec Command="dotnet run --no-build -c $(Configuration) $(MSBuildProjectFile)" WorkingDirectory="$(MSBuildThisFileDirectory)" />
