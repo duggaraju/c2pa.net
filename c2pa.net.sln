@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.ContentAuthenticy.Bindings", "lib\Microsoft.ContentAuthenticy.Bindings.csproj", "{D0C8B558-2A95-4F47-8260-B8AFCD45E380}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsot.ContentAuthenticity.BindingTests", "tests\Microsot.ContentAuthenticity.BindingTests.csproj", "{DCE1355E-CBD1-4FA8-BABF-604F1219E7F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BindingsGenerator", "generator\BindingsGenerator.csproj", "{82DF169C-1EDE-4CC3-8072-D89D4F0BC8DA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D0C8B558-2A95-4F47-8260-B8AFCD45E380}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0C8B558-2A95-4F47-8260-B8AFCD45E380}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0C8B558-2A95-4F47-8260-B8AFCD45E380}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0C8B558-2A95-4F47-8260-B8AFCD45E380}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DCE1355E-CBD1-4FA8-BABF-604F1219E7F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCE1355E-CBD1-4FA8-BABF-604F1219E7F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCE1355E-CBD1-4FA8-BABF-604F1219E7F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCE1355E-CBD1-4FA8-BABF-604F1219E7F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82DF169C-1EDE-4CC3-8072-D89D4F0BC8DA}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{82DF169C-1EDE-4CC3-8072-D89D4F0BC8DA}.Debug|Any CPU.Build.0 = Debug|x64
+		{82DF169C-1EDE-4CC3-8072-D89D4F0BC8DA}.Release|Any CPU.ActiveCfg = Release|x64
+		{82DF169C-1EDE-4CC3-8072-D89D4F0BC8DA}.Release|Any CPU.Build.0 = Release|x64
+	EndGlobalSection
+EndGlobal

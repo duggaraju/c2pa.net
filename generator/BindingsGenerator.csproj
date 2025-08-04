@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Platforms>x64</Platforms>
+    <CargoOutput>$(MSBuildThisFileDirectory)../c2pa-rs/target/$(Configuration.ToLower())/</CargoOutput>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CppSharp" Version="1.1.5.3168" />
+  </ItemGroup>
+  <Target Name="cargo" BeforeTargets="Build" Inputs="$(MSBuildThisFileDirectory)../c2pa-rs/Cargo.toml" Outputs="$(CargoOutput)c2pa.h">
+    <PropertyGroup>
+      <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
+    </PropertyGroup>
+    <Exec Command="cargo build $(CargoArgs)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs" />
+  </Target>
+  <Target Name="GenerateBindings" AfterTargets="Build" Outputs="$(MSBuildThisFileDirectory)../lib/generated/C2paBindings.cs" Inputs="$(CargoOutput)c2pa.h">
+    <Exec Command="dotnet run --no-build -c $(Configuration) $(MSBuildProjectFile)" WorkingDirectory="$(MSBuildThisFileDirectory)" />
+  </Target>
+</Project>
