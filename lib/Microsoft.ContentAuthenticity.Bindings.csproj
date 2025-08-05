@@ -6,12 +6,13 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>x64</PlatformTarget>
+    <C2paLibrary Condition="$([MSBuild]::IsOSPlatform('Windows'))">c2pa_c.dll</C2paLibrary>
+    <C2paLibrary Condition="$([MSBuild]::IsOSPlatform('Linux'))">libc2pa_c.so</C2paLibrary>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="CppSharp" Version="1.1.5.3168" />
   </ItemGroup>
   <ItemGroup>
-	  <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/c2pa_c.dll" CopyToOutputDirectory="PreserveNewest" />
+	  <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/$(C2paLibrary)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

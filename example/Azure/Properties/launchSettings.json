@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "test": {
+      "commandName": "Project",
+      "commandLineArgs": "--input-file ..\\..\\..\\sample_images\\sample1.jpg --output-file ..\\..\\..\\sample_images\\output.jpg",
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    }
+  }
+}

@@ -2,6 +2,15 @@
 {
     public partial class C2paReader
     {
+        partial void DisposePartial(bool disposing)
+        {
+            if (disposing)
+            {
+                c2pa.C2paReaderFree(this);
+                C2pa.CheckError();
+            }
+        }
+
         public static C2paReader FromStream(Stream stream, string format)
         {
             unsafe

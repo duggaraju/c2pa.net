@@ -44,6 +44,16 @@ namespace Microsoft.ContentAuthenticity.Bindings
             WriteIndented = true
         };
 
+        public static T Deserialize<T>(string json)
+        {
+            return JsonSerializer.Deserialize<T>(json, JsonOptions) ?? throw new JsonException("Failed to deserialize JSON.");
+        }
+
+        public static string Serialize<T>(T obj)
+        {
+            return JsonSerializer.Serialize(obj, JsonOptions);
+        }
+
         public static Type GetAssertionTypeFromLabel(string label)
         {
             return label switch
@@ -57,7 +67,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
             };
         }
 
-        public unsafe static string FromCString(sbyte* ptr, bool ownsResource = false)
+        public unsafe static string FromCString(sbyte* ptr, bool ownsResource = true)
         {
             if (ptr == null)
             {

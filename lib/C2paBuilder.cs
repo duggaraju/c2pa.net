@@ -21,6 +21,16 @@ namespace Microsoft.ContentAuthenticity.Bindings
             return builder;
         }
 
+        partial void DisposePartial(bool disposing)
+        {
+            if (disposing)
+            {
+                c2pa.C2paBuilderFree(this);
+                C2pa.CheckError();
+            }
+        }
+
+
         public unsafe void Sign(Stream source, Stream dest, string format)
         {
             using var inputStream = new C2paStream(source);

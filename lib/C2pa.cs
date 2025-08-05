@@ -11,7 +11,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
         /// </summary>
         public unsafe static string Version => Utils.FromCString(c2pa.C2paVersion());
 
-        public unsafe static string[] SupportedExtensions
+        public unsafe static string[] SupportedMimeTypes
         {
             get
             {
@@ -19,6 +19,12 @@ namespace Microsoft.ContentAuthenticity.Bindings
                 var buffer = c2pa.C2paReaderSupportedMimeTypes(ref count);
                 return Utils.FromCStringArray(buffer, count);
             }
+        }
+
+        public unsafe static void LoadSettings(string settings)
+        {
+            c2pa.C2paLoadSettings(settings, "json");
+            CheckError();
         }
 
         public static void CheckError()

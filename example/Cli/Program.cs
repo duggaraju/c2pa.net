@@ -16,7 +16,7 @@ class Program
         {
             Console.WriteLine($"C2PA .NET CLI");
             Console.WriteLine($"C2PA SDK Version: {C2pa.Version}");
-            Console.WriteLine($"Supported Extensions: {string.Join(", ", C2pa.SupportedExtensions)}");
+            Console.WriteLine($"Supported Extensions: {string.Join(", ", C2pa.SupportedMimeTypes)}");
         });
         rootCommand.AddCommand(versionCommand);
 
