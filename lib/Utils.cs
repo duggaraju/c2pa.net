@@ -79,13 +79,13 @@ namespace Microsoft.ContentAuthenticity.Bindings
             var values = new string[count];
             for (ulong i = 0; i < count; i++)
             {
-                values[i] = FromCString(ptr[i], ownsResource: false);
+                values[i] = FromCString(ptr[i]);
             }
             c2pa.C2paFreeStringArray(ptr, count);
             return values;
         }
 
-        private static string GetMimeTypeFromExtension(string extension)
+        public static string GetMimeTypeFromExtension(string extension)
         {
             return extension.ToLowerInvariant() switch
             {

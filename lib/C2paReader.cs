@@ -19,7 +19,7 @@
         public static C2paReader FromFile(string path)
         {
             using var stream = File.OpenRead(path);
-            return FromStream(stream, Path.GetExtension(path).Substring(1));
+            return FromStream(stream, Utils.GetMimeTypeFromExtension(Path.GetExtension(path)));
         }
     }
 }

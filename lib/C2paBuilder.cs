@@ -43,7 +43,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
             }
             using var inputStream = new FileStream(input, FileMode.Open);
             using var outputStream = new FileStream(output, FileMode.Create);
-            Sign(inputStream, outputStream, Path.GetExtension(input).Substring(1));
+            Sign(inputStream, outputStream, Utils.GetMimeTypeFromExtension(Path.GetExtension(input)));
         }
 
         public void AddResource(string identifier, string path)
