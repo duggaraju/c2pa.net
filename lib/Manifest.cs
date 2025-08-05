@@ -116,31 +116,6 @@ namespace Microsoft.ContentAuthenticity.Bindings
         }
     }
 
-    public record ManifestDefinition(string format = "application/octet-stream")
-    {
-        public string? Vendor { get; set; } = null;
-        public List<ClaimGeneratorInfo> ClaimGeneratorInfo { get; set; } = [];
-        public string? Title { get; set; } = null;
-        public string Format { get; set; } = format;
-        public string InstanceID { get; set; } = C2paBuilder.GenerateInstanceID();
-        public Thumbnail? Thumbnail { get; set; } = null;
-        public List<Ingredient> Ingredients { get; set; } = [];
-        public List<Assertion> Assertions { get; set; } = [];
-        public List<string>? Redactions { get; set; } = null;
-        public string? Label { get; set; } = null;
-
-        public string ToJson()
-        {
-            return JsonSerializer.Serialize(this, Utils.JsonOptions);
-        }
-
-        public static ManifestDefinition FromJson(string json)
-        {
-            var value = JsonSerializer.Deserialize<ManifestDefinition>(json, Utils.JsonOptions);
-            return value ?? throw new JsonException("Invalid JSON");
-        }
-    }
-
     public record ManifestStore(string ActiveManifest, Dictionary<string, Manifest> Manifests)
     {
         public static ManifestStore FromJson(string json)

@@ -12,6 +12,7 @@
                 Reader = (context, data, len) => Read(new Span<byte>(data, (int)len));
                 Flusher = (_) => Flush();
                 Seeker = (_, offset, mode) => Seek(offset, mode);
+                Writer = (context, data, len) => Write(new ReadOnlySpan<byte>(data, (int)len));
             }
         }
 
@@ -41,6 +42,12 @@
         {
             int bytesRead = _stream.Read(buffer);
             return bytesRead;
+        }
+
+        private unsafe long Write(ReadOnlySpan<byte> data)
+        {
+            _stream.Write(data);
+            return data.Length;
         }
 
         public long Flush()

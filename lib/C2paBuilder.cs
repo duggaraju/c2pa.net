@@ -2,34 +2,23 @@
 namespace Microsoft.ContentAuthenticity.Bindings
 {
 
-    public class C2paBuilderSettings
-    {
-        public string ClaimGenerator { get; set; } = string.Empty;
-
-        public string TrustSettings { get; set; } = "{}";
-
-    }
-
     public partial class C2paBuilder
     {
-
-        private ManifestDefinition _definition;
-        private readonly C2paBuilderSettings _settings;
-        private readonly C2paSigner _signer;
-
+        private C2paSigner _signer;
         private ResourceStore? _resources;
 
-        public unsafe C2paBuilder(C2paBuilderSettings settings, ISigner callback, ManifestDefinition definition) : this()
+        public static C2paBuilder Create(ManifestDefinition definition, ISigner callback)
         {
-            _settings = settings;
-            _definition = definition;
-            SignerCallback signer = (context, data, len, signature, sig_len) => Sign(callback, data, len, signature, sig_len);
-            _signer = c2pa.C2paSignerCreate(nint.Zero, signer, callback.Alg, callback.Certs, callback.TimeAuthorityUrl);
+            return FromJson(definition.ToJson(), callback);
         }
 
-        public C2paBuilder(C2paBuilderSettings settings, ISigner callback, string manifestDefintionJsonString):
-            this(settings, callback, ManifestDefinition.FromJson(manifestDefintionJsonString))
+        public unsafe static C2paBuilder FromJson(string manifestDefintion, ISigner callback)
         {
+            var builder = c2pa.C2paBuilderFromJson(manifestDefintion);
+            C2pa.CheckError();
+            SignerCallback signer = (context, data, len, signature, sig_len) => Sign(callback, data, len, signature, sig_len);
+            builder._signer = c2pa.C2paSignerCreate(nint.Zero, signer, callback.Alg, callback.Certs, callback.TimeAuthorityUrl);
+            return builder;
         }
 
         public unsafe void Sign(Stream source, Stream dest, string format)
@@ -37,6 +26,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
             using var inputStream = new C2paStream(source);
             using var outputStream = new C2paStream(dest);
             _ = c2pa.C2paBuilderSign(this, format, inputStream, outputStream, _signer, null);
+            C2pa.CheckError();
         }
 
         public void Sign(string input, string output)
@@ -48,21 +38,6 @@ namespace Microsoft.ContentAuthenticity.Bindings
             using var inputStream = new FileStream(input, FileMode.Open);
             using var outputStream = new FileStream(output, FileMode.Create);
             Sign(inputStream, outputStream, Path.GetExtension(input).Substring(1));
-        }
-
-        public static C2paBuilderSettings CreateBuilderSettings(string claimGenerator, string TrustSettings = "{}")
-        {
-            return new C2paBuilderSettings() { ClaimGenerator = claimGenerator, TrustSettings = TrustSettings };
-        }
-
-        public ManifestDefinition GetManifestDefinition()
-        {
-            return _definition;
-        }
-
-        public void SetTitle(string title)
-        {
-            _definition.Title = title;
         }
 
         public void AddResource(string identifier, string path)

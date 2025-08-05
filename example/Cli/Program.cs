@@ -95,6 +95,9 @@ class Program
                 
                 Console.WriteLine("C2PA Manifest Data:");
                 Console.WriteLine(json);
+
+                Console.WriteLine("Manifest Store:");
+                Console.WriteLine(reader.ManifestStore.ToJson());
             }
             catch (Exception ex)
             {
@@ -112,10 +115,7 @@ class Program
         
         var inputOption = new Option<FileInfo>(
             ["--input", "-i"],
-            "Input file to sign")
-        {
-            IsRequired = true
-        };
+            "Input file to sign");
         inputOption.AddValidator(result =>
         {
             var file = result.GetValueForOption(inputOption);
@@ -127,35 +127,58 @@ class Program
 
         var outputOption = new Option<FileInfo>(
             ["--output", "-o"],
-            "Output file path for signed file")
-        {
-            IsRequired = true
-        };
+            "Output file path for signed file");
 
         var manifestOption = new Option<FileInfo>(
             ["--manifest", "-m"],
-            "Manifest definition JSON file")
+            "Manifest definition JSON file");
+        manifestOption.AddValidator(result =>
+        {
+            var file = result.GetValueForOption(manifestOption);
+            if (file != null && !file.Exists)
+            {
+                result.ErrorMessage = $"Manifest file does not exist: {file.FullName}";
+            }
+        });
+
+        var certOption = new Option<FileInfo>(
+            ["--cert", "--certificate"],
+            "Certificate file path (.pem or .crt)")
+        {
+        };
+        certOption.AddValidator(result =>
+        {
+            var file = result.GetValueForOption(certOption);
+            if (file != null && !file.Exists)
+            {
+                result.ErrorMessage = $"Certificate file does not exist: {file.FullName}";
+            }
+        });
+
+        var keyOption = new Option<FileInfo>(
+            ["--key", "--private-key"],
+            "Private key file path (.pem or .key)")
+        {
+        };
+        keyOption.AddValidator(result =>
+        {
+            var file = result.GetValueForOption(keyOption);
+            if (file != null && !file.Exists)
+            {
+                result.ErrorMessage = $"Private key file does not exist: {file.FullName}";
+            }
+        });
+
+        var tsaUrlOption = new Option<string?>(
+            ["--tsa-url"],
+            "Time Authority URL for timestamping")
         {
             IsRequired = false
         };
 
-        var titleOption = new Option<string>(
-            ["--title", "-t"],
-            "Title for the manifest")
-        {
-            IsRequired = false
-        };
-
-        var authorOption = new Option<string>(
-            ["--author", "-a"],
-            "Author name for the manifest")
-        {
-            IsRequired = false
-        };
-
-        var claimGeneratorOption = new Option<string>(
-            ["--claim-generator", "-c"],
-            "Claim generator name")
+        var algorithmOption = new Option<string?>(
+            ["--algorithm", "--alg"],
+            "Signing algorithm (ES256, ES384, ES512, PS256, PS384, PS512, Ed25519). If not specified, will be determined from the certificate.")
         {
             IsRequired = false
         };
@@ -163,57 +186,29 @@ class Program
         signCommand.AddOption(inputOption);
         signCommand.AddOption(outputOption);
         signCommand.AddOption(manifestOption);
-        signCommand.AddOption(titleOption);
-        signCommand.AddOption(authorOption);
-        signCommand.AddOption(claimGeneratorOption);
+        signCommand.AddOption(certOption);
+        signCommand.AddOption(keyOption);
+        signCommand.AddOption(tsaUrlOption);
 
-        signCommand.SetHandler((FileInfo input, FileInfo output, FileInfo? manifestFile, string? title, string? author, string? claimGenerator) =>
+        signCommand.SetHandler((manifestFile, certFile, keyFile, input, output, tsaUrl) =>
         {
             try
             {
                 Console.WriteLine($"Signing file: {input.FullName}");
                 
                 // Create or load manifest definition
-                ManifestDefinition manifest;
-                if (manifestFile != null && manifestFile.Exists)
-                {
-                    var manifestJson = File.ReadAllText(manifestFile.FullName);
-                    manifest = ManifestDefinition.FromJson(manifestJson);
-                }
-                else
-                {
-                    // Create a basic manifest
-                    manifest = new ManifestDefinition(GetMimeTypeFromExtension(input.Extension))
-                    {
-                        Title = title ?? $"Signed {input.Name}",
-                        ClaimGeneratorInfo = [new ClaimGeneratorInfo(claimGenerator ?? "C2PA .NET CLI", "1.0.0")]
-                    };
+                var manifestJson = File.ReadAllText(manifestFile.FullName);
+                var manifest = ManifestDefinition.FromJson(manifestJson);
 
-                    // Add author assertion if provided
-                    if (!string.IsNullOrEmpty(author))
-                    {
-                        CreativeWorkAssertion creativeWorkAssertion = new(
-                            new CreativeWorkAssertionData
-                            {
-                                Authors = [new AuthorInfo("@Person", author)]
-                            }
-                        );
-                        manifest.Assertions.Add(creativeWorkAssertion);
-                    }
-                }
+                Console.WriteLine("Using file-based signer with provided certificate and key");
+                var certContent = File.ReadAllText(certFile.FullName);
+                var keyContent = File.ReadAllText(keyFile.FullName);
+                using var signer = new FileSigner(certContent, keyContent, tsaUrl, manifest.Alg);
 
-                // Create a demo signer (not for production use)
-                Console.WriteLine("Warning: Using demo/test signer (not for production)");
-                var signer = new DemoSigner();
+                Console.WriteLine($"Detected/Selected signing algorithm: {signer.Alg}");
 
                 // Create builder and sign
-                var settings = C2paBuilder.CreateBuilderSettings(claimGenerator ?? "C2PA .NET CLI");
-                using var builder = new C2paBuilder(settings, signer, manifest);
-                
-                if (!string.IsNullOrEmpty(title))
-                {
-                    builder.SetTitle(title);
-                }
+                using var builder = C2paBuilder.Create(manifest, signer);
 
                 builder.Sign(input.FullName, output.FullName);
                 
@@ -224,86 +219,9 @@ class Program
                 Console.Error.WriteLine($"Failed to sign file: {ex.Message}");
                 Environment.Exit(1);
             }
-        }, inputOption, outputOption, manifestOption, titleOption, authorOption, claimGeneratorOption);
+        }, manifestOption, certOption, keyOption, inputOption, outputOption, tsaUrlOption);
 
         return signCommand;
     }
 
-    private static string GetMimeTypeFromExtension(string extension)
-    {
-        return extension.ToLowerInvariant() switch
-        {
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".webp" => "image/webp",
-            ".tiff" or ".tif" => "image/tiff",
-            ".pdf" => "application/pdf",
-            ".mp4" => "video/mp4",
-            ".mov" => "video/quicktime",
-            ".avi" => "video/x-msvideo",
-            ".mp3" => "audio/mpeg",
-            ".wav" => "audio/wav",
-            _ => "application/octet-stream"
-        };
-    }
-}
-
-// Demo signer for testing (not for production use)
-internal class DemoSigner : ISigner
-{
-    public C2paSigningAlg Alg => C2paSigningAlg.Ed25519;
-    public string Certs => GenerateDemoCertificate();
-    public string? TimeAuthorityUrl => null;
-
-    public int Sign(ReadOnlySpan<byte> data, Span<byte> signature)
-    {
-        // This is a demo implementation - not cryptographically secure
-        var hash = System.Security.Cryptography.SHA256.HashData(data);
-        if (signature.Length < hash.Length)
-            return -1;
-        
-        hash.CopyTo(signature);
-        return hash.Length;
-    }
-
-    private static string GenerateDemoCertificate()
-    {
-        return """
-        -----BEGIN CERTIFICATE-----
-        MIIBkTCB+wIJAKZW8y6v1Zv4MA0GCSqGSIb3DQEBCwUAMBoxGDAWBgNVBAMMD0My
-        UEEgRGVtbyBTaWduZXIwHhcNMjQwMTAxMDAwMDAwWhcNMjUwMTAxMDAwMDAwWjAa
-        MRgwFgYDVQQDDA9DMlBBIERlbW8gU2lnbmVyMFwwDQYJKoZIhvcNAQEBBQADSwAw
-        SAJBAKZdtGXvZH8Lf8H4R+6YYf5nV5z9L3BXHZqJ8r8X9aE2nS6Z4q1Y4v0C5+p4
-        K8bV2a8c7fE3O7H6rJ8y9p8qXCsCAwEAATANBgkqhkiG9w0BAQsFAANBAE/q8u9d
-        bY5y2N7rO8f6P9qW5pE4pZ1x7k8D9fT2vX3sE4m2kQ8v6r9yH4F8cN5oQ8nZ4zJ8
-        R7xK2q6M4k8sJ6Y=
-        -----END CERTIFICATE-----
-        """;
-    }
-}
-
-// File-based signer for production use
-internal class FileSigner : ISigner
-{
-    private readonly string _certs;
-    private readonly string _privateKey;
-    private readonly string? _tsaUrl;
-
-    public FileSigner(string certs, string privateKey, string? tsaUrl = null)
-    {
-        _certs = certs;
-        _privateKey = privateKey;
-        _tsaUrl = tsaUrl;
-    }
-
-    public C2paSigningAlg Alg => C2paSigningAlg.Es256; // Default to ES256
-    public string Certs => _certs;
-    public string? TimeAuthorityUrl => _tsaUrl;
-
-    public int Sign(ReadOnlySpan<byte> data, Span<byte> signature)
-    {
-        // This would implement actual cryptographic signing
-        // For now, return a placeholder implementation
-        throw new NotImplementedException("File-based signing requires cryptographic implementation");
-    }
 }

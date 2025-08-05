@@ -1,6 +1,3 @@
-using System.Runtime.InteropServices;
-using System.Text.Json;
-
 namespace Microsoft.ContentAuthenticity.Bindings
 {
 
@@ -12,27 +9,15 @@ namespace Microsoft.ContentAuthenticity.Bindings
         /// <summary>
         /// The version of the Sdk.
         /// </summary>
-        public static string Version
-        {
-            get
-            {
-                unsafe
-                {
-                    return Utils.FromCString(c2pa.C2paVersion());
-                }
-            }
-        }
+        public unsafe static string Version => Utils.FromCString(c2pa.C2paVersion());
 
-        public static string[] SupportedExtensions
+        public unsafe static string[] SupportedExtensions
         {
             get
             {
-                unsafe
-                {
-                    ulong count = 0;
-                    var buffer = c2pa.C2paReaderSupportedMimeTypes(ref count);
-                    return Utils.FromCStringArray(buffer, count);
-                }
+                ulong count = 0;
+                var buffer = c2pa.C2paReaderSupportedMimeTypes(ref count);
+                return Utils.FromCStringArray(buffer, count);
             }
         }
 

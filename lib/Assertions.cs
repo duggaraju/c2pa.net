@@ -10,15 +10,11 @@ namespace Microsoft.ContentAuthenticity.Bindings
         Json
     }
 
-    public record Assertion(string Label, object Data, AssertionKind Kind = AssertionKind.Json)
+    public record Assertion(string Label, object _Data, AssertionKind Kind = AssertionKind.Json)
     {
         public string ToJson()
         {
             return JsonSerializer.Serialize(this, Utils.JsonOptions);
-        }
-
-        public string DataAsJson() {
-            return JsonSerializer.Serialize(Data, Utils.JsonOptions);
         }
 
         public static Assertion? FromJson(string json)
@@ -31,20 +27,19 @@ namespace Microsoft.ContentAuthenticity.Bindings
     {
     }
 
-    public record ThumbnailAssertion(ThumbnailAssertionData data) : Assertion("c2pa.thumbnail", data)
-    {
-        new ThumbnailAssertionData Data { get; } = data;
-    }
-
-    public record ClaimThumbnailAssertion(ThumbnailAssertionData data) : Assertion("c2pa.thumbnail.claim", data)
+    public record ThumbnailAssertion(ThumbnailAssertionData Data) : Assertion("c2pa.thumbnail", Data)
     {
     }
 
-    public record IngredientThumbnailAssertion(ThumbnailAssertionData data) : Assertion("c2pa.thumbnail.ingredient", data)
+    public record ClaimThumbnailAssertion(ThumbnailAssertionData Data) : Assertion("c2pa.thumbnail.claim", Data)
     {
     }
 
-    public record ActionAssertion(ActionAssertionData data) : Assertion("c2pa.action", data)
+    public record IngredientThumbnailAssertion(ThumbnailAssertionData Data) : Assertion("c2pa.thumbnail.ingredient", Data)
+    {
+    }
+
+    public record ActionAssertion(ActionAssertionData Data) : Assertion("c2pa.action", Data)
     {
     }
 
@@ -59,9 +54,8 @@ namespace Microsoft.ContentAuthenticity.Bindings
     }
 
     // Fix for CS1975: Cast 'data' to object in the base constructor initializer
-    public record CustomAssertion(string Label, dynamic data) : Assertion(Label, (object)data)
+    public record CustomAssertion(string Label, dynamic Data) : Assertion(Label, (object)Data)
     {
-        public new dynamic Data { get; } = data;
         public ExpandoObject GetDataAsExpandoObject()
         {
             return ConvertElementToExpandoObject(Data);
@@ -89,7 +83,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
         }
     }
 
-    public record CreativeWorkAssertion(CreativeWorkAssertionData data) : Assertion("stds.schema-org.CreativeWork", data)
+    public record CreativeWorkAssertion(CreativeWorkAssertionData Data) : Assertion("stds.schema-org.CreativeWork", Data)
     {
     }
 

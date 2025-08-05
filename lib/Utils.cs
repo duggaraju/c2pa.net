@@ -7,7 +7,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
 {
     public class AssertionTypeConverter : JsonConverter<Assertion>
     {
-        public override Assertion Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override Assertion? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             using JsonDocument doc = JsonDocument.ParseValue(ref reader);
             JsonElement root = doc.RootElement;
@@ -16,7 +16,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
 
             string rawJson = root.GetRawText();
 
-            return (Assertion) JsonSerializer.Deserialize(root.GetRawText(), assertionType, options);
+            return JsonSerializer.Deserialize(root.GetRawText(), assertionType, options) as Assertion;
         }
 
         public override void Write(Utf8JsonWriter writer, Assertion value, JsonSerializerOptions options)
@@ -84,6 +84,25 @@ namespace Microsoft.ContentAuthenticity.Bindings
             c2pa.C2paFreeStringArray(ptr, count);
             return values;
         }
+
+        private static string GetMimeTypeFromExtension(string extension)
+        {
+            return extension.ToLowerInvariant() switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".webp" => "image/webp",
+                ".tiff" or ".tif" => "image/tiff",
+                ".pdf" => "application/pdf",
+                ".mp4" => "video/mp4",
+                ".mov" => "video/quicktime",
+                ".avi" => "video/x-msvideo",
+                ".mp3" => "audio/mpeg",
+                ".wav" => "audio/wav",
+                _ => "application/octet-stream"
+            };
+        }
+
     }
 
 }

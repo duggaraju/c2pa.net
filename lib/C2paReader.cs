@@ -14,6 +14,7 @@
 
         public unsafe string Json => Utils.FromCString(c2pa.C2paReaderJson(this));
 
+        public ManifestStore ManifestStore => ManifestStore.FromJson(Json);
 
         public static C2paReader FromFile(string path)
         {
