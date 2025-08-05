@@ -25,8 +25,14 @@ namespace Microsoft.ContentAuthenticity.Bindings
         {
             using var inputStream = new C2paStream(source);
             using var outputStream = new C2paStream(dest);
-            _ = c2pa.C2paBuilderSign(this, format, inputStream, outputStream, _signer, null);
+            byte* manifest = null;
+            _ = c2pa.C2paBuilderSign(this, format, inputStream, outputStream, _signer, &manifest);
             C2pa.CheckError();
+            if (manifest != null)
+            {
+                c2pa.C2paManifestBytesFree(manifest);
+                C2pa.CheckError();
+            }
         }
 
         public void Sign(string input, string output)
