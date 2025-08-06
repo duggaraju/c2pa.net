@@ -60,6 +60,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
             {
                 "c2pa.action" => typeof(ActionAssertion),
                 "c2pa.thumbnail" => typeof(ThumbnailAssertion),
+                "c2pa.training-mining" => typeof(TrainingAssertion),
                 string s when Regex.IsMatch(s, @"c2pa\.thumbnail\.claim.*") => typeof(ClaimThumbnailAssertion),
                 string s when Regex.IsMatch(s, @"c2pa\.thumbnail\.ingredient.*") => typeof(IngredientThumbnailAssertion),
                 "stds.schema-org.CreativeWork" => typeof(CreativeWorkAssertion),

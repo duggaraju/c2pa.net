@@ -7,54 +7,51 @@ namespace Microsoft.ContentAuthenticity.Bindings
     public enum AssertionKind
     {
         Cbor,
-        Json
+        Json,
+        Binary,
+        Uri
     }
 
-    public record Assertion(string Label, object _Data, AssertionKind Kind = AssertionKind.Json)
+    public record Assertion(string Label, object Data, AssertionKind Kind = AssertionKind.Json, int? Instance = null)
     {
-        public string ToJson()
+        public string ToJson() => Utils.Serialize(this);
+
+        public static Assertion FromJson(string json) => Utils.Deserialize<Assertion>(json);
+    }
+
+    public record Assertion<T> : Assertion where T : notnull
+    {
+        public new T Data { get; init; }
+
+        public Assertion(string label, T data, AssertionKind kind = AssertionKind.Json, int? instance = null)
+            : base(label, data, kind, instance)
         {
-            return JsonSerializer.Serialize(this, Utils.JsonOptions);
-        }
-
-        public static Assertion? FromJson(string json)
-        {
-            return JsonSerializer.Deserialize<Assertion>(json, Utils.JsonOptions);
+            Data = data;
         }
     }
 
-    public record ThumbnailAssertionData(string Thumbnail, string InstanceID)
-    {
-    }
+    public record ThumbnailAssertionData(string Thumbnail, string InstanceID);
 
-    public record ThumbnailAssertion(ThumbnailAssertionData Data) : Assertion("c2pa.thumbnail", Data)
-    {
-    }
+    public record ThumbnailAssertion(ThumbnailAssertionData Data) : Assertion<ThumbnailAssertionData>("c2pa.thumbnail", Data);
 
-    public record ClaimThumbnailAssertion(ThumbnailAssertionData Data) : Assertion("c2pa.thumbnail.claim", Data)
-    {
-    }
+    public record ClaimThumbnailAssertion(ThumbnailAssertionData Data) : Assertion<ThumbnailAssertionData>("c2pa.thumbnail.claim", Data);
 
-    public record IngredientThumbnailAssertion(ThumbnailAssertionData Data) : Assertion("c2pa.thumbnail.ingredient", Data)
-    {
-    }
+    public record IngredientThumbnailAssertion(ThumbnailAssertionData Data) : Assertion<ThumbnailAssertionData>("c2pa.thumbnail.ingredient", Data);
 
-    public record ActionAssertion(ActionAssertionData Data) : Assertion("c2pa.action", Data)
-    {
-    }
+    public record ActionAssertion(ActionAssertionData Data) : Assertion<ActionAssertionData>("c2pa.action", Data);
 
 
-    public record C2paAction(string Action, string? When = null, string? SoftwareAgent = null, string? Changed = null, string? InstanceID = null, List<dynamic>? Actors = null)
-    {
-    }
+    public record C2paAction(
+        string Action,
+        string? When = null,
+        string? SoftwareAgent = null,
+        string? Changed = null,
+        string? InstanceID = null,
+        List<dynamic>? Actors = null);
 
-    public record ActionAssertionData
-    {
-        public List<C2paAction> Actions { get; set; } = new();
-    }
+    public record ActionAssertionData(List<C2paAction> Actions);
 
-    // Fix for CS1975: Cast 'data' to object in the base constructor initializer
-    public record CustomAssertion(string Label, dynamic Data) : Assertion(Label, (object)Data)
+    public record CustomAssertion(string Label, dynamic Data) : Assertion<dynamic>(Label, (object)Data)
     {
         public ExpandoObject GetDataAsExpandoObject()
         {
@@ -83,19 +80,25 @@ namespace Microsoft.ContentAuthenticity.Bindings
         }
     }
 
-    public record CreativeWorkAssertion(CreativeWorkAssertionData Data) : Assertion("stds.schema-org.CreativeWork", Data)
-    {
-    }
+
+    public record AuthorInfo([property: JsonPropertyName("@type")] string Type, string Name);
 
     public record CreativeWorkAssertionData(
         [property: JsonPropertyName("@context")] string? Context = "",
         [property: JsonPropertyName("@type")] string? Type = "",
-        AuthorInfo[]? Authors = null)
+        AuthorInfo[]? Authors = null);
+
+    public record CreativeWorkAssertion(CreativeWorkAssertionData Data) : Assertion<CreativeWorkAssertionData>("stds.schema-org.CreativeWork", Data);
+
+    public enum Training
     {
+        Allowed,
+        [JsonPropertyName("notAllowed")]
+        NotAllowed,
+        Constrained
     }
 
-    public record AuthorInfo(
-        [property: JsonPropertyName("@type")] string Type, string Name)
-    {
-    }
+    public record TrainingAssertionData(Dictionary<string, Training> Entries);
+   
+    public record TrainingAssertion(TrainingAssertionData Data) : Assertion<TrainingAssertionData>("c2pa.training-mining", Data, AssertionKind.Json);
 }
