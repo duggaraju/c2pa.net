@@ -208,9 +208,9 @@ class Program
                 Console.WriteLine($"Detected/Selected signing algorithm: {signer.Alg}");
 
                 // Create builder and sign
-                using var builder = C2paBuilder.Create(manifest, signer);
+                using var builder = C2paBuilder.Create(manifest);
 
-                builder.Sign(input.FullName, output.FullName);
+                builder.Sign(signer, input.FullName, output.FullName);
                 
                 Console.WriteLine($"Successfully signed file: {output.FullName}");
             }

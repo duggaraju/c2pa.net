@@ -33,11 +33,10 @@ public class C2paBuilderTests
     {
         // Arrange
         var manifest = new ManifestDefinition("image/jpeg");
-        var signer = new TestSigner();
         
         // Act
-        var exception = Record.Exception(() => C2paBuilder.Create(manifest, signer));
-        
+        var exception = Record.Exception(() => C2paBuilder.Create(manifest));
+
         // Assert - Should not throw during creation, actual functionality depends on native library
         // We can't test the full functionality without the native C2PA library being properly set up
         Assert.True(exception == null || exception is C2paException);
@@ -53,11 +52,10 @@ public class C2paBuilderTests
             Vendor = "Test Vendor"
         };
         var json = manifest.ToJson();
-        var signer = new TestSigner();
         
         // Act
-        var exception = Record.Exception(() => C2paBuilder.FromJson(json, signer));
-        
+        var exception = Record.Exception(() => C2paBuilder.FromJson(json));
+
         // Assert - Should not throw during creation, actual functionality depends on native library
         Assert.True(exception == null || exception is C2paException);
     }

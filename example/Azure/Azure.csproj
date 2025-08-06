@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Platforms>x64</Platforms>
+    <RootNamespace>C2paSample</RootNamespace>
   </PropertyGroup>
 
 	<ItemGroup>

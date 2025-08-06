@@ -1,4 +1,4 @@
-namespace Microsoft.ContentAuthenticity.BindingTests;
+namespace Microsot.ContentAuthenticity.BindingTests;
 
 public class C2paExceptionTests
 {
@@ -9,7 +9,7 @@ public class C2paExceptionTests
         var message = "Test error message";
         
         // Act
-        var exception = new C2paException(message);
+        var exception = new C2paException("Other", message);
         
         // Assert
         Assert.Equal(message, exception.Message);

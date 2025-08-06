@@ -50,7 +50,12 @@ class Library : ILibrary
         options.OutputDir = Path.Combine(baseDir, "lib", "generated");
         options.CheckSymbols = false;
         var module = options.AddModule("C2paBindings");
-        var path = Path.Combine(baseDir, "c2pa-rs", "target", "debug");        
+        var path = Path.Combine(baseDir, "c2pa-rs", "target",
+#if DEBUG        
+            "debug");
+#else
+            "release");
+#endif
         module.IncludeDirs.Add(path);
         module.Headers.Add("c2pa.h");
         module.LibraryDirs.Add(path);

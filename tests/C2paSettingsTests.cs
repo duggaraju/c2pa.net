@@ -36,19 +36,14 @@ public class C2paSettingsTests
     }
 
     [Fact]
-    public void FromJson_ShouldDeserializeCorrectly()
+    public void Load_ShouldLoadCorrectly()
     {
         // Arrange
         var original = new C2paSettings(new TrustSettings(), new VerifySettings());
         var json = original.ToJson();
         
         // Act
-        var deserialized = C2paSettings.FromJson(json);
-        
-        // Assert
-        Assert.NotNull(deserialized);
-        Assert.NotNull(deserialized.Trust);
-        Assert.NotNull(deserialized.Verify);
+        C2paSettings.Load(json);        
     }
 
     [Fact]

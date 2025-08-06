@@ -18,9 +18,18 @@ namespace Microsoft.ContentAuthenticity.Bindings
             return Utils.Serialize(this);
         }
 
-        public static C2paSettings FromJson(string json)
+        public void Load()
         {
-            return Utils.Deserialize<C2paSettings>(json);
+            Load(ToJson());
+        }
+
+        public static void Load(string settings, string format = "json")
+        {
+            var ret = c2pa.C2paLoadSettings(settings, format);
+            if (ret != 0)
+            {
+                C2pa.CheckError();
+            }
         }
     }
 }

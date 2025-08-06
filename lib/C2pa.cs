@@ -39,7 +39,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
             string errType = err.Split(' ')[0];
             string errMsg = err;
 
-            throw new C2paException(errMsg);
+            throw new C2paException(errType, errMsg);
         }
     }
 }

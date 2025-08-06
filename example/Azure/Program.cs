@@ -57,6 +57,7 @@ namespace C2paSample
                 }
             }
             """;
+            C2paSettings.Load(settings);
 
             ManifestDefinition manifest = new()
             {
@@ -66,14 +67,14 @@ namespace C2paSample
                 Assertions = { new CreativeWorkAssertion(new CreativeWorkAssertionData("http://schema.org/", "CreativeWork", [new AuthorInfo("person", "Isaiah Carrington")])) }
             };
 
-            C2paBuilder builder = C2paBuilder.Create(manifest, signer);
-            builder.Sign(inputFile, outputFile);
+            C2paBuilder builder = C2paBuilder.Create(manifest);
+            builder.Sign(signer, inputFile, outputFile);
         }
 
         class TrustedSigner(TokenCredential credential) : ISigner
         {
             const string EndpointUri = "https://eus.codesigning.azure.net/";
-            static readonly Azure.CodeSigning.Models.SignatureAlgorithm Algorithm = Azure.CodeSigning.Models.SignatureAlgorithm.PS384;
+            static readonly SignatureAlgorithm Algorithm = SignatureAlgorithm.PS384;
             const string CertificateProfile = "media-provenance-sign";
             const string AccountName = "ts-80221a56b4b24529a43e";
 
@@ -123,7 +124,7 @@ namespace C2paSample
                     builder.AppendLine($"subject={cert.Subject}");
                     builder.AppendLine($"issuer={cert.Issuer}");
                     var data = PemEncoding.Write("CERTIFICATE", cert.RawData);
-                    builder.AppendLine(new String(data));
+                    builder.AppendLine(new string(data));
                 }
 
                 string pem = builder.ToString();

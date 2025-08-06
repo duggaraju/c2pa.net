@@ -4,20 +4,17 @@ namespace Microsoft.ContentAuthenticity.Bindings
 
     public partial class C2paBuilder
     {
-        private C2paSigner _signer;
         private ResourceStore? _resources;
 
-        public static C2paBuilder Create(ManifestDefinition definition, ISigner callback)
+        public static C2paBuilder Create(ManifestDefinition definition)
         {
-            return FromJson(definition.ToJson(), callback);
+            return FromJson(definition.ToJson());
         }
 
-        public unsafe static C2paBuilder FromJson(string manifestDefintion, ISigner callback)
+        public unsafe static C2paBuilder FromJson(string manifestDefintion)
         {
             var builder = c2pa.C2paBuilderFromJson(manifestDefintion);
             C2pa.CheckError();
-            SignerCallback signer = (context, data, len, signature, sig_len) => Sign(callback, data, len, signature, sig_len);
-            builder._signer = c2pa.C2paSignerCreate(nint.Zero, signer, callback.Alg, callback.Certs, callback.TimeAuthorityUrl);
             return builder;
         }
 
@@ -31,13 +28,16 @@ namespace Microsoft.ContentAuthenticity.Bindings
         }
 
 
-        public unsafe void Sign(Stream source, Stream dest, string format)
+        public unsafe void Sign(ISigner signer, Stream source, Stream dest, string format)
         {
+            SignerCallback callback = (context, data, len, signature, sig_len) => Sign(signer, data, len, signature, sig_len);
+            var c2paSigner = c2pa.C2paSignerCreate(nint.Zero, callback, signer.Alg, signer.Certs, signer.TimeAuthorityUrl);
             using var inputStream = new C2paStream(source);
             using var outputStream = new C2paStream(dest);
             byte* manifest = null;
-            _ = c2pa.C2paBuilderSign(this, format, inputStream, outputStream, _signer, &manifest);
-            C2pa.CheckError();
+            var ret = c2pa.C2paBuilderSign(this, format, inputStream, outputStream, c2paSigner, &manifest);
+            if (ret == -1)
+                C2pa.CheckError();
             if (manifest != null)
             {
                 c2pa.C2paManifestBytesFree(manifest);
@@ -45,7 +45,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
             }
         }
 
-        public void Sign(string input, string output)
+        public void Sign(ISigner signer, string input, string output)
         {
             if (!File.Exists(input))
             {
@@ -53,7 +53,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
             }
             using var inputStream = new FileStream(input, FileMode.Open);
             using var outputStream = new FileStream(output, FileMode.Create);
-            Sign(inputStream, outputStream, Utils.GetMimeTypeFromExtension(Path.GetExtension(input)));
+            Sign(signer, inputStream, outputStream, Utils.GetMimeTypeFromExtension(Path.GetExtension(input)));
         }
 
         public void AddResource(string identifier, string path)
@@ -76,7 +76,6 @@ namespace Microsoft.ContentAuthenticity.Bindings
             var hash = new Span<byte>(signature, (int)sig_max_size);
             return callback.Sign(span, hash);
         }
-
     }
 
 }
