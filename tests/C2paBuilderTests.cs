@@ -7,11 +7,11 @@ public class C2paBuilderTests
     {
         // Act
         var instanceId = C2paBuilder.GenerateInstanceID();
-        
+
         // Assert
         Assert.NotNull(instanceId);
         Assert.StartsWith("xmp:iid:", instanceId);
-        
+
         // Extract GUID part and verify it's valid
         var guidPart = instanceId.Substring("xmp:iid:".Length);
         Assert.True(Guid.TryParse(guidPart, out _));
@@ -23,7 +23,7 @@ public class C2paBuilderTests
         // Act
         var id1 = C2paBuilder.GenerateInstanceID();
         var id2 = C2paBuilder.GenerateInstanceID();
-        
+
         // Assert
         Assert.NotEqual(id1, id2);
     }
@@ -33,7 +33,7 @@ public class C2paBuilderTests
     {
         // Arrange
         var manifest = new ManifestDefinition("image/jpeg");
-        
+
         // Act
         var exception = Record.Exception(() => C2paBuilder.Create(manifest));
 
@@ -52,7 +52,7 @@ public class C2paBuilderTests
             Vendor = "Test Vendor"
         };
         var json = manifest.ToJson();
-        
+
         // Act
         var exception = Record.Exception(() => C2paBuilder.FromJson(json));
 

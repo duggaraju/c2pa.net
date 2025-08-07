@@ -99,6 +99,6 @@ namespace Microsoft.ContentAuthenticity.Bindings
     }
 
     public record TrainingAssertionData(Dictionary<string, Training> Entries);
-   
+
     public record TrainingAssertion(TrainingAssertionData Data) : Assertion<TrainingAssertionData>("c2pa.training-mining", Data, AssertionKind.Json);
 }

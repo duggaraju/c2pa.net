@@ -7,7 +7,7 @@ public class ManifestDefinitionTests
     {
         // Act
         var manifest = new ManifestDefinition();
-        
+
         // Assert
         Assert.Equal("application/octet-stream", manifest.Format);
         Assert.Equal(C2paSigningAlg.Es256, manifest.Alg);
@@ -25,10 +25,10 @@ public class ManifestDefinitionTests
     {
         // Arrange
         var format = "image/jpeg";
-        
+
         // Act
         var manifest = new ManifestDefinition(format);
-        
+
         // Assert
         Assert.Equal(format, manifest.Format);
     }
@@ -42,10 +42,10 @@ public class ManifestDefinitionTests
             Title = "Test Manifest",
             Vendor = "Test Vendor"
         };
-        
+
         // Act
         var json = manifest.ToJson();
-        
+
         // Assert
         Assert.NotNull(json);
         Assert.NotEmpty(json);
@@ -64,10 +64,10 @@ public class ManifestDefinitionTests
             Vendor = "Test Vendor"
         };
         var json = original.ToJson();
-        
+
         // Act
         var deserialized = ManifestDefinition.FromJson(json);
-        
+
         // Assert
         Assert.Equal(original.Format, deserialized.Format);
         Assert.Equal(original.Title, deserialized.Title);
@@ -81,10 +81,10 @@ public class ManifestDefinitionTests
         // Arrange
         var manifest = new ManifestDefinition();
         var claimGenerator = new ClaimGeneratorInfo("TestApp", "1.0.0");
-        
+
         // Act
         manifest.ClaimGeneratorInfo.Add(claimGenerator);
-        
+
         // Assert
         Assert.Single(manifest.ClaimGeneratorInfo);
         Assert.Equal("TestApp", manifest.ClaimGeneratorInfo[0].Name);
@@ -97,10 +97,10 @@ public class ManifestDefinitionTests
         // Arrange
         var manifest = new ManifestDefinition();
         var assertion = new CreativeWorkAssertion(new CreativeWorkAssertionData());
-        
+
         // Act
         manifest.Assertions.Add(assertion);
-        
+
         // Assert
         Assert.Single(manifest.Assertions);
         Assert.IsType<CreativeWorkAssertion>(manifest.Assertions[0]);

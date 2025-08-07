@@ -5,17 +5,17 @@
         public C2paSigningAlg Alg { get; set; } = C2paSigningAlg.Es256;
 
         public string? Vendor { get; set; }
-        
+
         public List<ClaimGeneratorInfo> ClaimGeneratorInfo { get; set; } = [];
-        
+
         public string? Title { get; set; }
 
         public string InstanceID { get; set; } = "xmp:iid:" + Guid.NewGuid().ToString();
 
         public Thumbnail? Thumbnail { get; set; }
-        
+
         public List<Ingredient> Ingredients { get; set; } = [];
-        
+
         public List<Assertion> Assertions { get; set; } = [];
 
         public List<string>? Redactions { get; set; }

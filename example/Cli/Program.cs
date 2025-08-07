@@ -47,7 +47,7 @@ class Program
     private static Command CreateReadCommand()
     {
         var readCommand = new Command("read", "Read and display C2PA manifest data from a file");
-        
+
         var inputOption = new Option<FileInfo>(
             ["--input", "-i"],
             "Input file path to read C2PA data from")
@@ -77,22 +77,22 @@ class Program
             try
             {
                 Console.WriteLine($"Reading C2PA data from: {input.FullName}");
-                
+
                 using var reader = C2paReader.FromFile(input.FullName);
                 var json = reader.Json;
-                
+
                 if (pretty)
                 {
                     // Parse and re-format JSON for pretty printing
                     using var document = JsonDocument.Parse(json);
-                    var options = new JsonSerializerOptions 
-                    { 
+                    var options = new JsonSerializerOptions
+                    {
                         WriteIndented = true,
                         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
                     };
                     json = JsonSerializer.Serialize(document.RootElement, options);
                 }
-                
+
                 Console.WriteLine("C2PA Manifest Data:");
                 Console.WriteLine(json);
 
@@ -112,7 +112,7 @@ class Program
     private static Command CreateSignCommand()
     {
         var signCommand = new Command("sign", "Sign a file with C2PA manifest");
-        
+
         var inputOption = new Option<FileInfo>(
             ["--input", "-i"],
             "Input file to sign");
@@ -195,7 +195,7 @@ class Program
             try
             {
                 Console.WriteLine($"Signing file: {input.FullName}");
-                
+
                 // Create or load manifest definition
                 var manifestJson = File.ReadAllText(manifestFile.FullName);
                 var manifest = ManifestDefinition.FromJson(manifestJson);
@@ -211,7 +211,7 @@ class Program
                 using var builder = C2paBuilder.Create(manifest);
 
                 builder.Sign(signer, input.FullName, output.FullName);
-                
+
                 Console.WriteLine($"Successfully signed file: {output.FullName}");
             }
             catch (Exception ex)

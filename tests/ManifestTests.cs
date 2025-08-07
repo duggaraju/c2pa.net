@@ -7,7 +7,7 @@ public class ManifestTests
     {
         // Arrange & Act
         var thumbnail = new Thumbnail("image/jpeg", "thumb-123");
-        
+
         // Assert
         Assert.Equal("image/jpeg", thumbnail.Format);
         Assert.Equal("thumb-123", thumbnail.Identifier);
@@ -19,7 +19,7 @@ public class ManifestTests
     {
         // Arrange & Act
         var resourceRef = new ResourceRef("image/png", "resource-456");
-        
+
         // Assert
         Assert.Equal("image/png", resourceRef.Format);
         Assert.Equal("resource-456", resourceRef.Identifier);
@@ -34,7 +34,7 @@ public class ManifestTests
     {
         // Arrange & Act
         var assetType = new AssetType("image", "1.0");
-        
+
         // Assert
         Assert.Equal("image", assetType.Type);
         Assert.Equal("1.0", assetType.Version);
@@ -48,10 +48,10 @@ public class ManifestTests
         var alg = C2paSigningAlg.Es256;
         var hash = new byte[] { 1, 2, 3, 4 };
         var salt = new byte[] { 5, 6, 7, 8 };
-        
+
         // Act
         var hashedUri = new HashedUri(url, alg, hash, salt);
-        
+
         // Assert
         Assert.Equal(url, hashedUri.Url);
         Assert.Equal(alg, hashedUri.Alg);
@@ -66,10 +66,10 @@ public class ManifestTests
         var code = "validation.success";
         var url = "https://example.com/validation";
         var explanation = "Validation passed";
-        
+
         // Act
         var status = new ValidationStatus(code, url, explanation);
-        
+
         // Assert
         Assert.Equal(code, status.Code);
         Assert.Equal(url, status.Url);
@@ -81,7 +81,7 @@ public class ManifestTests
     {
         // Arrange & Act
         var info = new ClaimGeneratorInfo();
-        
+
         // Assert
         Assert.Equal("", info.Name);
         Assert.Equal("", info.Version);
@@ -92,7 +92,7 @@ public class ManifestTests
     {
         // Arrange & Act
         var info = new ClaimGeneratorInfo("TestApp", "2.0.1");
-        
+
         // Assert
         Assert.Equal("TestApp", info.Name);
         Assert.Equal("2.0.1", info.Version);
@@ -103,7 +103,7 @@ public class ManifestTests
     {
         // Arrange & Act
         var ingredient = new Ingredient();
-        
+
         // Assert
         Assert.Equal("", ingredient.Title);
         Assert.Equal("", ingredient.Format);
@@ -122,7 +122,7 @@ public class ManifestTests
     {
         // Arrange & Act
         var ingredient = new Ingredient("Test Image", "image/jpeg", Relationship.ComponentOf);
-        
+
         // Assert
         Assert.Equal("Test Image", ingredient.Title);
         Assert.Equal("image/jpeg", ingredient.Format);
@@ -134,7 +134,7 @@ public class ManifestTests
     {
         // Arrange & Act
         var store = new ResourceStore();
-        
+
         // Assert
         Assert.NotNull(store.Resources);
         Assert.Empty(store.Resources);
@@ -146,11 +146,11 @@ public class ManifestTests
     {
         // Arrange
         var store = new ResourceStore();
-        
+
         // Act
         store.Resources.Add("thumbnail", "/path/to/thumbnail.jpg");
         store.Resources.Add("logo", "/path/to/logo.png");
-        
+
         // Assert
         Assert.Equal(2, store.Resources.Count);
         Assert.Equal("/path/to/thumbnail.jpg", store.Resources["thumbnail"]);

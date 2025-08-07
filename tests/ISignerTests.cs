@@ -11,10 +11,10 @@ public class ISignerTests
         mockSigner.Setup(s => s.Certs).Returns("certificate-data");
         mockSigner.Setup(s => s.TimeAuthorityUrl).Returns("https://timestamp.example.com");
         mockSigner.Setup(s => s.UseOcsp).Returns(false);
-        
+
         // Act
         var signer = mockSigner.Object;
-        
+
         // Assert
         Assert.Equal(C2paSigningAlg.Es256, signer.Alg);
         Assert.Equal("certificate-data", signer.Certs);
@@ -29,10 +29,10 @@ public class ISignerTests
         var testSigner = new TestSigner();
         var testData = new ReadOnlySpan<byte>([1, 2, 3, 4]);
         var hashBuffer = new Span<byte>(new byte[64]);
-        
+
         // Act
         var result = testSigner.Sign(testData, hashBuffer);
-        
+
         // Assert
         Assert.Equal(8, result); // TestSigner returns 8 bytes
         Assert.Equal(1, hashBuffer[0]);
@@ -44,10 +44,10 @@ public class ISignerTests
     {
         // Arrange
         var mockSigner = new Mock<ISigner>();
-        
+
         // Act
         var useOcsp = mockSigner.Object.UseOcsp;
-        
+
         // Assert
         Assert.False(useOcsp);
     }
@@ -65,10 +65,10 @@ public class ISignerTests
         // Arrange
         var mockSigner = new Mock<ISigner>();
         mockSigner.Setup(s => s.Alg).Returns(algorithm);
-        
+
         // Act
         var alg = mockSigner.Object.Alg;
-        
+
         // Assert
         Assert.Equal(algorithm, alg);
     }

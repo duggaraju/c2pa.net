@@ -7,10 +7,10 @@ public class AssertionTests
     {
         // Arrange
         var data = new CreativeWorkAssertionData("http://schema.org/", "CreativeWork");
-        
+
         // Act
         var assertion = new CreativeWorkAssertion(data);
-        
+
         // Assert
         Assert.Equal("stds.schema-org.CreativeWork", assertion.Label);
         Assert.Equal(data, assertion.Data);
@@ -21,11 +21,11 @@ public class AssertionTests
     public void ActionAssertion_ShouldCreateWithCorrectLabel()
     {
         // Arrange
-        var data = new ActionAssertionData([ new C2paAction("c2pa.edited") ]);
-        
+        var data = new ActionAssertionData([new C2paAction("c2pa.edited")]);
+
         // Act
         var assertion = new ActionAssertion(data);
-        
+
         // Assert
         Assert.Equal("c2pa.action", assertion.Label);
         Assert.Equal(data, assertion.Data);
@@ -37,10 +37,10 @@ public class AssertionTests
     {
         // Arrange
         var data = new ThumbnailAssertionData("thumbnail.jpg", "thumb-123");
-        
+
         // Act
         var assertion = new ThumbnailAssertion(data);
-        
+
         // Assert
         Assert.Equal("c2pa.thumbnail", assertion.Label);
         Assert.Equal(data, assertion.Data);
@@ -52,10 +52,10 @@ public class AssertionTests
         // Arrange
         var label = "custom.assertion";
         var data = new { customField = "customValue" };
-        
+
         // Act
         var assertion = new CustomAssertion(label, data);
-        
+
         // Assert
         Assert.Equal(label, assertion.Label);
         Assert.Equal(data, assertion.Data);
@@ -65,15 +65,15 @@ public class AssertionTests
     public void CreativeWorkAssertionData_WithAuthors_ShouldCreateCorrectly()
     {
         // Arrange
-        var authors = new[] 
-        { 
+        var authors = new[]
+        {
             new AuthorInfo("Person", "John Doe"),
             new AuthorInfo("Organization", "ACME Corp")
         };
-        
+
         // Act
         var data = new CreativeWorkAssertionData("http://schema.org/", "CreativeWork", authors);
-        
+
         // Assert
         Assert.Equal("http://schema.org/", data.Context);
         Assert.Equal("CreativeWork", data.Type);
@@ -89,15 +89,15 @@ public class AssertionTests
         // Arrange
         var when = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
         var instanceId = Guid.NewGuid().ToString();
-        
+
         // Act
         var action = new C2paAction(
-            "c2pa.edited", 
-            when, 
-            "TestApp v1.0", 
-            "color, brightness", 
+            "c2pa.edited",
+            when,
+            "TestApp v1.0",
+            "color, brightness",
             instanceId);
-        
+
         // Assert
         Assert.Equal("c2pa.edited", action.Action);
         Assert.Equal(when, action.When);
@@ -112,10 +112,10 @@ public class AssertionTests
         // Arrange
         var data = new CreativeWorkAssertionData("http://schema.org/", "CreativeWork");
         var assertion = new CreativeWorkAssertion(data);
-        
+
         // Act
         var json = assertion.ToJson();
-        
+
         // Assert
         Assert.NotNull(json);
         Assert.Contains("stds.schema-org.CreativeWork", json);
@@ -129,10 +129,10 @@ public class AssertionTests
         var original = new CreativeWorkAssertion(
             new CreativeWorkAssertionData("http://schema.org/", "CreativeWork"));
         var json = original.ToJson();
-        
+
         // Act
         var deserialized = Assertion.FromJson(json);
-        
+
         // Assert
         Assert.NotNull(deserialized);
         Assert.Equal(original.Label, deserialized.Label);
@@ -150,10 +150,10 @@ public class AssertionTests
             { "ai.mining", Training.Allowed }
         };
         var data = new TrainingAssertionData(entries);
-        
+
         // Act
         var assertion = new TrainingAssertion(data);
-        
+
         // Assert
         Assert.Equal("c2pa.training-mining", assertion.Label);
         Assert.Equal(data, assertion.Data);
@@ -166,10 +166,10 @@ public class AssertionTests
         // Arrange
         var emptyEntries = new Dictionary<string, Training>();
         var data = new TrainingAssertionData(emptyEntries);
-        
+
         // Act
         var assertion = new TrainingAssertion(data);
-        
+
         // Assert
         Assert.Equal("c2pa.training-mining", assertion.Label);
         Assert.Equal(data, assertion.Data);
@@ -188,10 +188,10 @@ public class AssertionTests
             { "ai.inference", Training.Constrained }
         };
         var data = new TrainingAssertionData(entries);
-        
+
         // Act
         var assertion = new TrainingAssertion(data);
-        
+
         // Assert
         Assert.Equal(3, assertion.Data.Entries.Count);
         Assert.Equal(Training.Allowed, assertion.Data.Entries["ai.generative.training"]);
@@ -211,10 +211,10 @@ public class AssertionTests
             { "ai.generative.training", trainingValue }
         };
         var data = new TrainingAssertionData(entries);
-        
+
         // Act
         var assertion = new TrainingAssertion(data);
-        
+
         // Assert
         Assert.Single(assertion.Data.Entries);
         Assert.Equal(trainingValue, assertion.Data.Entries["ai.generative.training"]);
@@ -233,13 +233,13 @@ public class AssertionTests
             { "ai.research.academic", Training.Allowed }
         };
         var data = new TrainingAssertionData(entries);
-        
+
         // Act
         var assertion = new TrainingAssertion(data);
-        
+
         // Assert
         Assert.Equal(5, assertion.Data.Entries.Count);
-        Assert.All(entries, kvp => 
+        Assert.All(entries, kvp =>
         {
             Assert.True(assertion.Data.Entries.ContainsKey(kvp.Key));
             Assert.Equal(kvp.Value, assertion.Data.Entries[kvp.Key]);
@@ -257,10 +257,10 @@ public class AssertionTests
         };
         var data = new TrainingAssertionData(entries);
         var assertion = new TrainingAssertion(data);
-        
+
         // Act
         var json = assertion.ToJson();
-        
+
         // Assert
         Assert.NotNull(json);
         Assert.Contains("c2pa.training-mining", json);
@@ -283,15 +283,15 @@ public class AssertionTests
         var originalData = new TrainingAssertionData(originalEntries);
         var originalAssertion = new TrainingAssertion(originalData);
         var json = originalAssertion.ToJson();
-        
+
         // Act
         var deserialized = Assertion.FromJson(json);
-        
+
         // Assert
         Assert.NotNull(deserialized);
         Assert.Equal(originalAssertion.Label, deserialized.Label);
         Assert.Equal(originalAssertion.Kind, deserialized.Kind);
-        
+
         // Note: Since deserialized comes back as Assertion base type,
         // we need to verify the data structure through JSON comparison
         var reserializedJson = deserialized.ToJson();
@@ -325,10 +325,10 @@ public class AssertionTests
         };
         var data = new TrainingAssertionData(entries);
         var assertion = new TrainingAssertion(data);
-        
+
         // Act
         var json = assertion.ToJson();
-        
+
         // Assert
         Assert.True(json.Contains("NotAllowed") || json.Contains("not_allowed"));
         // Ensure we don't have both formats mixed up
@@ -345,7 +345,7 @@ public class AssertionTests
         var data2 = new TrainingAssertionData(entries2);
         var assertion1 = new TrainingAssertion(data1);
         var assertion2 = new TrainingAssertion(data2);
-        
+
         // Act & Assert
         Assert.Equal(assertion1.Label, assertion2.Label);
         Assert.Equal(assertion1.Kind, assertion2.Kind);
@@ -363,11 +363,11 @@ public class AssertionTests
             { "ai_inference_model", Training.Allowed }
         };
         var data = new TrainingAssertionData(entries);
-        
+
         // Act
         var assertion = new TrainingAssertion(data);
         var json = assertion.ToJson();
-        
+
         // Assert
         Assert.Equal(3, assertion.Data.Entries.Count);
         Assert.NotNull(json);
@@ -388,16 +388,16 @@ public class AssertionTests
         };
         var originalData = new TrainingAssertionData(originalEntries);
         var originalAssertion = new TrainingAssertion(originalData);
-        
+
         // Act - Serialize and deserialize
         var json = originalAssertion.ToJson();
         var deserializedAssertion = Utils.Deserialize<TrainingAssertion>(json);
-        
+
         // Assert
         Assert.Equal(originalAssertion.Label, deserializedAssertion.Label);
         Assert.Equal(originalAssertion.Kind, deserializedAssertion.Kind);
         Assert.Equal(originalEntries.Count, deserializedAssertion.Data.Entries.Count);
-        
+
         foreach (var kvp in originalEntries)
         {
             Assert.True(deserializedAssertion.Data.Entries.ContainsKey(kvp.Key));
@@ -415,11 +415,11 @@ public class AssertionTests
             { longKey, Training.Constrained }
         };
         var data = new TrainingAssertionData(entries);
-        
+
         // Act
         var assertion = new TrainingAssertion(data);
         var json = assertion.ToJson();
-        
+
         // Assert
         Assert.Single(assertion.Data.Entries);
         Assert.Equal(Training.Constrained, assertion.Data.Entries[longKey]);

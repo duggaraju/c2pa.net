@@ -7,7 +7,7 @@ public class C2paTests
     {
         // Act
         var version = C2pa.Version;
-        
+
         // Assert
         Assert.NotNull(version);
         Assert.NotEmpty(version);
@@ -18,7 +18,7 @@ public class C2paTests
     {
         // Act
         var mimeTypes = C2pa.SupportedMimeTypes;
-        
+
         // Assert
         Assert.NotNull(mimeTypes);
         Assert.NotEmpty(mimeTypes);

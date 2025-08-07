@@ -4,7 +4,7 @@
     {
         private readonly Stream _stream;
 
-        public C2paStream(Stream stream): this()
+        public C2paStream(Stream stream) : this()
         {
             _stream = stream;
             unsafe

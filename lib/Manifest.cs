@@ -54,13 +54,14 @@ namespace Microsoft.ContentAuthenticity.Bindings
     }
 
     // Ingredient
-    public record HashedUri(string Url, C2paSigningAlg  Alg, byte[] Hash, byte[] Salt)
+    public record HashedUri(string Url, C2paSigningAlg Alg, byte[] Hash, byte[] Salt)
     {
     }
 
     public record ValidationStatus(string Code, string Url, string Explanation);
 
-    public enum Relationship {
+    public enum Relationship
+    {
         [JsonPropertyName("parentOf")]
         ParentOf,
 
@@ -74,7 +75,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
     // Manifest
     public record ClaimGeneratorInfo(string Name = "", string Version = "");
 
-    public record Ingredient(string Title = "", string Format = "", Relationship Relationship = Relationship.ParentOf) 
+    public record Ingredient(string Title = "", string Format = "", Relationship Relationship = Relationship.ParentOf)
     {
         public string? DocumentID { get; set; } = null;
 
@@ -83,7 +84,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
         public HashedUri? C2paManifest { get; set; }
 
         public HashedUri? HashedManifestUri { get; set; }
-        
+
         public List<ValidationStatus>? ValidationStatus { get; set; }
 
         public Thumbnail? Thumbnail { get; set; }
@@ -92,7 +93,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
 
         public string? Description { get; set; }
 
-        public string? InformationalUri { get; set; }   
+        public string? InformationalUri { get; set; }
     }
 
 
@@ -101,9 +102,9 @@ namespace Microsoft.ContentAuthenticity.Bindings
         public string ClaimGenerator { get; set; } = string.Empty;
 
         public List<ClaimGeneratorInfo> ClaimGeneratorInfo { get; set; } = [];
-        
+
         public string Format { get; set; } = "application/octet-stream";
-        
+
         public string? Title { get; set; }
 
         public Thumbnail? Thumbnail { get; set; }

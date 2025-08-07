@@ -68,7 +68,7 @@ class Library : ILibrary
 
     public void SetupPasses(Driver driver)
     {
-	    driver.Context.TranslationUnitPasses.RenameDeclsUpperCase(RenameTargets.Any);
-	    //driver.Context.TranslationUnitPasses.AddPass(new FunctionToInstanceMethodPass());
+        driver.Context.TranslationUnitPasses.RenameDeclsUpperCase(RenameTargets.Any);
+        //driver.Context.TranslationUnitPasses.AddPass(new FunctionToInstanceMethodPass());
     }
 }

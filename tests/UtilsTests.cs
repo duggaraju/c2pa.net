@@ -20,7 +20,7 @@ public class UtilsTests
     {
         // Act
         var mimeType = Utils.GetMimeTypeFromExtension(extension);
-        
+
         // Assert
         Assert.Equal(expectedMimeType, mimeType);
     }
@@ -33,7 +33,7 @@ public class UtilsTests
     {
         // Act
         var mimeType = Utils.GetMimeTypeFromExtension(extension);
-        
+
         // Assert
         Assert.Equal(expectedMimeType, mimeType);
     }
@@ -50,7 +50,7 @@ public class UtilsTests
     {
         // Act
         var type = Utils.GetAssertionTypeFromLabel(label);
-        
+
         // Assert
         Assert.Equal(expectedType, type);
     }
@@ -60,10 +60,10 @@ public class UtilsTests
     {
         // Arrange
         var obj = new { Name = "Test", Value = 42 };
-        
+
         // Act
         var json = Utils.Serialize(obj);
-        
+
         // Assert
         Assert.NotNull(json);
         Assert.Contains("name", json); // snake_case
@@ -77,10 +77,10 @@ public class UtilsTests
     {
         // Arrange
         var json = """{"name": "Test", "value": 42}""";
-        
+
         // Act
         var obj = Utils.Deserialize<TestObject>(json);
-        
+
         // Assert
         Assert.NotNull(obj);
         Assert.Equal("Test", obj.Name);
@@ -92,7 +92,7 @@ public class UtilsTests
     {
         // Arrange
         var invalidJson = "invalid json";
-        
+
         // Act & Assert
         Assert.Throws<JsonException>(() => Utils.Deserialize<TestObject>(invalidJson));
     }
@@ -102,7 +102,7 @@ public class UtilsTests
     {
         // Arrange
         var nullJson = "null";
-        
+
         // Act & Assert
         Assert.Throws<JsonException>(() => Utils.Deserialize<TestObject>(nullJson));
     }
@@ -112,10 +112,10 @@ public class UtilsTests
     {
         // Arrange
         var obj = new TestObject { Name = "Test", Value = 42 };
-        
+
         // Act
         var json = JsonSerializer.Serialize(obj, Utils.JsonOptions);
-        
+
         // Assert
         Assert.Contains("name", json);
         Assert.Contains("value", json);

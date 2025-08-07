@@ -40,17 +40,17 @@ internal class FileSigner : ISigner, IDisposable
         _certs = certs;
         _privateKey = privateKey;
         _tsaUrl = tsaUrl;
-        
+
         // Parse the certificate to determine the algorithm and prepare the signing key
         (_algorithm, _signingKey) = ParseCertificateAndKey(certs, privateKey, preferredAlgorithm);
     }
 
     /// <inheritdoc/>
     public C2paSigningAlg Alg => _algorithm;
-    
+
     /// <inheritdoc/>
     public string Certs => _certs;
-    
+
     /// <inheritdoc/>
     public string? TimeAuthorityUrl => _tsaUrl;
 
@@ -66,7 +66,7 @@ internal class FileSigner : ISigner, IDisposable
     public int Sign(ReadOnlySpan<byte> data, Span<byte> signature)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         try
         {
             byte[] signatureBytes = _algorithm switch
@@ -151,7 +151,7 @@ internal class FileSigner : ISigner, IDisposable
             {
                 privateKey = ParseECPrivateKeyFromPem(privateKeyPem);
                 algorithm = preferredAlgorithm ?? DetermineECAlgorithm((ECDsa)privateKey);
-                
+
                 // Validate that the preferred algorithm is compatible with EC keys
                 if (preferredAlgorithm.HasValue && !IsECAlgorithm(preferredAlgorithm.Value))
                 {
@@ -162,7 +162,7 @@ internal class FileSigner : ISigner, IDisposable
             {
                 privateKey = ParseRSAPrivateKeyFromPem(privateKeyPem);
                 algorithm = preferredAlgorithm ?? DetermineRSAAlgorithm((RSA)privateKey);
-                
+
                 // Validate that the preferred algorithm is compatible with RSA keys
                 if (preferredAlgorithm.HasValue && !IsRSAAlgorithm(preferredAlgorithm.Value))
                 {
@@ -189,17 +189,17 @@ internal class FileSigner : ISigner, IDisposable
             .Where(line => !line.StartsWith("-----"))
             .Select(line => line.Trim())
             .Where(line => !string.IsNullOrEmpty(line));
-        
+
         var base64 = string.Join("", lines);
         var certBytes = Convert.FromBase64String(base64);
-        
+
         return new X509Certificate2(certBytes);
     }
 
     private static ECDsa ParseECPrivateKeyFromPem(string privateKeyPem)
     {
         var ecdsa = ECDsa.Create();
-        
+
         // Try different PEM formats
         try
         {
@@ -219,7 +219,7 @@ internal class FileSigner : ISigner, IDisposable
                 ecdsa.ImportFromPem(privateKeyPem);
             }
         }
-        
+
         return ecdsa;
     }
 
@@ -236,7 +236,7 @@ internal class FileSigner : ISigner, IDisposable
             .Where(line => !line.StartsWith("-----"))
             .Select(line => line.Trim())
             .Where(line => !string.IsNullOrEmpty(line));
-        
+
         return string.Join("", lines);
     }
 
