@@ -17,7 +17,4 @@
     </PropertyGroup>
     <Exec Command="cargo build $(CargoArgs) --features rust_native_crypto" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/c2pa_c_ffi" />
   </Target>
-  <Target Name="GenerateBindings" AfterTargets="Build" Outputs="$(MSBuildThisFileDirectory)../lib/generated/C2paBindings.cs" Inputs="$(CargoOutput)c2pa.h">
-    <Exec Command="dotnet run --no-build -c $(Configuration) $(MSBuildProjectFile)" WorkingDirectory="$(MSBuildThisFileDirectory)" />
-  </Target>
 </Project>

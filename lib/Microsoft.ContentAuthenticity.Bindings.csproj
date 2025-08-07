@@ -21,7 +21,10 @@
     <ProjectReference Include="../generator/BindingsGenerator.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <ItemGroup>
-	  <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/$(C2paLibrary)" CopyToOutputDirectory="PreserveNewest" />
+	  <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/$(C2paLibrary)"
+      CopyToOutputDirectory="PreserveNewest"
+      Pack="true"
+      PackagePath="runtimes/$(RuntimeIdentifier)/native/"/>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md">
@@ -29,4 +32,7 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
+  <Target Name="GenerateBindingFiles" BeforeTargets="CoreCompile" DependsOnTargets="ResolveProjectReferences">
+    <Exec Command="$(MSBuildThisFileDirectory)../generator/$(OutputPath)BindingsGenerator.exe" />
+  </Target>
 </Project>
