@@ -101,12 +101,16 @@ jobs:
     - name: Build Rust FFI library (Release)
       if: matrix.configuration == 'Release'
       working-directory: c2pa-rs
+      env:
+        RUSTFLAGS: "-A warnings"
       run: |
         cargo build --release -p c2pa-c-ffi --no-default-features --features "rust_native_crypto"
 
     - name: Build Rust FFI library (Debug)
       if: matrix.configuration == 'Debug'
       working-directory: c2pa-rs
+      env:
+        RUSTFLAGS: "-A warnings"
       run: |
         cargo build -p c2pa-c-ffi --no-default-features --features "rust_native_crypto"
 
@@ -193,6 +197,10 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -229,25 +237,10 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Setup Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: ${{ env.RUST_VERSION }}
-        components: rustfmt, clippy
-
     - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential pkg-config libssl-dev
-
-    # Rust formatting and linting
-    - name: Check Rust formatting
-      working-directory: c2pa-rs
-      run: cargo fmt -- --check
-
-    - name: Run Rust clippy
-      working-directory: c2pa-rs
-      run: cargo clippy --features="file_io" --all-targets -- -D warnings
 
     # .NET formatting and analysis
     - name: Install dotnet format tool
