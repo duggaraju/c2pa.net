@@ -98,17 +98,17 @@ jobs:
         brew install pkg-config openssl
 
     # Build Rust c2pa-c-ffi library
-    - name: Build Rust FFI library (Windows)
-      if: matrix.os == 'windows-latest'
+    - name: Build Rust FFI library (Release)
+      if: matrix.configuration == 'Release'
       working-directory: c2pa-rs
       run: |
-        cargo build --${{ matrix.configuration == 'Release' && 'release' || '' }} -p c2pa-c-ffi --no-default-features --features "rust_native_crypto, file_io"
+        cargo build --release -p c2pa-c-ffi --no-default-features --features "rust_native_crypto"
 
-    - name: Build Rust FFI library (Unix)
-      if: matrix.os != 'windows-latest'
+    - name: Build Rust FFI library (Debug)
+      if: matrix.configuration == 'Debug'
       working-directory: c2pa-rs
       run: |
-        cargo build ${{ matrix.configuration == 'Release' && '--release' || '' }} -p c2pa-c-ffi --no-default-features --features "rust_native_crypto, file_io"
+        cargo build -p c2pa-c-ffi --no-default-features --features "rust_native_crypto"
 
     # Restore .NET dependencies
     - name: Restore dependencies
@@ -255,10 +255,3 @@ jobs:
 
     - name: Check .NET formatting
       run: dotnet format --verify-no-changes --verbosity diagnostic
-
-    # SonarCloud analysis (optional - requires SonarCloud setup)
-    # - name: SonarCloud Scan
-    #   uses: SonarSource/sonarcloud-github-action@master
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
