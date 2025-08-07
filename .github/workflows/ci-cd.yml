@@ -11,7 +11,7 @@ on:
 
 env:
   DOTNET_VERSION: '8.0.x'
-  RUST_VERSION: 'stable'
+  RUST_VERSION: '1.88.0'
   NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
   
 jobs:
