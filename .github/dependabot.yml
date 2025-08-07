@@ -1,0 +1,46 @@
+version: 2
+updates:
+  # Enable version updates for .NET dependencies
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "duggaraju"
+    assignees:
+      - "duggaraju"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Enable version updates for Rust dependencies in submodule
+  - package-ecosystem: "cargo"
+    directory: "/c2pa-rs"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "duggaraju"
+    assignees:
+      - "duggaraju"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "duggaraju"
+    assignees:
+      - "duggaraju"
+    commit-message:
+      prefix: "chore"
+      include: "scope"

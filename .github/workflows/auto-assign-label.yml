@@ -1,0 +1,115 @@
+name: Auto-assign and Label
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+  issues:
+    types: [opened]
+
+jobs:
+  auto-assign:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Auto-assign PR to author
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.addAssignees({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            assignees: [context.payload.pull_request.user.login]
+          });
+
+    - name: Auto-assign issue to author
+      if: github.event_name == 'issues'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.addAssignees({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            assignees: [context.payload.issue.user.login]
+          });
+
+  auto-label:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Label PR based on files changed
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { owner, repo, number } = context.issue;
+          
+          // Get list of changed files
+          const files = await github.rest.pulls.listFiles({
+            owner,
+            repo,
+            pull_number: number
+          });
+          
+          const changedFiles = files.data.map(file => file.filename);
+          const labels = [];
+          
+          // Add labels based on file changes
+          if (changedFiles.some(file => file.startsWith('lib/'))) {
+            labels.push('library');
+          }
+          
+          if (changedFiles.some(file => file.startsWith('tests/'))) {
+            labels.push('tests');
+          }
+          
+          if (changedFiles.some(file => file.startsWith('example/'))) {
+            labels.push('example');
+          }
+          
+          if (changedFiles.some(file => file.startsWith('generator/'))) {
+            labels.push('generator');
+          }
+          
+          if (changedFiles.some(file => file.includes('.csproj') || file.includes('.props') || file.includes('.sln'))) {
+            labels.push('build');
+          }
+          
+          if (changedFiles.some(file => file.startsWith('.github/'))) {
+            labels.push('ci/cd');
+          }
+          
+          if (changedFiles.some(file => file.includes('README') || file.includes('.md'))) {
+            labels.push('documentation');
+          }
+          
+          if (changedFiles.some(file => file.includes('c2pa-rs'))) {
+            labels.push('dependencies');
+          }
+          
+          // Add size labels
+          const totalChanges = files.data.reduce((sum, file) => sum + file.changes, 0);
+          if (totalChanges > 500) {
+            labels.push('size/XL');
+          } else if (totalChanges > 100) {
+            labels.push('size/L');
+          } else if (totalChanges > 30) {
+            labels.push('size/M');
+          } else if (totalChanges > 10) {
+            labels.push('size/S');
+          } else {
+            labels.push('size/XS');
+          }
+          
+          // Apply labels
+          if (labels.length > 0) {
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: number,
+              labels
+            });
+          }

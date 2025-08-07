@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+
+    - name: Get version from tag or input
+      id: get_version
+      run: |
+        if ($env:GITHUB_EVENT_NAME -eq "workflow_dispatch") {
+          $version = "${{ github.event.inputs.version }}"
+        } else {
+          $version = $env:GITHUB_REF -replace '^refs/tags/v', ''
+        }
+        echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "::set-output name=version::$version"
+      shell: pwsh
+
+    - name: Update project version
+      run: |
+        # Update the version in the project file
+        $projectFile = "lib/Microsoft.ContentAuthenticity.Bindings.csproj"
+        $content = Get-Content $projectFile -Raw
+        $content = $content -replace '<Version>.*</Version>', "<Version>${{ env.VERSION }}</Version>"
+        if ($content -notmatch '<Version>') {
+          $content = $content -replace '(<PropertyGroup[^>]*>)', "`$1`n    <Version>${{ env.VERSION }}</Version>"
+        }
+        Set-Content $projectFile $content
+      shell: pwsh
+
+    - name: Build Rust FFI library
+      working-directory: c2pa-rs
+      run: |
+        cargo build --release -p c2pa-c-ffi --no-default-features --features "rust_native_crypto, file_io"
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: |
+        dotnet build --configuration Release --no-restore
+
+    - name: Run tests
+      run: |
+        dotnet test --configuration Release --no-build --verbosity normal
+
+    - name: Create NuGet packages
+      run: |
+        dotnet pack lib/Microsoft.ContentAuthenticity.Bindings.csproj --configuration Release --no-build --output ./release-packages --include-symbols --include-source -p:PackageVersion=${{ env.VERSION }}
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ env.VERSION }}
+        name: Release v${{ env.VERSION }}
+        draft: false
+        prerelease: false
+        files: |
+          ./release-packages/*.nupkg
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Publish to NuGet.org
+      run: |
+        dotnet nuget push ./release-packages/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

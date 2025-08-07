@@ -1,0 +1,264 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  RUST_VERSION: 'stable'
+  NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+  
+jobs:
+  # Build matrix for different platforms
+  build-and-test:
+    name: Build and Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        configuration: [Debug, Release]
+        exclude:
+          # Only run Debug builds on Ubuntu to save resources
+          - os: ubuntu-latest
+            configuration: Debug
+          - os: macos-latest
+            configuration: Debug
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ env.RUST_VERSION }}
+
+    - name: Install Rust targets (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        rustup target add x86_64-pc-windows-msvc
+
+    - name: Install Rust targets (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        rustup target add x86_64-unknown-linux-gnu
+
+    - name: Install Rust targets (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        rustup target add x86_64-apple-darwin
+        rustup target add aarch64-apple-darwin
+
+    # Cache Rust dependencies
+    - name: Cache Rust dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          c2pa-rs/target
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ matrix.os }}-rust-${{ hashFiles('c2pa-rs/Cargo.lock') }}
+        restore-keys: |
+          ${{ matrix.os }}-rust-
+
+    # Cache .NET dependencies
+    - name: Cache .NET dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.nuget/packages
+          ~/.dotnet
+        key: ${{ matrix.os }}-dotnet-${{ hashFiles('**/*.csproj', '**/*.props') }}
+        restore-keys: |
+          ${{ matrix.os }}-dotnet-
+
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential pkg-config libssl-dev
+
+    - name: Install system dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install pkg-config openssl
+
+    # Build Rust c2pa-c-ffi library
+    - name: Build Rust FFI library (Windows)
+      if: matrix.os == 'windows-latest'
+      working-directory: c2pa-rs
+      run: |
+        cargo build --${{ matrix.configuration == 'Release' && 'release' || '' }} -p c2pa-c-ffi --no-default-features --features "rust_native_crypto, file_io"
+
+    - name: Build Rust FFI library (Unix)
+      if: matrix.os != 'windows-latest'
+      working-directory: c2pa-rs
+      run: |
+        cargo build ${{ matrix.configuration == 'Release' && '--release' || '' }} -p c2pa-c-ffi --no-default-features --features "rust_native_crypto, file_io"
+
+    # Restore .NET dependencies
+    - name: Restore dependencies
+      run: dotnet restore
+
+    # Build .NET solution
+    - name: Build solution
+      run: |
+        dotnet build --configuration ${{ matrix.configuration }} --no-restore --verbosity normal
+
+    # Run tests
+    - name: Run tests
+      run: |
+        dotnet test --configuration ${{ matrix.configuration }} --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage"
+
+    # Upload test results
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}-${{ matrix.configuration }}
+        path: |
+          **/TestResults/**/*.trx
+          **/TestResults/**/*.xml
+
+    # Upload coverage reports
+    - name: Upload coverage to Codecov
+      if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release'
+      uses: codecov/codecov-action@v4
+      with:
+        files: "**/TestResults/**/coverage.cobertura.xml"
+        fail_ci_if_error: false
+
+    # Create NuGet packages (only on Windows Release)
+    - name: Create NuGet packages
+      if: matrix.os == 'windows-latest' && matrix.configuration == 'Release'
+      run: |
+        dotnet pack lib/Microsoft.ContentAuthenticity.Bindings.csproj --configuration Release --no-build --output ./artifacts/packages --include-symbols --include-source
+
+    # Upload NuGet packages as artifacts
+    - name: Upload NuGet packages
+      if: matrix.os == 'windows-latest' && matrix.configuration == 'Release'
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget-packages
+        path: ./artifacts/packages/*.nupkg
+
+  # Publish job that runs only on main branch pushes or releases
+  publish:
+    name: Publish NuGet Package
+    needs: build-and-test
+    runs-on: windows-latest
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+      (github.event_name == 'release' && github.event.action == 'published')
+    
+    steps:
+    - name: Download NuGet packages
+      uses: actions/download-artifact@v4
+      with:
+        name: nuget-packages
+        path: ./packages
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    # Publish to NuGet.org (only on release)
+    - name: Publish to NuGet.org
+      if: github.event_name == 'release' && github.event.action == 'published'
+      run: |
+        dotnet nuget push ./packages/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+    # Publish to GitHub Packages (on main branch pushes)
+    - name: Publish to GitHub Packages
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: |
+        dotnet nuget push ./packages/*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --skip-duplicate
+
+  # Security scanning
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Code quality checks
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ env.RUST_VERSION }}
+        components: rustfmt, clippy
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential pkg-config libssl-dev
+
+    # Rust formatting and linting
+    - name: Check Rust formatting
+      working-directory: c2pa-rs
+      run: cargo fmt -- --check
+
+    - name: Run Rust clippy
+      working-directory: c2pa-rs
+      run: cargo clippy --features="file_io" --all-targets -- -D warnings
+
+    # .NET formatting and analysis
+    - name: Install dotnet format tool
+      run: dotnet tool install -g dotnet-format
+
+    - name: Check .NET formatting
+      run: dotnet format --verify-no-changes --verbosity diagnostic
+
+    # SonarCloud analysis (optional - requires SonarCloud setup)
+    # - name: SonarCloud Scan
+    #   uses: SonarSource/sonarcloud-github-action@master
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
