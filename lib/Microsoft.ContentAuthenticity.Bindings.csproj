@@ -32,7 +32,10 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-  <Target Name="GenerateBindingFiles" BeforeTargets="CoreCompile" DependsOnTargets="ResolveProjectReferences">
-    <Exec Command="$(MSBuildThisFileDirectory)../generator/$(OutputPath)BindingsGenerator.exe" />
+  <Target Name="GenerateBindingFiles" BeforeTargets="CoreCompile" DependsOnTargets="ResolveProjectReferences" Condition="!Exists('generated/C2paBindings.cs')">
+    <Exec Command="$(MSBuildThisFileDirectory)../generator/$(OutputPath)BindingsGenerator" />
+    <CreateItem Include="generated/*.cs">
+      <Output TaskParameter="Include" ItemName="Compile" />
+    </CreateItem>
   </Target>
 </Project>

@@ -89,6 +89,15 @@ cd example/Cli
 dotnet run
 ```
 
+### Package
+
+Create a nuget package for publishing.
+
+```bash
+cd lib
+dotnet pack -c Release -p RuntimeIdentitifer=linx-x64 # or win-x64 for Windows.
+```
+
 ## Project Structure
 
 - `lib/` - Main .NET bindings library (Microsoft.ContentAuthenticity.Bindings)
