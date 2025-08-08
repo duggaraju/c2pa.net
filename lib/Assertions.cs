@@ -41,7 +41,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
 
     public record ActionV1(
         string Action,
-        [property:JsonPropertyName("softwareAgent")] string? SoftwareAgent = null,
+        [property: JsonPropertyName("softwareAgent")] string? SoftwareAgent = null,
         [property: JsonPropertyName("digitalSourceType")] string? DigitalSourceType = null,
         string? Changed = null,
         string? InstanceID = null,

@@ -11,11 +11,28 @@ namespace Microsoft.ContentAuthenticity.Bindings
             return FromJson(definition.ToJson());
         }
 
-        public unsafe static C2paBuilder FromJson(string manifestDefintion)
+        public static C2paBuilder FromJson(string manifestDefintion)
         {
             var builder = c2pa.C2paBuilderFromJson(manifestDefintion);
-            C2pa.CheckError();
-            return builder;
+            if (builder == null)
+                C2pa.CheckError();
+            return builder!;
+        }
+
+        public static C2paBuilder FromArchive(string archivePath)
+        {
+            using var stream = File.OpenRead(archivePath);
+            return FromArchive(stream);
+        }
+
+
+        public static C2paBuilder FromArchive(Stream stream)
+        {
+            using var c2paStream = new C2paStream(stream);
+            var builder = c2pa.C2paBuilderFromArchive(c2paStream);
+            if (builder == null)
+                C2pa.CheckError();
+            return builder!;
         }
 
         partial void DisposePartial(bool disposing)
@@ -27,6 +44,19 @@ namespace Microsoft.ContentAuthenticity.Bindings
             }
         }
 
+        public void ToArchive(string path)
+        {
+            using var stream = File.OpenWrite(path);
+            ToArchive(stream);
+        }
+
+        public void ToArchive(Stream stream)
+        {
+            using var c2paStream = new C2paStream(stream);
+            var ret = c2pa.C2paBuilderToArchive(this, c2paStream);
+            if (ret == -1)
+                C2pa.CheckError();
+        }
 
         public unsafe void Sign(ISigner signer, Stream source, Stream dest, string format)
         {
