@@ -3,6 +3,20 @@ namespace Microsoft.ContentAuthenticity.Bindings
 
     public partial class C2paBuilder
     {
+        public static string[] SupportedMimeTypes
+        {
+            get
+            {
+                unsafe
+                {
+                    ulong count = 0;
+                    var buffer = c2pa.C2paBuilderSupportedMimeTypes(ref count);
+                    return Utils.FromCStringArray(buffer, count);
+                }
+            }
+        }
+
+
         public static C2paBuilder Create(ManifestDefinition definition)
         {
             return FromJson(definition.ToJson());
@@ -37,7 +51,6 @@ namespace Microsoft.ContentAuthenticity.Bindings
             if (disposing)
             {
                 c2pa.C2paBuilderFree(this);
-                C2pa.CheckError();
             }
         }
 

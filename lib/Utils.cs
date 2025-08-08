@@ -69,14 +69,14 @@ namespace Microsoft.ContentAuthenticity.Bindings
             };
         }
 
-        public unsafe static string FromCString(sbyte* ptr, bool ownsResource = true)
+        public unsafe static string FromCString(sbyte* ptr, bool freeResource = true)
         {
             if (ptr == null)
             {
                 return string.Empty;
             }
             var value = Marshal.PtrToStringUTF8((nint)ptr)!;
-            if (!ownsResource)
+            if (freeResource)
                 c2pa.C2paStringFree(ptr);
 
             return value;
@@ -91,7 +91,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
             var values = new string[count];
             for (ulong i = 0; i < count; i++)
             {
-                values[i] = FromCString(ptr[i]);
+                values[i] = FromCString(ptr[i], freeResource: false);
             }
             c2pa.C2paFreeStringArray(ptr, count);
             return values;

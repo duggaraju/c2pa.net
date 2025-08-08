@@ -14,9 +14,11 @@ class Program
         var versionCommand = new Command("version", "Display the C2PA SDK version");
         versionCommand.SetHandler(() =>
         {
-            Console.WriteLine($"C2PA .NET CLI");
+            Console.WriteLine("C2PA .NET CLI");
             Console.WriteLine($"C2PA SDK Version: {C2pa.Version}");
-            Console.WriteLine($"Supported Extensions: {string.Join(", ", C2pa.SupportedMimeTypes)}");
+            Console.WriteLine($"Supported MimeTypes: {string.Join(", ", C2pa.SupportedMimeTypes)}");
+            Console.WriteLine($"Reader supported MimeTypes: {string.Join(", ", C2paReader.SupportedMimeTypes)}");
+            Console.WriteLine($"Builder supported MimeTypes: {string.Join(", ", C2paBuilder.SupportedMimeTypes)}");
         });
         rootCommand.AddCommand(versionCommand);
 

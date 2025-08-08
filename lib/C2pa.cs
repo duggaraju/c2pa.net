@@ -9,19 +9,31 @@ namespace Microsoft.ContentAuthenticity.Bindings
         /// <summary>
         /// The version of the Sdk.
         /// </summary>
-        public unsafe static string Version => Utils.FromCString(c2pa.C2paVersion());
+        public static string Version
+        {
+            get
+            {
+                unsafe
+                {
+                    return Utils.FromCString(c2pa.C2paVersion());
+                }
+            }
+        }
 
-        public unsafe static string[] SupportedMimeTypes
+        public static string[] SupportedMimeTypes
         {
             get
             {
                 ulong count = 0;
-                var buffer = c2pa.C2paReaderSupportedMimeTypes(ref count);
-                return Utils.FromCStringArray(buffer, count);
+                unsafe
+                {
+                    var buffer = c2pa.C2paReaderSupportedMimeTypes(ref count);
+                    return Utils.FromCStringArray(buffer, count);
+                }
             }
         }
 
-        public unsafe static void LoadSettings(string settings)
+        public static void LoadSettings(string settings)
         {
             c2pa.C2paLoadSettings(settings, "json");
             CheckError();
@@ -34,6 +46,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
             {
                 err = Utils.FromCString(c2pa.C2paError());
             }
+
             if (string.IsNullOrEmpty(err)) return;
 
             string errType = err.Split(' ')[0];

@@ -2,12 +2,24 @@
 {
     public partial class C2paReader
     {
+        public static string[] SupportedMimeTypes
+        {
+            get
+            {
+                unsafe
+                {
+                    ulong count = 0;
+                    var buffer = c2pa.C2paReaderSupportedMimeTypes(ref count);
+                    return Utils.FromCStringArray(buffer, count);
+                }
+            }
+        }
+
         partial void DisposePartial(bool disposing)
         {
             if (disposing)
             {
                 c2pa.C2paReaderFree(this);
-                C2pa.CheckError();
             }
         }
 
@@ -16,12 +28,22 @@
             unsafe
             {
                 var reader = c2pa.C2paReaderFromStream(format, new C2paStream(stream));
-                C2pa.CheckError();
-                return reader;
+                if (reader == null)
+                    C2pa.CheckError();
+                return reader!;
             }
         }
 
-        public unsafe string Json => Utils.FromCString(c2pa.C2paReaderJson(this));
+        public string Json
+        {
+            get
+            {
+                unsafe
+                {
+                    return Utils.FromCString(c2pa.C2paReaderJson(this));
+                }
+            }
+        }
 
         public ManifestStore ManifestStore => ManifestStore.FromJson(Json);
 
