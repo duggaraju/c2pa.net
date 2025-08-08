@@ -1,6 +1,6 @@
 using System.CommandLine;
 using System.Text.Json;
-using Microsoft.ContentAuthenticity.Bindings;
+using ContentAuthenticity.Bindings;
 
 namespace Cli;
 

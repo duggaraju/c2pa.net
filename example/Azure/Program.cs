@@ -7,7 +7,7 @@ using Azure.Identity;
 using Azure.CodeSigning;
 using Azure.CodeSigning.Models;
 
-using Microsoft.ContentAuthenticity.Bindings;
+using ContentAuthenticity.Bindings;
 
 namespace C2paSample
 {

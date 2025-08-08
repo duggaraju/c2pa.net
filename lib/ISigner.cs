@@ -1,4 +1,10 @@
-namespace Microsoft.ContentAuthenticity.Bindings
+// Copyright (c) 2025 Prakash Duggaraju. All rights reserved.
+// Licensed under the MIT License.
+// See the LICENSE file in the project root for more information.
+
+using ContentAuthenticity.Bindings;
+
+namespace ContentAuthenticity.Bindings
 {
     public interface ISigner
     {

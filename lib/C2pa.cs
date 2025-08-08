@@ -1,4 +1,8 @@
-namespace Microsoft.ContentAuthenticity.Bindings
+// Copyright (c) 2025 Prakash Duggaraju. All rights reserved.
+// Licensed under the MIT License.
+// See the LICENSE file in the project root for more information.
+
+namespace ContentAuthenticity.Bindings
 {
 
     /// <summary>
@@ -35,8 +39,9 @@ namespace Microsoft.ContentAuthenticity.Bindings
 
         public static void LoadSettings(string settings)
         {
-            c2pa.C2paLoadSettings(settings, "json");
-            CheckError();
+            var ret = c2pa.C2paLoadSettings(settings, "json");
+            if (ret == -1)
+                CheckError();
         }
 
         public static void CheckError()

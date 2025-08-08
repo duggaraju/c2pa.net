@@ -2,7 +2,7 @@ using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.ContentAuthenticity.Bindings
+namespace ContentAuthenticity.Bindings
 {
     public enum AssertionKind
     {

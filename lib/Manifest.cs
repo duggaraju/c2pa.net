@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Microsoft.ContentAuthenticity.Bindings
+namespace ContentAuthenticity.Bindings
 {
 
     // Example manifest JSON

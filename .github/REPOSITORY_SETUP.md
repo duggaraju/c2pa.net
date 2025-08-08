@@ -180,7 +180,7 @@ Modify the `on:` section in workflow files to change when workflows run:
 
 ### Customizing Package Settings
 
-Edit the NuGet package configuration in `lib/Microsoft.ContentAuthenticity.Bindings.csproj`:
+Edit the NuGet package configuration in `lib/ContentAuthenticity.Bindings.csproj`:
 
 - Update package metadata
 - Modify included files

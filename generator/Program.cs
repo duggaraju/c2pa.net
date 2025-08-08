@@ -63,7 +63,7 @@ class Library : ILibrary
             module.Libraries.Add("c2pa_c.dll");
         else
             module.Libraries.Add("libc2pa_c.so");
-        module.OutputNamespace = "Microsoft.ContentAuthenticity.Bindings";
+        module.OutputNamespace = "ContentAuthenticity.Bindings";
     }
 
     public void SetupPasses(Driver driver)

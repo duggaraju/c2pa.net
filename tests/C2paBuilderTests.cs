@@ -1,4 +1,6 @@
-namespace Microsoft.ContentAuthenticity.BindingTests;
+using ContentAuthenticity.Bindings;
+
+namespace ContentAuthenticity.BindingTests;
 
 public class C2paBuilderTests
 {

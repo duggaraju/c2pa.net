@@ -7,24 +7,22 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <C2paLibrary Condition="$([MSBuild]::IsOSPlatform('Windows'))">c2pa_c.dll</C2paLibrary>
     <C2paLibrary Condition="$([MSBuild]::IsOSPlatform('Linux'))">libc2pa_c.so</C2paLibrary>
-    <Title>Microsoft Content Authenticity Library</Title>
-    <Company>Microsoft</Company>
+    <Title>Content Authenticity (c2pa) Library for .NET</Title>
+    <Company></Company>
     <Authors>Prakash Duggaraju</Authors>
     <Description>.NET Bindings on top of Rust c2pa-rs library.</Description>
-    <Copyright>Microsoft Corporation</Copyright>
+    <Copyright>Prakash Duggaraju</Copyright>
     <PackageProjectUrl>https://github.com/duggaraju/c2pa.net</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/duggaraju/c2pa.net</RepositoryUrl>
+    <PackageId>ContentAuthenticity.Bindings</PackageId>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CppSharp" Version="1.1.5.3168" />
     <ProjectReference Include="../generator/BindingsGenerator.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <ItemGroup>
-	  <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/$(C2paLibrary)"
-      CopyToOutputDirectory="PreserveNewest"
-      Pack="true"
-      PackagePath="runtimes/$(RuntimeIdentifier)/native/"/>
+	  <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/$(C2paLibrary)" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes/$(RuntimeIdentifier)/native/" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md">

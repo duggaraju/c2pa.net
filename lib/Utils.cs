@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace Microsoft.ContentAuthenticity.Bindings
+namespace ContentAuthenticity.Bindings
 {
     public class AssertionTypeConverter : JsonConverter<Assertion>
     {

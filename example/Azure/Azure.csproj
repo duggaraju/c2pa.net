@@ -19,7 +19,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\lib\Microsoft.ContentAuthenticity.Bindings.csproj" />
+	  <ProjectReference Include="..\..\lib\ContentAuthenticity.Bindings.csproj" />
 	</ItemGroup>
 
 </Project>

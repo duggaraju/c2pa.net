@@ -1,4 +1,8 @@
-namespace Microsoft.ContentAuthenticity.Bindings
+// Copyright (c) 2025 Prakash Duggaraju. All rights reserved.
+// Licensed under the MIT License.
+// See the LICENSE file in the project root for more information.
+
+namespace ContentAuthenticity.Bindings
 {
 
     public partial class C2paBuilder
@@ -81,7 +85,6 @@ namespace Microsoft.ContentAuthenticity.Bindings
             if (manifest != null)
             {
                 c2pa.C2paManifestBytesFree(manifest);
-                C2pa.CheckError();
             }
         }
 
