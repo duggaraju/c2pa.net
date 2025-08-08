@@ -1,6 +1,3 @@
-
-using CppSharp.Types.Std;
-
 namespace Microsoft.ContentAuthenticity.Bindings
 {
 
