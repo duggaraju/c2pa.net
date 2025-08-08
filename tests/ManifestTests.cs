@@ -129,34 +129,6 @@ public class ManifestTests
         Assert.Equal(Relationship.ComponentOf, ingredient.Relationship);
     }
 
-    [Fact]
-    public void ResourceStore_ShouldInitializeWithEmptyResources()
-    {
-        // Arrange & Act
-        var store = new ResourceStore();
-
-        // Assert
-        Assert.NotNull(store.Resources);
-        Assert.Empty(store.Resources);
-        Assert.Null(store.Label);
-    }
-
-    [Fact]
-    public void ResourceStore_ShouldAllowAddingResources()
-    {
-        // Arrange
-        var store = new ResourceStore();
-
-        // Act
-        store.Resources.Add("thumbnail", "/path/to/thumbnail.jpg");
-        store.Resources.Add("logo", "/path/to/logo.png");
-
-        // Assert
-        Assert.Equal(2, store.Resources.Count);
-        Assert.Equal("/path/to/thumbnail.jpg", store.Resources["thumbnail"]);
-        Assert.Equal("/path/to/logo.png", store.Resources["logo"]);
-    }
-
     [Theory]
     [InlineData(Relationship.ParentOf)]
     [InlineData(Relationship.ComponentOf)]

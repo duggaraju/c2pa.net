@@ -21,13 +21,13 @@ public class AssertionTests
     public void ActionAssertion_ShouldCreateWithCorrectLabel()
     {
         // Arrange
-        var data = new ActionAssertionData([new C2paAction("c2pa.edited")]);
+        var data = new ActionAssertionData([new ActionV1("c2pa.edited")]);
 
         // Act
-        var assertion = new ActionAssertion(data);
+        var assertion = new ActionsAssertion(data);
 
         // Assert
-        Assert.Equal("c2pa.action", assertion.Label);
+        Assert.Equal("c2pa.actions", assertion.Label);
         Assert.Equal(data, assertion.Data);
         Assert.Single(data.Actions);
     }
@@ -87,20 +87,17 @@ public class AssertionTests
     public void C2paAction_WithAllProperties_ShouldCreateCorrectly()
     {
         // Arrange
-        var when = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
         var instanceId = Guid.NewGuid().ToString();
 
         // Act
-        var action = new C2paAction(
+        var action = new ActionV1(
             "c2pa.edited",
-            when,
             "TestApp v1.0",
-            "color, brightness",
-            instanceId);
+            Changed: "color, brightness",
+            InstanceID: instanceId);
 
         // Assert
         Assert.Equal("c2pa.edited", action.Action);
-        Assert.Equal(when, action.When);
         Assert.Equal("TestApp v1.0", action.SoftwareAgent);
         Assert.Equal("color, brightness", action.Changed);
         Assert.Equal(instanceId, action.InstanceID);

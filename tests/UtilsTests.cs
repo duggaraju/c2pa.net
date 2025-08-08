@@ -39,7 +39,7 @@ public class UtilsTests
     }
 
     [Theory]
-    [InlineData("c2pa.action", typeof(ActionAssertion))]
+    [InlineData("c2pa.action", typeof(ActionsAssertion))]
     [InlineData("c2pa.thumbnail", typeof(ThumbnailAssertion))]
     [InlineData("c2pa.training-mining", typeof(TrainingAssertion))]
     [InlineData("c2pa.thumbnail.claim.123", typeof(ClaimThumbnailAssertion))]

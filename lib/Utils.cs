@@ -58,7 +58,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
         {
             return label switch
             {
-                "c2pa.action" => typeof(ActionAssertion),
+                "c2pa.action" => typeof(ActionsAssertion),
                 "c2pa.thumbnail" => typeof(ThumbnailAssertion),
                 "c2pa.training-mining" => typeof(TrainingAssertion),
                 string s when Regex.IsMatch(s, @"c2pa\.thumbnail\.claim.*") => typeof(ClaimThumbnailAssertion),

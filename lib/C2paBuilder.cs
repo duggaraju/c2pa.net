@@ -1,11 +1,11 @@
 
+using CppSharp.Types.Std;
+
 namespace Microsoft.ContentAuthenticity.Bindings
 {
 
     public partial class C2paBuilder
     {
-        private ResourceStore? _resources;
-
         public static C2paBuilder Create(ManifestDefinition definition)
         {
             return FromJson(definition.ToJson());
@@ -45,24 +45,53 @@ namespace Microsoft.ContentAuthenticity.Bindings
             }
         }
 
+        /// <summary>
+        /// Sign the input file using the provided signer and write the C2PA manifest to the output file.
+        /// </summary>
         public void Sign(ISigner signer, string input, string output)
         {
-            if (!File.Exists(input))
-            {
-                throw new ArgumentException("Invalid file path provided.", nameof(input));
-            }
             using var inputStream = new FileStream(input, FileMode.Open);
             using var outputStream = new FileStream(output, FileMode.Create);
             Sign(signer, inputStream, outputStream, Utils.GetMimeTypeFromExtension(Path.GetExtension(input)));
         }
 
+        /// <summary>
+        /// Add a resource to the C2PA builder.
+        /// </summary>
         public void AddResource(string identifier, string path)
         {
-            _resources ??= new ResourceStore();
-            _resources.Resources.Add(identifier, path);
-            using C2paStream resourceStream = new(new FileStream(path, FileMode.Open));
-            c2pa.C2paBuilderAddResource(this, identifier, resourceStream);
-            C2pa.CheckError();
+            using var stream = File.OpenRead(path);
+            AddResource(identifier, stream);
+        }
+
+        public void AddResource(string identifier, Stream stream)
+        {
+            using C2paStream resourceStream = new(stream);
+            var ret = c2pa.C2paBuilderAddResource(this, identifier, resourceStream);
+            if (ret == -1)
+                C2pa.CheckError();
+        }
+
+        /// <summary>
+        /// Sets the C2PA builder to not embed the manifest in the output file.
+        /// </summary>
+        void SetNoEmbed()
+        {
+            c2pa.C2paBuilderSetNoEmbed(this);
+        }
+
+        public void AddIngredient(Ingredient ingredient, string file)
+        {
+            using var stream = File.OpenRead(file);
+            AddIngredient(Utils.Serialize(ingredient), Utils.GetMimeTypeFromExtension(Path.GetExtension(file)), stream);
+        }
+
+        public void AddIngredient(string json, string format, Stream stream)
+        {
+            using var c2paStream = new C2paStream(stream);
+            var ret = c2pa.C2paBuilderAddIngredientFromStream(this, json, format, c2paStream);
+            if (ret == -1)
+                C2pa.CheckError();
         }
 
         public static string GenerateInstanceID()

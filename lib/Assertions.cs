@@ -1,3 +1,4 @@
+using CppSharp.AST;
 using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -38,18 +39,35 @@ namespace Microsoft.ContentAuthenticity.Bindings
 
     public record IngredientThumbnailAssertion(ThumbnailAssertionData Data) : Assertion<ThumbnailAssertionData>("c2pa.thumbnail.ingredient", Data);
 
-    public record ActionAssertion(ActionAssertionData Data) : Assertion<ActionAssertionData>("c2pa.action", Data);
-
-
-    public record C2paAction(
+    public record ActionV1(
         string Action,
-        string? When = null,
-        string? SoftwareAgent = null,
+        [property:JsonPropertyName("softwareAgent")] string? SoftwareAgent = null,
+        [property: JsonPropertyName("digitalSourceType")] string? DigitalSourceType = null,
         string? Changed = null,
         string? InstanceID = null,
-        List<dynamic>? Actors = null);
+        Dictionary<string, object>? Parameters = null);
 
-    public record ActionAssertionData(List<C2paAction> Actions);
+    public record ActionAssertionData(List<ActionV1> Actions);
+
+    public record ActionsAssertion(ActionAssertionData Data) : Assertion<ActionAssertionData>("c2pa.actions", Data);
+
+    public record ActionV2(
+        string Action,
+        [property: JsonPropertyName("softwareAgent")] ClaimGeneratorInfo? SoftwareAgent = null,
+        string? Description = null,
+        [property: JsonPropertyName("digitalSourceType")] string? DigitalSourceType = null,
+        DateTimeOffset? When = null,
+        Dictionary<string, object>? Changes = null,
+        List<dynamic>? Actors = null,
+        List<ActionV2>? Related = null,
+        string? Reason = null,
+        Dictionary<string, object>? Parameters = null);
+
+    public record Template(string DigitalSourceType, string Action);
+
+    public record ActionsAssertionV2Data(List<ActionV2> Actions, bool AllActionsIncluded = false, Template[]? Templates = null);
+
+    public record ActionsAssertionV2(ActionsAssertionV2Data Data) : Assertion<ActionsAssertionV2Data>("c2pa.actions.v2", Data);
 
     public record CustomAssertion(string Label, dynamic Data) : Assertion<dynamic>(Label, (object)Data)
     {

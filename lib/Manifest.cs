@@ -43,20 +43,10 @@ namespace Microsoft.ContentAuthenticity.Bindings
 
     public record AssetType(
         [property: JsonPropertyName("asset_type")] string Type,
-        string? Version = null)
-    {
-    }
-
-    public record ResourceStore
-    {
-        public Dictionary<string, string> Resources { get; set; } = [];
-        public string? Label { get; set; }
-    }
+        string? Version = null);
 
     // Ingredient
-    public record HashedUri(string Url, C2paSigningAlg Alg, byte[] Hash, byte[] Salt)
-    {
-    }
+    public record HashedUri(string Url, C2paSigningAlg Alg, byte[] Hash, byte[] Salt);
 
     public record ValidationStatus(string Code, string Url, string Explanation);
 
@@ -73,11 +63,11 @@ namespace Microsoft.ContentAuthenticity.Bindings
     }
 
     // Manifest
-    public record ClaimGeneratorInfo(string Name = "", string Version = "");
+    public record ClaimGeneratorInfo(string Name = "", string Version = "", string? OperatingSystem = null);
 
     public record Ingredient(string Title = "", string Format = "", Relationship Relationship = Relationship.ParentOf)
     {
-        public string? DocumentID { get; set; } = null;
+        public string? DocumentID { get; set; }
 
         public string? InstanceID { get; set; }
 
