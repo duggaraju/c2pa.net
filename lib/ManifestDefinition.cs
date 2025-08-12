@@ -23,6 +23,8 @@
 
         public string? Label { get; set; }
 
+        public int ClaimVersion { get; set; } = 1;
+
         public string ToJson()
         {
             return Utils.Serialize(this);

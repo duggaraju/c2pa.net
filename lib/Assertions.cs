@@ -30,7 +30,10 @@ namespace Microsoft.ContentAuthenticity.Bindings
 
     public record IngredientThumbnailAssertion(ThumbnailAssertionData Data) : Assertion<ThumbnailAssertionData>("c2pa.thumbnail.ingredient", Data);
 
-    public record ActionV1(
+    public record ActionAssertion(ActionAssertionData Data) : Assertion<ActionAssertionData>("c2pa.actions", Data);
+
+
+    public record C2paAction(
         string Action,
         [property: JsonPropertyName("softwareAgent")] string? SoftwareAgent = null,
         [property: JsonPropertyName("digitalSourceType")] string? DigitalSourceType = null,

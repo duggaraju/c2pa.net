@@ -15,6 +15,7 @@
     <PackageProjectUrl>https://github.com/duggaraju/c2pa.net</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/duggaraju/c2pa.net</RepositoryUrl>
+    <Version>$(PackageVersion)</Version>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CppSharp" Version="1.1.5.3168" />

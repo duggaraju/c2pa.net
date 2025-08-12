@@ -111,6 +111,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
                 ".avi" => "video/x-msvideo",
                 ".mp3" => "audio/mpeg",
                 ".wav" => "audio/wav",
+                ".gif" => "image/gif",
                 _ => "application/octet-stream"
             };
         }
