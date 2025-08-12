@@ -121,6 +121,8 @@ public class TestSigner : ISigner
     public string? TimeAuthorityUrl { get; init; } = "https://timestamp.test.com";
     public bool UseOcsp { get; init; } = false;
 
+    public string EKUs => "";
+
     public int Sign(ReadOnlySpan<byte> data, Span<byte> hash)
     {
         // Mock signature - in real implementation this would use cryptographic signing

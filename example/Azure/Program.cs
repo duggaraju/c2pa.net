@@ -136,6 +136,8 @@ namespace C2paSample
             public string Certs => GetCertificates();
 
             public string? TimeAuthorityUrl => "http://timestamp.digicert.com";
+
+            public string EKUs => "";
         }
     }
 }

@@ -11,5 +11,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
         public string? TimeAuthorityUrl { get; }
 
         public bool UseOcsp => false;
+
+        public string EKUs {  get; }
     }
 }
