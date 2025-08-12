@@ -1,6 +1,5 @@
 namespace Microsoft.ContentAuthenticity.Bindings
 {
-
     public partial class C2paBuilder
     {
         public static string[] SupportedMimeTypes
@@ -71,7 +70,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
         public unsafe void Sign(ISigner signer, Stream source, Stream dest, string format)
         {
             SignerCallback callback = (context, data, len, signature, sig_len) => Sign(signer, data, len, signature, sig_len);
-            var c2paSigner = c2pa.C2paSignerCreate(nint.Zero, callback, signer.Alg, signer.Certs, signer.TimeAuthorityUrl);
+            var c2paSigner = c2pa.C2paSignerCreate(__Instance, callback, signer.Alg, signer.Certs, signer.TimeAuthorityUrl);
             using var inputStream = new C2paStream(source);
             using var outputStream = new C2paStream(dest);
             byte* manifest = null;
