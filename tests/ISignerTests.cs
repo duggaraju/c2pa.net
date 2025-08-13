@@ -123,6 +123,8 @@ public class TestSigner : ISigner
 
     public string EKUs => "";
 
+    public string TrustAnchors => "";
+
     public int Sign(ReadOnlySpan<byte> data, Span<byte> hash)
     {
         // Mock signature - in real implementation this would use cryptographic signing

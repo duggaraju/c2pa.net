@@ -13,5 +13,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
         public bool UseOcsp => false;
 
         public string EKUs {  get; }
+
+        public string TrustAnchors { get; }
     }
 }

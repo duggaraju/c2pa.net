@@ -280,4 +280,6 @@ internal class FileSigner : ISigner, IDisposable
     }
 
     public string EKUs => "";
+
+    public string TrustAnchors => "";
 }
