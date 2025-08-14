@@ -4,15 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.ContentAuthenticity.Bindings
 {
-    public enum AssertionKind
-    {
-        Cbor,
-        Json,
-        Binary,
-        Uri
-    }
-
-    public record Assertion(string Label, object Data, AssertionKind Kind = AssertionKind.Json, int? Instance = null)
+    public record Assertion(string Label, object Data)
     {
         public string ToJson() => Utils.Serialize(this);
 
@@ -23,8 +15,8 @@ namespace Microsoft.ContentAuthenticity.Bindings
     {
         public new T Data { get; init; }
 
-        public Assertion(string label, T data, AssertionKind kind = AssertionKind.Json, int? instance = null)
-            : base(label, data, kind, instance)
+        public Assertion(string label, T data)
+            : base(label, data)
         {
             Data = data;
         }
@@ -117,5 +109,5 @@ namespace Microsoft.ContentAuthenticity.Bindings
 
     public record TrainingAssertionData(Dictionary<string, Training> Entries);
 
-    public record TrainingAssertion(TrainingAssertionData Data) : Assertion<TrainingAssertionData>("c2pa.training-mining", Data, AssertionKind.Json);
+    public record TrainingAssertion(TrainingAssertionData Data) : Assertion<TrainingAssertionData>("c2pa.training-mining", Data);
 }

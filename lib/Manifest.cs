@@ -2,33 +2,18 @@
 
 namespace Microsoft.ContentAuthenticity.Bindings
 {
+    // See https://opensource.contentauthenticity.org/docs/manifest/json-ref/reader for the schema.
 
-    // Example manifest JSON
-    // {
-    //     "claim_generator_info": [
-    //         {
-    //             "name": "{{claimName}}",
-    //             "version": "0.0.1"
-    //         }
-    //     ],
-    //     "format": "{{ext}}",
-    //     "title": "{{manifestTitle}}",
-    //     "ingredients": [],
-    //     "assertions": [
-    //         {   "label": "stds.schema-org.CreativeWork",
-    //             "data": {
-    //                 "@context": "http://schema.org/",
-    //                 "@type": "CreativeWork",
-    //                 "author": [
-    //                     {   "@type": "Person",
-    //                         "name": "{{authorName}}"
-    //                     }
-    //                 ]
-    //             },
-    //             "kind": "Json"
-    //         }
-    //     ]
-    // }
+    public enum AssertionKind
+    {
+        Cbor,
+        Json,
+        Binary,
+        Uri
+    }
+
+    public record ManifestAssertion(string Label, object Data, AssertionKind Kind, int? Instance = null): Assertion(Label, Data);
+
 
     public record Thumbnail(string Format, string Identifier) : ResourceRef(Format, Identifier);
 
@@ -101,7 +86,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
 
         public List<Ingredient> Ingredients { get; set; } = [];
 
-        public List<Assertion> Assertions { get; set; } = [];
+        public List<ManifestAssertion> Assertions { get; set; } = [];
     }
 
     public record ManifestStore(string ActiveManifest, Dictionary<string, Manifest> Manifests)

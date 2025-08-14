@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BindingsGenerator", "genera
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.ContentAuthenticity.Bindings", "lib\Microsoft.ContentAuthenticity.Bindings.csproj", "{5D3D7F83-7C71-073E-C4FF-A64C67DD295B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsot.ContentAuthenticity.BindingTests", "tests\Microsot.ContentAuthenticity.BindingTests.csproj", "{F7952285-E06C-1196-2039-95513390ACC2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.ContentAuthenticity.BindingTests", "tests\Microsoft.ContentAuthenticity.BindingTests.csproj", "{F7952285-E06C-1196-2039-95513390ACC2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

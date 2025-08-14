@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Xunit.Abstractions;
 
-namespace Microsot.ContentAuthenticity.BindingTests;
+namespace Microsoft.ContentAuthenticity.BindingTests;
 
 /// <summary>
 /// Stress tests focusing on native resource management and disposal patterns
@@ -114,7 +114,7 @@ public class NativeResourceStressTests
             catch (ObjectDisposedException)
             {
                 // This should not happen in properly written disposal code
-                Assert.True(false, "ObjectDisposedException thrown - disposal pattern issue detected");
+                Assert.Fail("ObjectDisposedException thrown - disposal pattern issue detected");
             }
         }
         

@@ -1,5 +1,6 @@
 ﻿namespace Microsoft.ContentAuthenticity.Bindings
 {
+    // See https://opensource.contentauthenticity.org/docs/manifest/json-ref/manifest-def for the schema.
     public record ManifestDefinition(string Format = "application/octet-stream")
     {
         public C2paSigningAlg Alg { get; set; } = C2paSigningAlg.Es256;

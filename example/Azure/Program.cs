@@ -57,7 +57,7 @@ namespace C2paSample
                 }
             }
             """;
-            C2paSettings.Load(settings);
+            Settings.Load(settings);
 
             ManifestDefinition manifest = new()
             {

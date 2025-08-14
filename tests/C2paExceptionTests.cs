@@ -1,4 +1,4 @@
-namespace Microsot.ContentAuthenticity.BindingTests;
+namespace Microsoft.ContentAuthenticity.BindingTests;
 
 public class C2paExceptionTests
 {

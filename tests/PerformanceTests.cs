@@ -2,7 +2,7 @@ using System.Diagnostics;
 using BenchmarkDotNet.Attributes;
 using Xunit.Abstractions;
 
-namespace Microsot.ContentAuthenticity.BindingTests;
+namespace Microsoft.ContentAuthenticity.BindingTests;
 
 /// <summary>
 /// Performance and memory tests for C2paReader and C2paBuilder to detect memory leaks and performance issues

@@ -10,7 +10,7 @@ public class C2paSettingsTests
         var verify = new VerifySettings();
 
         // Act
-        var settings = new C2paSettings(trust, verify);
+        var settings = new Settings(trust, verify);
 
         // Assert
         Assert.Equal(trust, settings.Trust);
@@ -23,7 +23,7 @@ public class C2paSettingsTests
         // Arrange
         var trust = new TrustSettings();
         var verify = new VerifySettings();
-        var settings = new C2paSettings(trust, verify);
+        var settings = new Settings(trust, verify);
 
         // Act
         var json = settings.ToJson();
@@ -39,11 +39,11 @@ public class C2paSettingsTests
     public void Load_ShouldLoadCorrectly()
     {
         // Arrange
-        var original = new C2paSettings(new TrustSettings(), new VerifySettings());
+        var original = new Settings(new TrustSettings(), new VerifySettings());
         var json = original.ToJson();
 
         // Act
-        C2paSettings.Load(json);
+        Settings.Load(json);
     }
 
     [Fact]
@@ -68,5 +68,49 @@ public class C2paSettingsTests
         // Assert
         Assert.Equal(verify1, verify2);
         Assert.True(verify1.Equals(verify2));
+    }
+
+    [Fact]
+    public void VerifySettings_ShouldLoad()
+    {
+        const string json = """
+            {   
+                "version_major": 1,
+                "version_minor": 0,
+                "trust": {
+                    "private_anchors": null,
+                    "trust_anchors": null,
+                    "trust_config": null,
+                    "allowed_list": null
+                },
+                "core": {
+                    "debug": false,
+                    "hash_alg": "sha256",
+                    "salt_jumbf_boxes": true,
+                    "prefer_box_hash": false,
+                    "prefer_bmff_merkle_tree": false,
+                    "compress_manifests": true,
+                    "max_memory_usage": null
+                },
+                "verify": {
+                    "verify_after_reading": true,
+                    "verify_after_sign": true,
+                    "verify_trust": true,
+                    "ocsp_fetch": false,
+                    "remote_manifest_fetch": true,
+                    "check_ingredient_trust": true,
+                    "skip_ingredient_conflict_resolution": false,
+                    "strict_v1_validation": false
+                },
+                "builder": {
+                    "auto_thumbnail": true
+                }
+            }
+            """;
+
+        var settings = Settings.Load(json);
+        Assert.NotNull(settings);
+        Assert.Equal(1, settings.MajorVersion);
+        Assert.Equal(0, settings.MinorVersion);
     }
 }

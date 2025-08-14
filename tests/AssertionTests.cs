@@ -14,7 +14,6 @@ public class AssertionTests
         // Assert
         Assert.Equal("stds.schema-org.CreativeWork", assertion.Label);
         Assert.Equal(data, assertion.Data);
-        Assert.Equal(AssertionKind.Json, assertion.Kind);
     }
 
     [Fact]
@@ -154,7 +153,6 @@ public class AssertionTests
         // Assert
         Assert.Equal("c2pa.training-mining", assertion.Label);
         Assert.Equal(data, assertion.Data);
-        Assert.Equal(AssertionKind.Json, assertion.Kind);
     }
 
     [Fact]
@@ -287,7 +285,6 @@ public class AssertionTests
         // Assert
         Assert.NotNull(deserialized);
         Assert.Equal(originalAssertion.Label, deserialized.Label);
-        Assert.Equal(originalAssertion.Kind, deserialized.Kind);
 
         // Note: Since deserialized comes back as Assertion base type,
         // we need to verify the data structure through JSON comparison
@@ -345,7 +342,6 @@ public class AssertionTests
 
         // Act & Assert
         Assert.Equal(assertion1.Label, assertion2.Label);
-        Assert.Equal(assertion1.Kind, assertion2.Kind);
         // Note: TrainingAssertionData equality would depend on Dictionary equality implementation
     }
 
@@ -392,7 +388,6 @@ public class AssertionTests
 
         // Assert
         Assert.Equal(originalAssertion.Label, deserializedAssertion.Label);
-        Assert.Equal(originalAssertion.Kind, deserializedAssertion.Kind);
         Assert.Equal(originalEntries.Count, deserializedAssertion.Data.Entries.Count);
 
         foreach (var kvp in originalEntries)
