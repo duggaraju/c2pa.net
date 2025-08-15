@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ContentAuthenticity.Bindings
+namespace Microsoft.ContentAuthenticity.Bindings
 {
     public partial class StreamContext
     {
