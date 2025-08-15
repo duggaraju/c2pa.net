@@ -7,6 +7,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <C2paLibrary Condition="$([MSBuild]::IsOSPlatform('Windows'))">c2pa_c.dll</C2paLibrary>
     <C2paLibrary Condition="$([MSBuild]::IsOSPlatform('Linux'))">libc2pa_c.so</C2paLibrary>
+    <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('Windows'))">win-x64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('Linux'))">linux-x64</RuntimeIdentifier>
     <Title>Microsoft Content Authenticity Library</Title>
     <Company>Microsoft</Company>
     <Authors>Prakash Duggaraju</Authors>

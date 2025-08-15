@@ -14,8 +14,6 @@ namespace Microsoft.ContentAuthenticity.Bindings
             string? label = root.GetProperty("label").GetString() ?? throw new JsonException("Missing label property");
             Type assertionType = GetAssertionTypeFromLabel(label);
 
-            string rawJson = root.GetRawText();
-
             return JsonSerializer.Deserialize(root.GetRawText(), assertionType, options) as Assertion;
         }
 
