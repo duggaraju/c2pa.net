@@ -8,6 +8,7 @@ using Azure.CodeSigning;
 using Azure.CodeSigning.Models;
 
 using Microsoft.ContentAuthenticity.Bindings;
+using System.Security.Cryptography.X509Certificates;
 
 namespace C2paSample
 {
@@ -106,25 +107,18 @@ namespace C2paSample
                 random.NextBytes(hash);
                 byte[] digest = GetDigest(hash);
 
-                SignRequest request = new(Algorithm, digest);
-                CertificateProfileSignOperation operation = _client.StartSign(AccountName, CertificateProfile, request);
-                SignStatus status = operation.WaitForCompletion();
-
-                SignedCms cmsData = new();
-                char[] cdata = Encoding.ASCII.GetChars(status.SigningCertificate);
-                byte[] certificate = Convert.FromBase64CharArray(cdata, 0, cdata.Length);
-
-                cmsData.Decode(certificate);
-
+                using Stream stream = _client.GetSignCertificateChain(AccountName, CertificateProfile);
+                var bytes = new byte[stream.Length];
+                stream.Read(bytes, 0, bytes.Length);
+                var certCollection = new X509Certificate2Collection();
+                certCollection.Import(bytes);
                 StringBuilder builder = new();
 
-                foreach (var cert in cmsData.Certificates)
+                foreach (var cert in certCollection)
                 {
                     Console.WriteLine("Subject = {0} Issuer = {1} Expiry = {2}", cert.Subject, cert.Issuer, cert.GetExpirationDateString());
-                    builder.AppendLine($"subject={cert.Subject}");
-                    builder.AppendLine($"issuer={cert.Issuer}");
-                    var data = PemEncoding.Write("CERTIFICATE", cert.RawData);
-                    builder.AppendLine(new string(data));
+                    builder.Insert(0, '\n');
+                    builder.Insert(0, cert.ExportCertificatePem());
                 }
 
                 string pem = builder.ToString();

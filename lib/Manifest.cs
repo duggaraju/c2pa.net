@@ -12,7 +12,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
         Uri
     }
 
-    public record ManifestAssertion(string Label, object Data, AssertionKind Kind, int? Instance = null): Assertion(Label, Data);
+    public record ManifestAssertion(string Label, object Data, AssertionKind Kind, int? Instance = null) : Assertion(Label, Data);
 
 
     public record Thumbnail(string Format, string Identifier) : ResourceRef(Format, Identifier);
