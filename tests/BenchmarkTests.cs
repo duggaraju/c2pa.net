@@ -74,6 +74,7 @@ namespace Microsoft.ContentAuthenticity.BindingTests
     /// <summary>
     /// Helper class to run BenchmarkDotNet tests
     /// </summary>
+    [Trait("Collection", "PerformanceTests")]
     public class BenchmarkTests
     {
         [Fact]
