@@ -76,6 +76,8 @@ namespace Microsoft.ContentAuthenticity.Bindings
             try
             {
                 var c2paSigner = c2pa.C2paSignerCreate(__Instance, callback, signer.Alg, signer.Certs, signer.TimeAuthorityUrl);
+                if (signer == null)
+                    C2pa.CheckError();
                 using var inputStream = new C2paStream(source);
                 using var outputStream = new C2paStream(dest);
                 byte* manifest = null;

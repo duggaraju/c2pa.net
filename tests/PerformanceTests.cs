@@ -7,7 +7,7 @@ namespace Microsoft.ContentAuthenticity.BindingTests;
 /// <summary>
 /// Performance and memory tests for C2paReader and C2paBuilder to detect memory leaks and performance issues
 /// </summary>
-[Trait("Collection", "PerformanceTests")]
+[Collection("PerformanceTests")]
 public class PerformanceTests
 {
     private readonly ITestOutputHelper _output;

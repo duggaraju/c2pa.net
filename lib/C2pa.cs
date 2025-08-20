@@ -9,15 +9,11 @@ namespace Microsoft.ContentAuthenticity.Bindings
         /// <summary>
         /// The version of the Sdk.
         /// </summary>
-        public static string Version
+        public static string Version { get; } = GetVersion();
+
+        private unsafe static string GetVersion()
         {
-            get
-            {
-                unsafe
-                {
-                    return Utils.FromCString(c2pa.C2paVersion());
-                }
-            }
+            return Utils.FromCString(c2pa.C2paVersion());
         }
 
         public static string[] SupportedMimeTypes

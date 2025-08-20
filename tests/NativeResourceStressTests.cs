@@ -7,7 +7,7 @@ namespace Microsoft.ContentAuthenticity.BindingTests;
 /// <summary>
 /// Stress tests focusing on native resource management and disposal patterns
 /// </summary>
-[Trait("Collection", "PerformanceTests")]
+[Collection("PerformanceTests")]
 public class NativeResourceStressTests(ITestOutputHelper output)
 {
     [Fact]

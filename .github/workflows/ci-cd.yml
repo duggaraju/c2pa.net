@@ -149,26 +149,6 @@ jobs:
         name: nuget-packages
         path: ./packages
 
-    - name: Extract and list downloaded artifacts
-      run: |
-        Write-Host "Listing downloaded artifacts:"
-        Get-ChildItem -Path ./packages -Recurse | ForEach-Object { Write-Host $_.FullName }
-        
-        # Check if there are any zip files that need extraction
-        $zipFiles = Get-ChildItem -Path ./packages -Filter "*.zip" -Recurse
-        if ($zipFiles) {
-          Write-Host "Found zip files, extracting..."
-          foreach ($zipFile in $zipFiles) {
-            Write-Host "Extracting: $($zipFile.FullName)"
-            Expand-Archive -Path $zipFile.FullName -DestinationPath ./packages -Force
-          }
-          Write-Host "Extraction completed. Updated file list:"
-          Get-ChildItem -Path ./packages -Recurse | ForEach-Object { Write-Host $_.FullName }
-        } else {
-          Write-Host "No zip files found to extract."
-        }
-      shell: pwsh
-
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
