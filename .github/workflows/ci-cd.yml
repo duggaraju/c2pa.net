@@ -178,13 +178,45 @@ jobs:
     - name: Publish to NuGet.org
       if: github.event_name == 'release' && github.event.action == 'published'
       run: |
-        dotnet nuget push ./packages/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        $packages = Get-ChildItem -Path ./packages -Filter "*.nupkg" -Recurse
+        if ($packages.Count -eq 0) {
+          Write-Host "No .nupkg files found to publish"
+          exit 1
+        }
+        
+        Write-Host "Found $($packages.Count) package(s) to publish to NuGet.org:"
+        foreach ($package in $packages) {
+          Write-Host "Publishing: $($package.Name)"
+          dotnet nuget push $package.FullName --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Failed to publish $($package.Name)"
+            exit $LASTEXITCODE
+          }
+        }
+        Write-Host "All packages published successfully to NuGet.org"
+      shell: pwsh
 
     # Publish to GitHub Packages (on main branch pushes)
     - name: Publish to GitHub Packages
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       run: |
-        dotnet nuget push ./packages/*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --skip-duplicate
+        $packages = Get-ChildItem -Path ./packages -Filter "*.nupkg" -Recurse
+        if ($packages.Count -eq 0) {
+          Write-Host "No .nupkg files found to publish"
+          exit 1
+        }
+        
+        Write-Host "Found $($packages.Count) package(s) to publish to GitHub Packages:"
+        foreach ($package in $packages) {
+          Write-Host "Publishing: $($package.Name)"
+          dotnet nuget push $package.FullName --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --skip-duplicate
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Failed to publish $($package.Name)"
+            exit $LASTEXITCODE
+          }
+        }
+        Write-Host "All packages published successfully to GitHub Packages"
+      shell: pwsh
 
   # Security scanning
   security-scan:
