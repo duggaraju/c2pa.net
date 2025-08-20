@@ -470,7 +470,7 @@ public class PerformanceTests
         }
     }
 
-    private const int IterationCount = 100;
+    private const int IterationCount = 1000;
 
     [Theory]
     [InlineData("Provenance Memleak test using file API with 1000 iterations", IterationCount, false)]
@@ -481,7 +481,7 @@ public class PerformanceTests
         string inputFile = "video1_no_manifest.mp4";
         string outputFile = "output.mp4";
         ISigner signer = new TestSigner();
-        byte[]? inputFileBuffer = use_buffer_api ? File.ReadAllBytes(inputFile) : null;
+        var inputFileBuffer = use_buffer_api ? File.ReadAllBytes(inputFile) : null;
         string mimeType = Utils.GetMimeTypeFromExtension(Path.GetExtension(inputFile));
 
         var manifest = """
@@ -496,10 +496,10 @@ public class PerformanceTests
             {
                 var inputStream = new MemoryStream(inputFileBuffer!);
                 var outputStream = new MemoryStream();
-
                 builder.Sign(signer, inputStream, outputStream, mimeType);
                 outputStream.Position = 0;
                 var reader = C2paReader.FromStream(outputStream, mimeType);
+                Assert.NotNull(reader.Json);
             }
             else
             {
@@ -509,8 +509,8 @@ public class PerformanceTests
                 }
 
                 builder.Sign(signer, inputFile, outputFile);
-
                 var reader = C2paReader.FromFile(outputFile);
+                Assert.NotNull(reader.Json);
             }
         }
     }

@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace Microsoft.ContentAuthenticity.Bindings
 {
     public partial class C2paBuilder
@@ -70,17 +72,24 @@ namespace Microsoft.ContentAuthenticity.Bindings
         public unsafe void Sign(ISigner signer, Stream source, Stream dest, string format)
         {
             SignerCallback callback = (context, data, len, signature, sig_len) => Sign(signer, data, len, signature, sig_len);
-            var c2paSigner = c2pa.C2paSignerCreate(__Instance, callback, signer.Alg, signer.Certs, signer.TimeAuthorityUrl);
-            using var inputStream = new C2paStream(source);
-            using var outputStream = new C2paStream(dest);
-            byte* manifest = null;
-            var ret = c2pa.C2paBuilderSign(this, format, inputStream, outputStream, c2paSigner, &manifest);
-            if (ret == -1)
-                C2pa.CheckError();
-            if (manifest != null)
+            var handle = GCHandle.Alloc(callback);
+            try
             {
-                c2pa.C2paManifestBytesFree(manifest);
-                C2pa.CheckError();
+                var c2paSigner = c2pa.C2paSignerCreate(__Instance, callback, signer.Alg, signer.Certs, signer.TimeAuthorityUrl);
+                using var inputStream = new C2paStream(source);
+                using var outputStream = new C2paStream(dest);
+                byte* manifest = null;
+                var ret = c2pa.C2paBuilderSign(this, format, inputStream, outputStream, c2paSigner, &manifest);
+                if (ret == -1)
+                    C2pa.CheckError();
+                if (manifest != null)
+                {
+                    c2pa.C2paManifestBytesFree(manifest);
+                }
+            }
+            finally
+            {
+                handle.Free();
             }
         }
 
