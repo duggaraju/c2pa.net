@@ -276,4 +276,8 @@ internal sealed class FileSigner : ISigner, IDisposable
     {
         return algorithm is C2paSigningAlg.Ps256 or C2paSigningAlg.Ps384 or C2paSigningAlg.Ps512;
     }
+
+    public string EKUs => "";
+
+    public string TrustAnchors => "";
 }
