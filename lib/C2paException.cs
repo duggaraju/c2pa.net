@@ -1,8 +1,7 @@
-namespace Microsoft.ContentAuthenticity.Bindings
+namespace Microsoft.ContentAuthenticity;
+
+[Serializable]
+public class C2paException(string type, string message) : Exception(message)
 {
-    [Serializable]
-    public class C2paException(string type, string message) : Exception(message)
-    {
-        public readonly string Type = type;
-    }
+    public readonly string Type = type;
 }

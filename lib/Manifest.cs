@@ -1,6 +1,7 @@
-﻿using System.Text.Json.Serialization;
+﻿using Microsoft.ContentAuthenticity.Bindings;
+using System.Text.Json.Serialization;
 
-namespace Microsoft.ContentAuthenticity.Bindings
+namespace Microsoft.ContentAuthenticity
 {
     // See https://opensource.contentauthenticity.org/docs/manifest/json-ref/reader for the schema.
 

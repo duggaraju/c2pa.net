@@ -1,14 +1,14 @@
 ﻿using System.Text;
 using System.Security.Cryptography;
-using System.Security.Cryptography.Pkcs;
 
 using Azure.Core;
 using Azure.Identity;
 using Azure.CodeSigning;
 using Azure.CodeSigning.Models;
 
-using Microsoft.ContentAuthenticity.Bindings;
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.ContentAuthenticity;
+using Microsoft.ContentAuthenticity.Bindings;
 
 namespace C2paSample
 {
@@ -32,7 +32,7 @@ namespace C2paSample
 
         private static void ValidateFile(string inputFile)
         {
-            var reader = C2paReader.FromFile(inputFile);
+            var reader = Reader.FromFile(inputFile);
             if (reader != null)
             {
                 Console.WriteLine(reader.Json);
@@ -68,7 +68,7 @@ namespace C2paSample
                 Assertions = { new CreativeWorkAssertion(new CreativeWorkAssertionData("http://schema.org/", "CreativeWork", [new AuthorInfo("person", "Isaiah Carrington")])) }
             };
 
-            C2paBuilder builder = C2paBuilder.Create(manifest);
+            var builder = Builder.Create(manifest);
             builder.Sign(signer, inputFile, outputFile);
         }
 

@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Xunit.Abstractions;
 
-namespace Microsoft.ContentAuthenticity.BindingTests;
+namespace Microsoft.ContentAuthenticity.Tests;
 
 /// <summary>
 /// Stress tests focusing on native resource management and disposal patterns
@@ -22,11 +22,7 @@ public class NativeResourceStressTests(ITestOutputHelper output)
         for (int i = 0; i < iterations; i++)
         {
             using var stream = new MemoryStream(testData);
-            using var c2paStream = new C2paStream(stream);
-
-            // Access context to ensure mapping is created
-            var context = c2paStream.Context;
-            Assert.NotNull(context);
+            using var c2paStream = new StreamAdapter(stream);
 
             // Every 500 iterations, check if mappings are being cleaned up
             if (i % 500 == 0 && i > 0)
@@ -77,13 +73,13 @@ public class NativeResourceStressTests(ITestOutputHelper output)
                 if (i % 3 == 0)
                 {
                     // Test early disposal
-                    var reader = C2paReader.FromStream(stream, format);
+                    var reader = Reader.FromStream(stream, format);
                     reader.Dispose(); // Explicit disposal
                 }
                 else if (i % 3 == 1)
                 {
                     // Test disposal after property access
-                    using var reader = C2paReader.FromStream(stream, format);
+                    using var reader = Reader.FromStream(stream, format);
                     try
                     {
                         _ = reader?.Json;
@@ -96,7 +92,7 @@ public class NativeResourceStressTests(ITestOutputHelper output)
                 else
                 {
                     // Test double disposal
-                    var reader = C2paReader.FromStream(stream, format);
+                    var reader = Reader.FromStream(stream, format);
                     reader?.Dispose();
                     reader?.Dispose(); // Should not throw
                 }
@@ -131,10 +127,7 @@ public class NativeResourceStressTests(ITestOutputHelper output)
         for (int i = 0; i < iterations; i++)
         {
             using var stream = new MemoryStream(testData);
-            using var c2paStream = new C2paStream(stream);
-
-            // Quick operations to test rapid allocation/deallocation
-            _ = c2paStream.Context;
+            using var c2paStream = new StreamAdapter(stream);
 
             if (i % 1000 == 0)
             {
@@ -186,12 +179,8 @@ public class NativeResourceStressTests(ITestOutputHelper output)
                         try
                         {
                             using var stream = new MemoryStream(testData);
-                            using var reader = C2paReader.FromStream(stream, format);
+                            using var reader = Reader.FromStream(stream, format);
                             _ = reader?.Json;
-
-                            // Test concurrent access to native-to-managed mappings
-                            using var c2paStream = new C2paStream(stream);
-                            _ = c2paStream.Context;
                         }
                         catch (C2paException)
                         {
@@ -241,11 +230,8 @@ public class NativeResourceStressTests(ITestOutputHelper output)
                 try
                 {
                     using var stream = new MemoryStream(testData);
-                    using var reader = C2paReader.FromStream(stream, format);
+                    using var reader = Reader.FromStream(stream, format);
                     _ = reader?.Json;
-
-                    using var c2paStream = new C2paStream(stream);
-                    _ = c2paStream.Context;
                 }
                 catch (C2paException)
                 {
@@ -298,18 +284,7 @@ public class NativeResourceStressTests(ITestOutputHelper output)
         for (int i = 0; i < iterations; i++)
         {
             using var stream = new MemoryStream(testData);
-            using var c2paStream = new C2paStream(stream);
-
-            // Access all callback properties to ensure they're created
-            var reader = c2paStream.Reader;
-            var writer = c2paStream.Writer;
-            var seeker = c2paStream.Seeker;
-            var flusher = c2paStream.Flusher;
-
-            Assert.NotNull(reader);
-            Assert.NotNull(writer);
-            Assert.NotNull(seeker);
-            Assert.NotNull(flusher);
+            using var c2paStream = new StreamAdapter(stream);
 
             if (i % 100 == 0)
             {

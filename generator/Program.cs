@@ -1,8 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using CppSharp;
-using CppSharp.AST;
-using CppSharp.Generators;
-using CppSharp.Passes;
+using ClangSharp;
+using ClangSharp.Interop;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -12,6 +10,8 @@ Console.WriteLine("Generated C# output!");
 
 class Library : ILibrary
 {
+    private const string C2paHeaderFile = "c2pa.h";
+
     public static string GetRootDirectory()
     {
         // use git rev-parse --show-toplevel to get the root directory
@@ -34,6 +34,15 @@ class Library : ILibrary
 
     public void Postprocess(Driver driver, ASTContext ctx)
     {
+        var translationUnit = ctx.TranslationUnits.First(t => t.FileName == C2paHeaderFile);
+        foreach (var declaration in translationUnit.Declarations)
+        {
+            if (declaration.Name.StartsWith("C2pa") && declaration.Name != "C2paStream")
+            {
+                // Remove the prefix
+                declaration.Name = declaration.Name.Substring("C2pa".Length);
+            }
+        }
     }
 
     public void Preprocess(Driver driver, ASTContext ctx)
@@ -57,7 +66,7 @@ class Library : ILibrary
             "release");
 #endif
         module.IncludeDirs.Add(path);
-        module.Headers.Add("c2pa.h");
+        module.Headers.Add(C2paHeaderFile);
         module.LibraryDirs.Add(path);
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             module.Libraries.Add("c2pa_c.dll");
@@ -69,6 +78,6 @@ class Library : ILibrary
     public void SetupPasses(Driver driver)
     {
         driver.Context.TranslationUnitPasses.RenameDeclsUpperCase(RenameTargets.Any);
-        //driver.Context.TranslationUnitPasses.AddPass(new FunctionToInstanceMethodPass());
+        driver.Context.TranslationUnitPasses.AddPass(new FunctionToInstanceMethodPass());
     }
 }

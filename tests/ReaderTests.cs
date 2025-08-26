@@ -1,6 +1,6 @@
-namespace Microsoft.ContentAuthenticity.BindingTests;
+namespace Microsoft.ContentAuthenticity.Tests;
 
-public class C2paReaderTests
+public class ReaderTests
 {
     [Fact]
     public void FromStream_WithValidParameters_ShouldNotThrowDuringCreation()
@@ -10,7 +10,7 @@ public class C2paReaderTests
         var format = "image/jpeg";
 
         // Act
-        var exception = Record.Exception(() => C2paReader.FromStream(stream, format));
+        var exception = Record.Exception(() => Reader.FromStream(stream, format));
 
         // Assert - Should not throw during creation, actual functionality depends on native library
         Assert.True(exception == null || exception is C2paException);
@@ -26,7 +26,7 @@ public class C2paReaderTests
             File.WriteAllBytes(tempFile, [1, 2, 3, 4, 5]);
 
             // Act
-            var exception = Record.Exception(() => C2paReader.FromFile(tempFile));
+            var exception = Record.Exception(() => Reader.FromFile(tempFile));
 
             // Assert - Should not throw during creation, actual functionality depends on native library
             Assert.True(exception == null || exception is C2paException);
@@ -45,6 +45,6 @@ public class C2paReaderTests
         var nonExistentFile = Path.Combine(Path.GetTempPath(), "non-existent-file.jpg");
 
         // Act & Assert
-        Assert.Throws<FileNotFoundException>(() => C2paReader.FromFile(nonExistentFile));
+        Assert.Throws<FileNotFoundException>(() => Reader.FromFile(nonExistentFile));
     }
 }

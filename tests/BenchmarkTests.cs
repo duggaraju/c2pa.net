@@ -1,6 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 
-namespace Microsoft.ContentAuthenticity.BindingTests
+namespace Microsoft.ContentAuthenticity.Tests
 {
     /// <summary>
     /// BenchmarkDotNet benchmarks for more detailed performance analysis
@@ -19,7 +19,7 @@ namespace Microsoft.ContentAuthenticity.BindingTests
             try
             {
                 using var stream = File.OpenRead("C.jpg");
-                using var reader = C2paReader.FromStream(stream, _format);
+                using var reader = Reader.FromStream(stream, _format);
                 _ = reader?.Json;
             }
             catch (C2paException)
@@ -33,7 +33,7 @@ namespace Microsoft.ContentAuthenticity.BindingTests
         {
             try
             {
-                using var builder = C2paBuilder.FromJson(_manifestJson);
+                using var builder = Builder.FromJson(_manifestJson);
                 using var archiveStream = new MemoryStream();
                 builder?.ToArchive(archiveStream);
             }

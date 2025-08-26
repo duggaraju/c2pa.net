@@ -1,4 +1,6 @@
-namespace Microsoft.ContentAuthenticity.Bindings
+using Microsoft.ContentAuthenticity.Bindings;
+
+namespace Microsoft.ContentAuthenticity
 {
 
     /// <summary>
@@ -13,26 +15,20 @@ namespace Microsoft.ContentAuthenticity.Bindings
 
         private unsafe static string GetVersion()
         {
-            return Utils.FromCString(c2pa.C2paVersion());
+            return Utils.FromCString(C2paBindings.version());
         }
 
         public static string[] SupportedMimeTypes
         {
             get
             {
-                ulong count = 0;
+                nuint count = 0;
                 unsafe
                 {
-                    var buffer = c2pa.C2paReaderSupportedMimeTypes(ref count);
+                    var buffer = C2paBindings.reader_supported_mime_types(&count);
                     return Utils.FromCStringArray(buffer, count);
                 }
             }
-        }
-
-        public static void LoadSettings(string settings)
-        {
-            c2pa.C2paLoadSettings(settings, "json");
-            CheckError();
         }
 
         public static void CheckError()
@@ -40,7 +36,7 @@ namespace Microsoft.ContentAuthenticity.Bindings
             string err;
             unsafe
             {
-                err = Utils.FromCString(c2pa.C2paError());
+                err = Utils.FromCString(C2paBindings.error());
             }
 
             if (string.IsNullOrEmpty(err)) return;

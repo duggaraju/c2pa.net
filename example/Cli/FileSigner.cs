@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.ContentAuthenticity;
 using Microsoft.ContentAuthenticity.Bindings;
-
 namespace Cli;
 
 /// <summary>

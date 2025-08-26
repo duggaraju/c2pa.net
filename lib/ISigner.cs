@@ -1,10 +1,11 @@
-namespace Microsoft.ContentAuthenticity.Bindings
+using SigningAlg = Microsoft.ContentAuthenticity.Bindings.C2paSigningAlg;
+namespace Microsoft.ContentAuthenticity
 {
     public interface ISigner
     {
         int Sign(ReadOnlySpan<byte> data, Span<byte> hash);
 
-        public C2paSigningAlg Alg { get; }
+        public SigningAlg Alg { get; }
 
         public string Certs { get; }
 

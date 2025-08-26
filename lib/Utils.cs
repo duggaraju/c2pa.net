@@ -1,9 +1,10 @@
-﻿using System.Runtime.InteropServices;
-using System.Text.Json.Serialization;
+﻿using Microsoft.ContentAuthenticity.Bindings;
+using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
-namespace Microsoft.ContentAuthenticity.Bindings
+namespace Microsoft.ContentAuthenticity
 {
     public class AssertionTypeConverter : JsonConverter<Assertion>
     {
@@ -77,23 +78,23 @@ namespace Microsoft.ContentAuthenticity.Bindings
             }
             var value = Marshal.PtrToStringUTF8((nint)ptr)!;
             if (freeResource)
-                c2pa.C2paStringFree(ptr);
+                C2paBindings.string_free(ptr);
 
             return value;
         }
 
-        public unsafe static string[] FromCStringArray(sbyte** ptr, ulong count)
+        public unsafe static string[] FromCStringArray(sbyte** ptr, nuint count)
         {
             if (count <= 0)
             {
                 return [];
             }
             var values = new string[count];
-            for (ulong i = 0; i < count; i++)
+            for (nuint i = 0; i < count; i++)
             {
                 values[i] = FromCString(ptr[i], freeResource: false);
             }
-            c2pa.C2paFreeStringArray(ptr, count);
+            C2paBindings.free_string_array(ptr, count);
             return values;
         }
 

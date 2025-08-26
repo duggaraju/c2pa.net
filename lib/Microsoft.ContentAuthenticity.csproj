@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <C2paLibrary Condition="$([MSBuild]::IsOSPlatform('Windows'))">c2pa_c.dll</C2paLibrary>
+    <C2paLibrary Condition="$([MSBuild]::IsOSPlatform('Linux'))">libc2pa_c.so</C2paLibrary>
+    <Title>Microsoft Content Authenticity Library</Title>
+    <Company>Microsoft</Company>
+    <Authors>Prakash Duggaraju</Authors>
+    <Description>.NET Bindings on top of Rust c2pa-rs library.</Description>
+    <Copyright>Microsoft Corporation</Copyright>
+    <PackageProjectUrl>https://github.com/duggaraju/c2pa.net</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/duggaraju/c2pa.net</RepositoryUrl>
+    <CargoOutput>$(MSBuildThisFileDirectory)../c2pa-rs/target/$(Configuration.ToLower())/</CargoOutput>
+    <RootNamespace>Microsoft.ContentAuthenticity</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ClangSharp" Version="20.1.2" />
+    <DotNtetCliToolReference Include="ClangSharpPInvokeGenerator" Version="20.1.2" />
+  </ItemGroup>
+  <ItemGroup>
+	  <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/$(C2paLibrary)" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes/$(RuntimeIdentifier)/native/" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+  <Target Name="GenerateBindings" BeforeTargets="CoreCompile" Condition="!Exists('generated/C2paBindings.cs')">
+    <PropertyGroup>
+      <ConfigOptions>-c multi-file generate-file-scoped-namespaces generate-helper-types generate-tests-xunit</ConfigOptions>
+      <InteropArgs>-n $(RootNamespace).Bindings -m C2paBindings -l $(C2paLibrary) -p c2pa_ --test-output ../tests/generated</InteropArgs>
+    </PropertyGroup>
+    <Exec Command="dotnet tool run ClangSharpPInvokeGenerator -- -f $(CargoOutput)c2pa.h -o generated $(InteropArgs) $(ConfigOptions)" />
+    <CreateItem Include="generated/*.cs">
+      <Output TaskParameter="Include" ItemName="Compile" />
+    </CreateItem>
+  </Target>
+
+  <Target Name="cargo" BeforeTargets="Build" Inputs="$(MSBuildThisFileDirectory)../c2pa-rs/Cargo.toml" Outputs="$(CargoOutput)c2pa.h">
+    <PropertyGroup>
+      <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
+    </PropertyGroup>
+    <Exec Command="cargo build $(CargoArgs) --features rust_native_crypto" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/c2pa_c_ffi" />
+  </Target>
+
+</Project>

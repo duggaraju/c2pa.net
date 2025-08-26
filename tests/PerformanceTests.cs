@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using Xunit.Abstractions;
 
-namespace Microsoft.ContentAuthenticity.BindingTests;
+namespace Microsoft.ContentAuthenticity.Tests;
 
 /// <summary>
 /// Performance and memory tests for C2paReader and C2paBuilder to detect memory leaks and performance issues
@@ -30,7 +30,7 @@ public class PerformanceTests
             try
             {
                 using var stream = File.OpenRead("CACAE-uri-CA.jpg");
-                using var reader = C2paReader.FromStream(stream, format);
+                using var reader = Reader.FromStream(stream, format);
                 // Access properties to ensure full initialization
                 _ = reader?.Json;
             }
@@ -78,7 +78,7 @@ public class PerformanceTests
         {
             try
             {
-                using var builder = C2paBuilder.FromJson(manifestJson);
+                using var builder = Builder.FromJson(manifestJson);
                 // Test archive operations
                 using var archiveStream = new MemoryStream();
                 builder?.ToArchive(archiveStream);
@@ -124,14 +124,7 @@ public class PerformanceTests
         for (int i = 0; i < iterations; i++)
         {
             using var stream = File.OpenRead("CACAE-uri-CA.jpg");
-            using var c2paStream = new C2paStream(stream);
-
-            // Test stream operations
-            _ = c2paStream.Context;
-            _ = c2paStream.Reader;
-            _ = c2paStream.Writer;
-            _ = c2paStream.Seeker;
-            _ = c2paStream.Flusher;
+            using var c2paStream = new StreamAdapter(stream);
 
             // Force garbage collection every 200 iterations
             if (i % 200 == 0)
@@ -170,7 +163,7 @@ public class PerformanceTests
         try
         {
             using var stream = File.OpenRead("CACAE-uri-CA.jpg");
-            using var reader = C2paReader.FromStream(stream, format);
+            using var reader = Reader.FromStream(stream, format);
             _ = reader?.Json;
 
             var peakMemory = GC.GetTotalMemory(false);
@@ -221,7 +214,7 @@ public class PerformanceTests
                     try
                     {
                         using var stream = File.OpenRead("C.jpg");
-                        using var reader = C2paReader.FromStream(stream, format);
+                        using var reader = Reader.FromStream(stream, format);
                         _ = reader?.Json;
                     }
                     catch (C2paException)
@@ -259,11 +252,7 @@ public class PerformanceTests
         for (int i = 0; i < iterations; i++)
         {
             using var stream = File.OpenRead("C.jpg");
-            using var c2paStream = new C2paStream(stream);
-            var context = c2paStream.Context;
-
-            // Verify mappings are working
-            Assert.NotNull(context);
+            using var c2paStream = new StreamAdapter(stream);
 
             if (i % 100 == 0)
             {
@@ -302,7 +291,7 @@ public class PerformanceTests
             try
             {
                 var stream = new MemoryStream(testData);
-                var reader = C2paReader.FromStream(stream, format);
+                var reader = Reader.FromStream(stream, format);
                 _ = reader?.Json;
                 // Intentionally not disposing to test finalizer
             }
@@ -352,7 +341,7 @@ public class PerformanceTests
             try
             {
                 using var stream = File.OpenRead("C.jpg");
-                using var reader = C2paReader.FromStream(stream, format);
+                using var reader = Reader.FromStream(stream, format);
                 _ = reader?.Json;
             }
             catch (C2paException)
@@ -383,7 +372,7 @@ public class PerformanceTests
         {
             try
             {
-                using var builder = C2paBuilder.FromJson(manifestJson);
+                using var builder = Builder.FromJson(manifestJson);
                 using var archiveStream = new MemoryStream();
                 builder?.ToArchive(archiveStream);
             }
@@ -489,7 +478,7 @@ public class PerformanceTests
             {
             }
         """;
-        var builder = C2paBuilder.FromJson(manifest);
+        var builder = Builder.FromJson(manifest);
 
         for (int iter = 0; iter < num_iterations; iter++)
         {
@@ -499,7 +488,7 @@ public class PerformanceTests
                 var outputStream = new MemoryStream();
                 builder.Sign(signer, inputStream, outputStream, mimeType);
                 outputStream.Position = 0;
-                var reader = C2paReader.FromStream(outputStream, mimeType);
+                var reader = Reader.FromStream(outputStream, mimeType);
                 Assert.NotNull(reader.Json);
             }
             else
@@ -510,7 +499,7 @@ public class PerformanceTests
                 }
 
                 builder.Sign(signer, inputFile, outputFile);
-                var reader = C2paReader.FromFile(outputFile);
+                var reader = Reader.FromFile(outputFile);
                 Assert.NotNull(reader.Json);
             }
         }

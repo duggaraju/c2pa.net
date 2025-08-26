@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Text.Json;
+using Microsoft.ContentAuthenticity;
 using Microsoft.ContentAuthenticity.Bindings;
 
 namespace Cli;
@@ -17,8 +18,8 @@ class Program
             Console.WriteLine("C2PA .NET CLI");
             Console.WriteLine($"C2PA SDK Version: {C2pa.Version}");
             Console.WriteLine($"Supported MimeTypes: {string.Join(", ", C2pa.SupportedMimeTypes)}");
-            Console.WriteLine($"Reader supported MimeTypes: {string.Join(", ", C2paReader.SupportedMimeTypes)}");
-            Console.WriteLine($"Builder supported MimeTypes: {string.Join(", ", C2paBuilder.SupportedMimeTypes)}");
+            Console.WriteLine($"Reader supported MimeTypes: {string.Join(", ", Reader.SupportedMimeTypes)}");
+            Console.WriteLine($"Builder supported MimeTypes: {string.Join(", ", Builder.SupportedMimeTypes)}");
         });
         rootCommand.Subcommands.Add(versionCommand);
 
@@ -82,7 +83,7 @@ class Program
             var pretty = result.GetRequiredValue(prettyOption);
             Console.WriteLine($"Reading C2PA data from: {input.FullName}");
 
-            using var reader = C2paReader.FromFile(input.FullName);
+            using var reader = Reader.FromFile(input.FullName);
             var json = reader.Json;
 
             if (pretty)
@@ -227,7 +228,7 @@ class Program
             Console.WriteLine($"Detected/Selected signing algorithm: {signer.Alg}");
 
             // Create builder and sign
-            using var builder = C2paBuilder.Create(manifest);
+            using var builder = Builder.Create(manifest);
 
             builder.Sign(signer, input.FullName, output.FullName);
 

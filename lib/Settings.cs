@@ -1,9 +1,10 @@
-﻿
+﻿using Microsoft.ContentAuthenticity.Bindings;
+using System.Text;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.ContentAuthenticity.Bindings
+namespace Microsoft.ContentAuthenticity
 {
-    public record TrustSettings(string? UserAnchors = null, string? TrustAnchors = null, string? TrustConfig = null, string AllowedList = null);
+    public record TrustSettings(string? UserAnchors = null, string? TrustAnchors = null, string? TrustConfig = null, string? AllowedList = null);
 
     public record VerifySettings(
         bool VerifyAfterReading = true,
@@ -29,17 +30,22 @@ namespace Microsoft.ContentAuthenticity.Bindings
             return Utils.Serialize(this);
         }
 
-        public void Load()
-        {
-            Load(ToJson());
-        }
+        private readonly static byte[] Format = Encoding.UTF8.GetBytes("json");
 
         public static Settings Load(string settings, string format = "json")
         {
-            var ret = c2pa.C2paLoadSettings(settings, format);
-            if (ret != 0)
+            unsafe
             {
-                C2pa.CheckError();
+                var bytes = Encoding.UTF8.GetBytes(settings);
+                fixed (byte* p = bytes)
+                fixed (byte* f = Format)
+                {
+                    var ret = C2paBindings.load_settings((sbyte*)p, (sbyte*)f);
+                    if (ret != 0)
+                    {
+                        C2pa.CheckError();
+                    }
+                }
             }
             return Utils.Deserialize<Settings>(settings);
         }

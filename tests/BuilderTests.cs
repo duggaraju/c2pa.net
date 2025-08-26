@@ -1,12 +1,12 @@
-namespace Microsoft.ContentAuthenticity.BindingTests;
+namespace Microsoft.ContentAuthenticity.Tests;
 
-public class C2paBuilderTests
+public class BuilderTests
 {
     [Fact]
     public void GenerateInstanceID_ShouldReturnValidGuid()
     {
         // Act
-        var instanceId = C2paBuilder.GenerateInstanceID();
+        var instanceId = Builder.GenerateInstanceID();
 
         // Assert
         Assert.NotNull(instanceId);
@@ -21,8 +21,8 @@ public class C2paBuilderTests
     public void GenerateInstanceID_ShouldReturnUniqueIds()
     {
         // Act
-        var id1 = C2paBuilder.GenerateInstanceID();
-        var id2 = C2paBuilder.GenerateInstanceID();
+        var id1 = Builder.GenerateInstanceID();
+        var id2 = Builder.GenerateInstanceID();
 
         // Assert
         Assert.NotEqual(id1, id2);
@@ -35,7 +35,7 @@ public class C2paBuilderTests
         var manifest = new ManifestDefinition("image/jpeg");
 
         // Act
-        var exception = Record.Exception(() => C2paBuilder.Create(manifest));
+        var exception = Record.Exception(() => Builder.Create(manifest));
 
         // Assert - Should not throw during creation, actual functionality depends on native library
         // We can't test the full functionality without the native C2PA library being properly set up
@@ -54,7 +54,7 @@ public class C2paBuilderTests
         var json = manifest.ToJson();
 
         // Act
-        var exception = Record.Exception(() => C2paBuilder.FromJson(json));
+        var exception = Record.Exception(() => Builder.FromJson(json));
 
         // Assert - Should not throw during creation, actual functionality depends on native library
         Assert.True(exception == null || exception is C2paException);
