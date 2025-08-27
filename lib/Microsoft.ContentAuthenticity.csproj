@@ -20,7 +20,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ClangSharp" Version="20.1.2" />
-    <DotNtetCliToolReference Include="ClangSharpPInvokeGenerator" Version="20.1.2" />
+    <PackageReference Include="libClangSharp.runtime.linux-x64" Version="20.1.2" Condition="$([MSBuild]::IsOSPlatform('Linux'))" GeneratePathProperty="true" />
   </ItemGroup>
   <ItemGroup>
 	  <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/$(C2paLibrary)" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes/$(RuntimeIdentifier)/native/" />
@@ -35,8 +35,9 @@
     <PropertyGroup>
       <ConfigOptions>-c multi-file generate-file-scoped-namespaces generate-helper-types generate-tests-xunit</ConfigOptions>
       <InteropArgs>-n $(RootNamespace).Bindings -m C2paBindings -l $(C2paLibrary) -p c2pa_ --test-output ../tests/generated</InteropArgs>
+      <EnvironmentVariables Condition="$([MSBuild]::IsOSPlatform('Linux'))">LD_LIBRARY_PATH=$(PkglibClangSharp_runtime_linux-x64)/runtimes/linux-x64/native</EnvironmentVariables>
     </PropertyGroup>
-    <Exec Command="dotnet tool run ClangSharpPInvokeGenerator -- -f $(CargoOutput)c2pa.h -o generated $(InteropArgs) $(ConfigOptions)" />
+    <Exec Command="dotnet tool run ClangSharpPInvokeGenerator -- -f $(CargoOutput)c2pa.h -o generated $(InteropArgs) $(ConfigOptions)" EnvironmentVariables="$(EnvironmentVariables)"/>
     <CreateItem Include="generated/*.cs">
       <Output TaskParameter="Include" ItemName="Compile" />
     </CreateItem>

@@ -1,12 +1,13 @@
 # c2pa.net
 
-.NET bindings for c2pa Rust library.
+.NET bindings for c2pa [Rust](https://github.com/contentauth/c2pa-rs) library.
 
 ## Prerequisites
 
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
 - [Rust toolchain](https://rustup.rs/) (for building the native c2pa-rs library)
 - [Git](https://git-scm.com/) with submodule support
+  [ClangSharp](https://github.com/dotnet/ClangSharp)
 
 ## Getting Started
 
@@ -54,6 +55,7 @@ git commit -m "Update c2pa-rs submodule to v0.28.1"
 
 ```bash
 # Build the entire solution
+dotnet restore && dotnet tool restore
 dotnet build
 
 # Build in Release mode

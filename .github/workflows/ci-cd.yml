@@ -91,7 +91,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential pkg-config libssl-dev libclang-dev llvm
+        sudo apt-get install -y build-essential pkg-config libssl-dev llvm-18 clang-18
 
     - name: Install system dependencies (macOS)
       if: matrix.os == 'macos-latest'
@@ -117,7 +117,8 @@ jobs:
 
     # Restore .NET dependencies
     - name: Restore dependencies
-      run: dotnet restore && dotnet tool restore
+      run: |
+        dotnet restore && dotnet tool restore
 
     # Build .NET solution
     - name: Build solution
