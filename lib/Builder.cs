@@ -104,6 +104,7 @@ public sealed class Builder : IDisposable
                     C2pa.CheckError();
                 byte* manifest = null;
                 var ret = C2paBindings.builder_sign(builder, (sbyte*)formatBytes, inputStream, outputStream, c2paSigner, &manifest);
+                C2paBindings.signer_free(c2paSigner);
                 if (ret == -1)
                     C2pa.CheckError();
                 if (manifest != null)

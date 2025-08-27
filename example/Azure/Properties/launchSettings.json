@@ -1,8 +1,10 @@
 {
   "profiles": {
-    "test": {
+    "Azure": {
       "commandName": "Project",
-      "commandLineArgs": "--input-file ..\\..\\..\\sample_images\\sample1.jpg --output-file ..\\..\\..\\sample_images\\output.jpg",
+      "commandLineArgs": "--input-file sample_images\\sample1.jpg --output-file output.jpg",
+      "workingDirectory": "$(ProjectDir)",
+      "nativeDebugging": true
     },
     "WSL": {
       "commandName": "WSL2",

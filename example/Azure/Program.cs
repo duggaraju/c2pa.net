@@ -76,8 +76,8 @@ class Program
     {
         const string EndpointUri = "https://eus.codesigning.azure.net/";
         static readonly SignatureAlgorithm Algorithm = SignatureAlgorithm.PS384;
-        const string CertificateProfile = "media-provenance-sign";
-        const string AccountName = "ts-80221a56b4b24529a43e";
+        const string CertificateProfile = "rai-poc-provenance-sign";
+        const string AccountName = "rai-provenance-sign";
 
         private readonly CertificateProfileClient _client = new(credential, new Uri(EndpointUri));
 
