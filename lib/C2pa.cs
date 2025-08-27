@@ -1,48 +1,47 @@
-namespace Microsoft.ContentAuthenticity
+namespace Microsoft.ContentAuthenticity;
+
+
+/// <summary>
+/// Top  level SDK entry point.
+/// </summary>
+public static class C2pa
 {
-
     /// <summary>
-    /// Top  level SDK entry point.
+    /// The version of the Sdk.
     /// </summary>
-    public static class C2pa
+    public static string Version { get; } = GetVersion();
+
+    private unsafe static string GetVersion()
     {
-        /// <summary>
-        /// The version of the Sdk.
-        /// </summary>
-        public static string Version { get; } = GetVersion();
+        return Utils.FromCString(C2paBindings.version());
+    }
 
-        private unsafe static string GetVersion()
+    public static string[] SupportedMimeTypes
+    {
+        get
         {
-            return Utils.FromCString(C2paBindings.version());
-        }
-
-        public static string[] SupportedMimeTypes
-        {
-            get
-            {
-                nuint count = 0;
-                unsafe
-                {
-                    var buffer = C2paBindings.reader_supported_mime_types(&count);
-                    return Utils.FromCStringArray(buffer, count);
-                }
-            }
-        }
-
-        public static void CheckError()
-        {
-            string err;
+            nuint count = 0;
             unsafe
             {
-                err = Utils.FromCString(C2paBindings.error());
+                var buffer = C2paBindings.reader_supported_mime_types(&count);
+                return Utils.FromCStringArray(buffer, count);
             }
-
-            if (string.IsNullOrEmpty(err)) return;
-
-            string errType = err.Split(' ')[0];
-            string errMsg = err;
-
-            throw new C2paException(errType, errMsg);
         }
+    }
+
+    public static void CheckError()
+    {
+        string err;
+        unsafe
+        {
+            err = Utils.FromCString(C2paBindings.error());
+        }
+
+        if (string.IsNullOrEmpty(err)) return;
+
+        string errType = err.Split(' ')[0];
+        string errMsg = err;
+
+        throw new C2paException(errType, errMsg);
     }
 }

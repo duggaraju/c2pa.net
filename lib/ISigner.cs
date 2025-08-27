@@ -1,17 +1,16 @@
 using SigningAlg = Microsoft.ContentAuthenticity.Bindings.C2paSigningAlg;
 
-namespace Microsoft.ContentAuthenticity
+namespace Microsoft.ContentAuthenticity;
+
+public interface ISigner
 {
-    public interface ISigner
-    {
-        int Sign(ReadOnlySpan<byte> data, Span<byte> hash);
+    int Sign(ReadOnlySpan<byte> data, Span<byte> hash);
 
-        public SigningAlg Alg { get; }
+    public SigningAlg Alg { get; }
 
-        public string Certs { get; }
+    public string Certs { get; }
 
-        public string? TimeAuthorityUrl { get; }
+    public string? TimeAuthorityUrl { get; }
 
-        public bool UseOcsp => false;
-    }
+    public bool UseOcsp => false;
 }
