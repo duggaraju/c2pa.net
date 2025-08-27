@@ -1,5 +1,4 @@
-﻿using Microsoft.ContentAuthenticity.Bindings;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Microsoft.ContentAuthenticity
 {

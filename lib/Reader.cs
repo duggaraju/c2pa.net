@@ -1,7 +1,4 @@
-﻿using Microsoft.ContentAuthenticity.Bindings;
-using System.Text;
-
-namespace Microsoft.ContentAuthenticity
+﻿namespace Microsoft.ContentAuthenticity
 {
     public sealed class Reader : IDisposable
     {

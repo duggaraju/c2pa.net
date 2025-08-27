@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\lib\Microsoft.ContentAuthenticity.csproj" />
+    <ProjectReference Include="..\..\lib\ContentAuthenticity.csproj" />
   </ItemGroup>
 
 </Project>

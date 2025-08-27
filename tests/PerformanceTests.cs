@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using Xunit.Abstractions;
 
-namespace Microsoft.ContentAuthenticity.Tests;
+namespace ContentAuthenticity.Tests;
 
 /// <summary>
 /// Performance and memory tests for C2paReader and C2paBuilder to detect memory leaks and performance issues

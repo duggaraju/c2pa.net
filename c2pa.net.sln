@@ -9,9 +9,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cli", "example\Cli\Cli.cspr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure", "example\Azure\Azure.csproj", "{189138A4-C330-4744-AF91-2D80F0380D46}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.ContentAuthenticity", "lib\Microsoft.ContentAuthenticity.csproj", "{5D3D7F83-7C71-073E-C4FF-A64C67DD295B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContentAuthenticity", "lib\ContentAuthenticity.csproj", "{5D3D7F83-7C71-073E-C4FF-A64C67DD295B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.ContentAuthenticity.Tests", "tests\Microsoft.ContentAuthenticity.Tests.csproj", "{F7952285-E06C-1196-2039-95513390ACC2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContentAuthenticity.Tests", "tests\ContentAuthenticity.Tests.csproj", "{F7952285-E06C-1196-2039-95513390ACC2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

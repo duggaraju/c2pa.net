@@ -1,13 +1,9 @@
-using Microsoft.ContentAuthenticity.Bindings;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Microsoft.ContentAuthenticity
 {
     public sealed class Builder : IDisposable
     {
-        private unsafe C2paBuilder* builder;
+        private readonly unsafe C2paBuilder* builder;
 
         private unsafe Builder(C2paBuilder* instance)
         {

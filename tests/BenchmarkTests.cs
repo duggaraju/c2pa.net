@@ -1,6 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 
-namespace Microsoft.ContentAuthenticity.Tests
+namespace ContentAuthenticity.Tests
 {
     /// <summary>
     /// BenchmarkDotNet benchmarks for more detailed performance analysis

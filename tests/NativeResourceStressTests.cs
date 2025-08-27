@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Xunit.Abstractions;
 
-namespace Microsoft.ContentAuthenticity.Tests;
+namespace ContentAuthenticity.Tests;
 
 /// <summary>
 /// Stress tests focusing on native resource management and disposal patterns

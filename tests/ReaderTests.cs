@@ -1,4 +1,4 @@
-namespace Microsoft.ContentAuthenticity.Tests;
+namespace ContentAuthenticity.Tests;
 
 public class ReaderTests
 {

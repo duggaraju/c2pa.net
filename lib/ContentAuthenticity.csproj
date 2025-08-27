@@ -32,7 +32,10 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-  <Target Name="GenerateBindings" BeforeTargets="CoreCompile" Condition="!Exists('generated/C2paBindings.cs')">
+  <ItemGroup>
+    <Using Include="Microsoft.ContentAuthenticity.Bindings" />
+  </ItemGroup>
+  <Target Name="GenerateBindings" DependsOnTargets="cargo" BeforeTargets="CoreCompile" Condition="!Exists('generated/C2paBindings.cs')">
     <PropertyGroup>
       <ConfigOptions>-c multi-file generate-file-scoped-namespaces generate-helper-types generate-tests-xunit</ConfigOptions>
       <InteropArgs>-n $(RootNamespace).Bindings -m C2paBindings -l $(C2paLibrary) -p c2pa_ --test-output ../tests/generated</InteropArgs>
@@ -45,7 +48,7 @@
     </CreateItem>
   </Target>
 
-  <Target Name="cargo" BeforeTargets="Build" Inputs="$(MSBuildThisFileDirectory)../c2pa-rs/Cargo.toml" Outputs="$(CargoOutput)c2pa.h">
+  <Target Name="cargo" Inputs="$(MSBuildThisFileDirectory)../c2pa-rs/Cargo.toml" Outputs="$(CargoOutput)c2pa.h">
     <PropertyGroup>
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
     </PropertyGroup>

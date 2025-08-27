@@ -1,5 +1,3 @@
-using Microsoft.ContentAuthenticity.Bindings;
-
 namespace Microsoft.ContentAuthenticity
 {
 

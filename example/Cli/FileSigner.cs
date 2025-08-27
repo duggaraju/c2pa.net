@@ -260,7 +260,7 @@ internal sealed class FileSigner : ISigner, IDisposable
         };
     }
 
-    private static C2paSigningAlg DetermineRSAAlgorithm(RSA rsa)
+    private static C2paSigningAlg DetermineRSAAlgorithm(RSA _)
     {
         // For RSA, we default to PS256 (PSS padding with SHA-256)
         // Could be made configurable based on requirements

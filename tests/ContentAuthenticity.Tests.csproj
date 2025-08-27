@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\lib\Microsoft.ContentAuthenticity.csproj" />
+    <ProjectReference Include="..\lib\ContentAuthenticity.csproj" />
     <Content Include="..\c2pa-rs\sdk\tests\fixtures\**\*" CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
 

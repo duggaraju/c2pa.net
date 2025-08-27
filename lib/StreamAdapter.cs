@@ -1,8 +1,4 @@
-﻿using Microsoft.ContentAuthenticity.Bindings;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-
-namespace Microsoft.ContentAuthenticity
+﻿namespace Microsoft.ContentAuthenticity
 {
     public sealed class StreamAdapter : IDisposable
     {
