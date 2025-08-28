@@ -46,6 +46,7 @@ jobs:
   # Build matrix for different platforms
   build-and-test:
     name: Build and Test
+    needs: generate-version
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
