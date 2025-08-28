@@ -9,6 +9,10 @@ on:
     types: [ published ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   DOTNET_VERSION: '8.0.x'
   RUST_VERSION: '1.88.0'
