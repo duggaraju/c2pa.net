@@ -15,43 +15,43 @@ public class NativeResourceStressTests(ITestOutputHelper output)
     {
         const int iterations = 5000;
         var testData = GenerateTestData(512);
-
+        
         // Test that NativeToManagedMap dictionaries don't grow indefinitely
         var initialMemory = GC.GetTotalMemory(true);
-
+        
         for (int i = 0; i < iterations; i++)
         {
             using var stream = new MemoryStream(testData);
             using var c2paStream = new StreamAdapter(stream);
-
+            
             // Every 500 iterations, check if mappings are being cleaned up
             if (i % 500 == 0 && i > 0)
             {
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
                 GC.Collect();
-
+                
                 var currentMemory = GC.GetTotalMemory(false);
                 var memoryGrowth = currentMemory - initialMemory;
-
+                
                 output.WriteLine($"Iteration {i}: Memory growth: {memoryGrowth:N0} bytes");
-
+                
                 // Memory growth should be bounded
-                Assert.True(memoryGrowth < 50_000_000,
+                Assert.True(memoryGrowth < 50_000_000, 
                     $"Excessive memory growth at iteration {i}: {memoryGrowth:N0} bytes");
             }
         }
-
+        
         // Final cleanup and verification
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-
+        
         var finalMemory = GC.GetTotalMemory(false);
         var totalGrowth = finalMemory - initialMemory;
-
+        
         output.WriteLine($"Final memory growth: {totalGrowth:N0} bytes");
-        Assert.True(totalGrowth < 20_000_000,
+        Assert.True(totalGrowth < 20_000_000, 
             $"Native mapping dictionaries not properly cleaned up: {totalGrowth:N0} bytes");
     }
 
@@ -62,13 +62,13 @@ public class NativeResourceStressTests(ITestOutputHelper output)
         var testData = GenerateTestData(1024);
         var format = "image/jpeg";
         var exceptions = 0;
-
+        
         for (int i = 0; i < iterations; i++)
         {
             try
             {
                 using var stream = new MemoryStream(testData);
-
+                
                 // Test disposal during various states of initialization
                 if (i % 3 == 0)
                 {
@@ -107,9 +107,9 @@ public class NativeResourceStressTests(ITestOutputHelper output)
                 Assert.Fail("ObjectDisposedException thrown - disposal pattern issue detected");
             }
         }
-
+        
         output.WriteLine($"Total C2paExceptions (expected): {exceptions}");
-
+        
         // Ensure we can handle disposal in various states without crashes
         Assert.True(exceptions > 0, "Expected some C2paExceptions for invalid test data");
     }
@@ -119,16 +119,16 @@ public class NativeResourceStressTests(ITestOutputHelper output)
     {
         const int iterations = 10000;
         var testData = GenerateTestData(256);
-
+        
         var stopwatch = Stopwatch.StartNew();
         var initialMemory = GC.GetTotalMemory(true);
-
+        
         // Rapid creation and disposal to stress the native resource management
         for (int i = 0; i < iterations; i++)
         {
             using var stream = new MemoryStream(testData);
             using var c2paStream = new StreamAdapter(stream);
-
+            
             if (i % 1000 == 0)
             {
                 GC.Collect();
@@ -136,21 +136,21 @@ public class NativeResourceStressTests(ITestOutputHelper output)
                 GC.Collect();
             }
         }
-
+        
         stopwatch.Stop();
-
+        
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-
+        
         var finalMemory = GC.GetTotalMemory(false);
         var memoryDifference = finalMemory - initialMemory;
         var avgTimePerOp = stopwatch.ElapsedMilliseconds / (double)iterations;
-
+        
         output.WriteLine($"High frequency test completed in {stopwatch.ElapsedMilliseconds} ms");
         output.WriteLine($"Average time per operation: {avgTimePerOp:F3} ms");
         output.WriteLine($"Memory difference: {memoryDifference:N0} bytes");
-
+        
         // Should complete quickly without significant memory leaks
         Assert.True(avgTimePerOp < 1.0, $"Operations too slow: {avgTimePerOp:F3} ms per operation");
         Assert.True(memoryDifference < 10_000_000, $"Memory leak detected: {memoryDifference:N0} bytes");
@@ -163,10 +163,10 @@ public class NativeResourceStressTests(ITestOutputHelper output)
         const int iterationsPerThread = 500;
         var testData = GenerateTestData(1024);
         var format = "image/jpeg";
-
+        
         var exceptions = new ConcurrentBag<Exception>();
         var tasks = new List<Task>();
-
+        
         for (int t = 0; t < threadCount; t++)
         {
             var threadId = t;
@@ -194,17 +194,17 @@ public class NativeResourceStressTests(ITestOutputHelper output)
                 }
             }));
         }
-
-        await Task.WhenAll(tasks);
-
+        
+        await Task.WhenAll(tasks.ToArray());
+        
         // Should not have any unexpected exceptions from multi-threading
         var unexpectedExceptions = exceptions.Where(ex => !(ex is C2paException)).ToList();
-
+        
         foreach (var ex in unexpectedExceptions)
         {
             output.WriteLine($"Unexpected exception: {ex}");
         }
-
+        
         Assert.Empty(unexpectedExceptions);
         output.WriteLine($"Cross-thread test completed with {exceptions.Count} expected C2paExceptions");
     }
@@ -216,15 +216,15 @@ public class NativeResourceStressTests(ITestOutputHelper output)
         const int iterationsPerCycle = 1000;
         var testData = GenerateTestData(2048);
         var format = "image/jpeg";
-
+        
         var memoryReadings = new List<long>();
         var initialMemory = GC.GetTotalMemory(true);
         memoryReadings.Add(initialMemory);
-
+        
         for (int cycle = 0; cycle < cycles; cycle++)
         {
             output.WriteLine($"Starting cycle {cycle + 1}/{cycles}");
-
+            
             for (int i = 0; i < iterationsPerCycle; i++)
             {
                 try
@@ -238,37 +238,37 @@ public class NativeResourceStressTests(ITestOutputHelper output)
                     // Expected for test data
                 }
             }
-
+            
             // Force garbage collection between cycles
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-
+            
             var currentMemory = GC.GetTotalMemory(false);
             memoryReadings.Add(currentMemory);
-
+            
             var memoryGrowthSinceStart = currentMemory - initialMemory;
             output.WriteLine($"Cycle {cycle + 1} memory: {currentMemory:N0} bytes (growth: {memoryGrowthSinceStart:N0})");
-
+            
             // Check for excessive memory growth over time
-            Assert.True(memoryGrowthSinceStart < 100_000_000,
+            Assert.True(memoryGrowthSinceStart < 100_000_000, 
                 $"Excessive memory growth in cycle {cycle + 1}: {memoryGrowthSinceStart:N0} bytes");
         }
-
+        
         // Analyze memory trend
         var finalMemory = memoryReadings.Last();
         var totalGrowth = finalMemory - initialMemory;
         var avgGrowthPerCycle = memoryReadings.Zip(memoryReadings.Skip(1))
             .Select(pair => pair.Second - pair.First)
             .Average();
-
+        
         output.WriteLine($"Total memory growth: {totalGrowth:N0} bytes");
         output.WriteLine($"Average growth per cycle: {avgGrowthPerCycle:F0} bytes");
-
+        
         // Memory growth should be reasonable and not indicate severe leaks
-        Assert.True(totalGrowth < 50_000_000,
+        Assert.True(totalGrowth < 50_000_000, 
             $"Long-running test shows significant memory growth: {totalGrowth:N0} bytes");
-        Assert.True(avgGrowthPerCycle < 5_000_000,
+        Assert.True(avgGrowthPerCycle < 5_000_000, 
             $"Average memory growth per cycle too high: {avgGrowthPerCycle:F0} bytes");
     }
 
@@ -277,9 +277,9 @@ public class NativeResourceStressTests(ITestOutputHelper output)
     {
         const int iterations = 1000;
         var testData = GenerateTestData(1024);
-
+        
         var initialMemory = GC.GetTotalMemory(true);
-
+        
         // Test that callback delegates don't cause memory leaks
         for (int i = 0; i < iterations; i++)
         {
@@ -293,18 +293,18 @@ public class NativeResourceStressTests(ITestOutputHelper output)
                 GC.Collect();
             }
         }
-
+        
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-
+        
         var finalMemory = GC.GetTotalMemory(false);
         var memoryDifference = finalMemory - initialMemory;
-
+        
         output.WriteLine($"Native callback test memory difference: {memoryDifference:N0} bytes");
-
+        
         // Ensure callback delegates don't cause memory leaks
-        Assert.True(memoryDifference < 10_000_000,
+        Assert.True(memoryDifference < 10_000_000, 
             $"Native callback memory leak detected: {memoryDifference:N0} bytes");
     }
 

@@ -7,21 +7,28 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <C2paLibrary Condition="$([MSBuild]::IsOSPlatform('Windows'))">c2pa_c.dll</C2paLibrary>
     <C2paLibrary Condition="$([MSBuild]::IsOSPlatform('Linux'))">libc2pa_c.so</C2paLibrary>
+    <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('Windows'))">win-x64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('Linux'))">linux-x64</RuntimeIdentifier>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <Title>Microsoft Content Authenticity Library</Title>
     <Company>Microsoft</Company>
-    <Authors>Prakash Duggaraju</Authors>
+    <Authors>Responsible AI</Authors>
     <Description>.NET Bindings on top of Rust c2pa-rs library.</Description>
     <Copyright>Microsoft Corporation</Copyright>
     <PackageProjectUrl>https://github.com/duggaraju/c2pa.net</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/duggaraju/c2pa.net</RepositoryUrl>
+    <Version>$(PackageVersion)</Version>
     <CargoOutput>$(MSBuildThisFileDirectory)../c2pa-rs/target/$(Configuration.ToLower())/</CargoOutput>
-    <RootNamespace>Microsoft.ContentAuthenticity</RootNamespace>
+    <RootNamespace>ContentAuthenticity</RootNamespace>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
+  
   <ItemGroup>
     <PackageReference Include="ClangSharp" Version="18.1.0.4" />
     <PackageReference Include="libClangSharp.runtime.linux-x64" Version="18.1.3" Condition="$([MSBuild]::IsOSPlatform('Linux'))" GeneratePathProperty="true" />
     <PackageReference Include="libclang.runtime.linux-x64" Version="18.1.3" Condition="$([MSBuild]::IsOSPlatform('Linux'))" GeneratePathProperty="true" />
+    <PackageReference Include="Macross.Json.Extensions" Version="3.0.0" />
   </ItemGroup>
   <ItemGroup>
 	  <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/$(C2paLibrary)" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes/$(RuntimeIdentifier)/native/" />
@@ -33,7 +40,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Using Include="Microsoft.ContentAuthenticity.Bindings" />
+    <Using Include="ContentAuthenticity.Bindings" />
   </ItemGroup>
   <Target Name="GenerateBindings" DependsOnTargets="cargo" BeforeTargets="CoreCompile" Condition="!Exists('generated/C2paBindings.cs')">
     <PropertyGroup>
@@ -54,5 +61,4 @@
     </PropertyGroup>
     <Exec Command="cargo build $(CargoArgs) --features rust_native_crypto" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/c2pa_c_ffi" />
   </Target>
-
 </Project>

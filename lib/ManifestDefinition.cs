@@ -1,6 +1,6 @@
-﻿using SigningAlg = Microsoft.ContentAuthenticity.Bindings.C2paSigningAlg;
+﻿using SigningAlg = ContentAuthenticity.Bindings.C2paSigningAlg;
 
-namespace Microsoft.ContentAuthenticity;
+namespace ContentAuthenticity;
 
 // See https://opensource.contentauthenticity.org/docs/manifest/json-ref/manifest-def for the schema.
 public record ManifestDefinition(string Format = "application/octet-stream")
@@ -24,6 +24,8 @@ public record ManifestDefinition(string Format = "application/octet-stream")
     public List<string>? Redactions { get; set; }
 
     public string? Label { get; set; }
+
+    public int ClaimVersion { get; set; } = 2;
 
     public string ToJson()
     {

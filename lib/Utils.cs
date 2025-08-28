@@ -1,4 +1,6 @@
-﻿namespace Microsoft.ContentAuthenticity;
+﻿using System.Text.Encodings.Web;
+
+namespace ContentAuthenticity;
 
 public class AssertionTypeConverter : JsonConverter<Assertion>
 {
@@ -8,8 +10,6 @@ public class AssertionTypeConverter : JsonConverter<Assertion>
         JsonElement root = doc.RootElement;
         string? label = root.GetProperty("label").GetString() ?? throw new JsonException("Missing label property");
         Type assertionType = GetAssertionTypeFromLabel(label);
-
-        string rawJson = root.GetRawText();
 
         return JsonSerializer.Deserialize(root.GetRawText(), assertionType, options) as Assertion;
     }
@@ -25,19 +25,140 @@ public class AssertionTypeConverter : JsonConverter<Assertion>
     }
 }
 
+public class MetadataAssertionConverter : JsonConverter<MetadataAssertionData>
+{
+    public override MetadataAssertionData Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        // Going from Json to Builder is currently not supported
+        throw new NotImplementedException("Deserialization not implemented for this example.");
+    }
+
+    public override void Write(Utf8JsonWriter writer, MetadataAssertionData assertionData, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+        
+        writer.WritePropertyName("@context");
+        JsonSerializer.Serialize(writer, assertionData.Context, options); // Use options for proper serialization of value types
+
+        FlattenDictionary(writer, assertionData.Value, "", options);
+        
+        writer.WriteEndObject();
+    }
+
+    private void FlattenDictionary(Utf8JsonWriter writer, Dictionary<string, object> dictionary, string prefix, JsonSerializerOptions options)
+    {
+        foreach (var entry in dictionary)
+        {
+            var key = string.IsNullOrEmpty(prefix) ? entry.Key : $"{prefix}.{entry.Key}";
+
+            if (entry.Value is Dictionary<string, object> nestedDictionary)
+            {
+                FlattenDictionary(writer, nestedDictionary, key, options);
+            }
+            else
+            {
+                // Write simple values directly
+                writer.WritePropertyName(key);
+                JsonSerializer.Serialize(writer, entry.Value, options); // Use options for proper serialization of value types
+            }
+        }
+    }
+}
+
+public class ByteBufConverter : JsonConverter<ByteBuf>
+{
+    public override ByteBuf Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        // Going from Json to Builder is currently not supported
+        throw new NotImplementedException("Deserialization not implemented for this example.");
+    }
+
+    public override void Write(Utf8JsonWriter writer, ByteBuf assertionData, JsonSerializerOptions options)
+    {
+        WriteByteBuf(writer, assertionData);
+    }
+
+    public static void WriteByteBuf(Utf8JsonWriter writer, ByteBuf assertionData)
+    {
+        writer.WriteStartArray();
+
+        foreach (var bufEntry in assertionData.Data)
+        {
+            writer.WriteNumberValue(bufEntry);
+        }
+
+        writer.WriteEndArray();
+    }
+}
+
+public class ByteBufListConverter : JsonConverter<List<ByteBuf>>
+{
+    public override List<ByteBuf> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        // Going from Json to Builder is currently not supported
+        throw new NotImplementedException("Deserialization not implemented for this example.");
+    }
+
+    public override void Write(Utf8JsonWriter writer, List<ByteBuf> assertionData, JsonSerializerOptions options)
+    {
+        writer.WriteStartArray();
+
+        foreach (var buf in assertionData)
+        {
+            ByteBufConverter.WriteByteBuf(writer, buf);
+        }
+        writer.WriteEndArray();
+    }
+}
+
+public class TimeStampAssertionConverter : JsonConverter<TimeStampAssertionData>
+{
+    public override TimeStampAssertionData Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        // Going from Json to Builder is currently not supported
+        throw new NotImplementedException("Deserialization not implemented for this example.");
+    }
+
+    public override void Write(Utf8JsonWriter writer, TimeStampAssertionData assertionData, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+
+        FlattenDictionary(writer, assertionData.Timestamps, "", options);
+
+        writer.WriteEndObject();
+    }
+
+    private void FlattenDictionary(Utf8JsonWriter writer, Dictionary<string, ByteBuf> dictionary, string prefix, JsonSerializerOptions options)
+    {
+        foreach (var entry in dictionary)
+        {
+            var key = string.IsNullOrEmpty(prefix) ? entry.Key : $"{prefix}.{entry.Key}";
+
+            // Write simple values directly
+            writer.WritePropertyName(key);
+            ByteBufConverter.WriteByteBuf(writer, entry.Value);
+        }
+    }
+}
+
 public static class Utils
 {
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
         Converters =
         {
+            new ByteBufConverter(),
+            new ByteBufListConverter(),
+            new TimeStampAssertionConverter(),
+            new MetadataAssertionConverter(),
+            new JsonStringEnumMemberConverter(),
+            new JsonStringEnumConverter(),
             new AssertionTypeConverter(),
-            new JsonStringEnumConverter()
         },
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-        WriteIndented = true
+        WriteIndented = true,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     public static T Deserialize<T>(string json)
@@ -56,11 +177,15 @@ public static class Utils
         {
             "c2pa.actions" => typeof(ActionsAssertion),
             "c2pa.actions.v2" => typeof(ActionsAssertionV2),
-            "c2pa.thumbnail" => typeof(ThumbnailAssertion),
             "c2pa.training-mining" => typeof(TrainingAssertion),
-            string s when s.StartsWith("c2pa.thumbnail.claim") => typeof(ClaimThumbnailAssertion),
-            string s when s.StartsWith("c2pa.thumbnail.ingredient") => typeof(IngredientThumbnailAssertion),
             "stds.schema-org.CreativeWork" => typeof(CreativeWorkAssertion),
+            "c2pa.embedded-data" => typeof(EmbeddedDataAssertion),
+            "c2pa.metadata" => typeof(MetadataAssertion),
+            "c2pa.soft-binding" => typeof(SoftBindingAssertion),
+            "c2pa.certificate-status" => typeof(CertificateStatusAssertion),
+            "c2pa.time-stamp" => typeof(TimeStampAssertion),
+            "c2pa.asset-ref" => typeof(AssetReferenceAssertion),
+            "c2pa.asset-type" => typeof(AssetTypeAssertion),
             _ => typeof(CustomAssertion),
         };
     }
@@ -107,8 +232,8 @@ public static class Utils
             ".avi" => "video/x-msvideo",
             ".mp3" => "audio/mpeg",
             ".wav" => "audio/wav",
+            ".gif" => "image/gif",
             _ => "application/octet-stream"
         };
     }
-
 }

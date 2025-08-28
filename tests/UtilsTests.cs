@@ -41,10 +41,7 @@ public class UtilsTests
     [Theory]
     [InlineData("c2pa.actions", typeof(ActionsAssertion))]
     [InlineData("c2pa.actions.v2", typeof(ActionsAssertionV2))]
-    [InlineData("c2pa.thumbnail", typeof(ThumbnailAssertion))]
     [InlineData("c2pa.training-mining", typeof(TrainingAssertion))]
-    [InlineData("c2pa.thumbnail.claim.123", typeof(ClaimThumbnailAssertion))]
-    [InlineData("c2pa.thumbnail.ingredient.456", typeof(IngredientThumbnailAssertion))]
     [InlineData("stds.schema-org.CreativeWork", typeof(CreativeWorkAssertion))]
     [InlineData("custom.assertion", typeof(CustomAssertion))]
     public void GetAssertionTypeFromLabel_ShouldReturnCorrectType(string label, Type expectedType)

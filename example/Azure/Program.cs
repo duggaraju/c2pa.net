@@ -7,8 +7,9 @@ using Azure.CodeSigning;
 using Azure.CodeSigning.Models;
 
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.ContentAuthenticity;
-using Microsoft.ContentAuthenticity.Bindings;
+using ContentAuthenticity;
+using ContentAuthenticity.Bindings;
+using System.Security.Cryptography.Pkcs;
 
 namespace C2paSample;
 
@@ -57,7 +58,7 @@ class Program
             ClaimGeneratorInfo = { new ClaimGeneratorInfo { Name = "C# Binding test", Version = "1.0.0" } },
             Format = "jpg",
             Title = "C# Test Image",
-            Assertions = { new CreativeWorkAssertion(new CreativeWorkAssertionData("http://schema.org/", "CreativeWork", [new AuthorInfo("person", "Isaiah Carrington")])) }
+            Assertions = { new CreativeWorkAssertion(new CreativeWorkAssertionData("http://schema.org/", "CreativeWork", new Dictionary<string, object>{ { "person", "Isaiah Carrington" } })) }
         };
 
         var builder = Builder.Create(manifest);
@@ -68,8 +69,8 @@ class Program
     {
         const string EndpointUri = "https://eus.codesigning.azure.net/";
         static readonly SignatureAlgorithm Algorithm = SignatureAlgorithm.PS384;
-        const string CertificateProfile = "rai-poc-provenance-sign";
-        const string AccountName = "rai-provenance-sign";
+        const string CertificateProfile = "media-provenance-sign";
+        const string AccountName = "ts-80221a56b4b24529a43e";
 
         private readonly CertificateProfileClient _client = new(credential, new Uri(EndpointUri));
 
@@ -99,18 +100,25 @@ class Program
             random.NextBytes(hash);
             byte[] digest = GetDigest(hash);
 
-            using Stream stream = _client.GetSignCertificateChain(AccountName, CertificateProfile);
-            var bytes = new byte[stream.Length];
-            stream.Read(bytes, 0, bytes.Length);
-            var certCollection = new X509Certificate2Collection();
-            certCollection.Import(bytes);
+            SignRequest request = new(Algorithm, digest);
+            CertificateProfileSignOperation operation = _client.StartSign(AccountName, CertificateProfile, request);
+            SignStatus status = operation.WaitForCompletion();
+
+            SignedCms cmsData = new();
+            char[] cdata = Encoding.ASCII.GetChars(status.SigningCertificate);
+            byte[] certificate = Convert.FromBase64CharArray(cdata, 0, cdata.Length);
+
+            cmsData.Decode(certificate);
+
             StringBuilder builder = new();
 
-            foreach (var cert in certCollection)
+            foreach (var cert in cmsData.Certificates)
             {
                 Console.WriteLine("Subject = {0} Issuer = {1} Expiry = {2}", cert.Subject, cert.Issuer, cert.GetExpirationDateString());
-                builder.Insert(0, '\n');
-                builder.Insert(0, cert.ExportCertificatePem());
+                builder.AppendLine($"subject={cert.Subject}");
+                builder.AppendLine($"issuer={cert.Issuer}");
+                var data = PemEncoding.Write("CERTIFICATE", cert.RawData);
+                builder.AppendLine(new string(data));
             }
 
             string pem = builder.ToString();
@@ -122,5 +130,9 @@ class Program
         public string Certs => GetCertificates();
 
         public string? TimeAuthorityUrl => "http://timestamp.digicert.com";
+
+        public string? EKUs => null;
+
+        public string? TrustAnchors => null;
     }
 }

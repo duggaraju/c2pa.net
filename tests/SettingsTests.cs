@@ -5,25 +5,19 @@ public class SettingsTests
     [Fact]
     public void Constructor_ShouldCreateWithTrustAndVerifySettings()
     {
-        // Arrange
-        var trust = new TrustSettings();
-        var verify = new VerifySettings();
-
         // Act
-        var settings = new Settings(trust, verify);
+        var settings = Settings.Default;
 
         // Assert
-        Assert.Equal(trust, settings.Trust);
-        Assert.Equal(verify, settings.Verify);
+        Assert.Equal(TrustSettings.Default, settings.Trust);
+        Assert.Equal(VerifySettings.Default, settings.Verify);
     }
 
     [Fact]
     public void ToJson_ShouldReturnValidJson()
     {
         // Arrange
-        var trust = new TrustSettings();
-        var verify = new VerifySettings();
-        var settings = new Settings(trust, verify);
+        var settings = Settings.Default;
 
         // Act
         var json = settings.ToJson();
@@ -39,7 +33,7 @@ public class SettingsTests
     public void Load_ShouldLoadCorrectly()
     {
         // Arrange
-        var original = new Settings(new TrustSettings(), new VerifySettings());
+        var original = Settings.Default;
         var json = original.ToJson();
 
         // Act

@@ -1,6 +1,70 @@
 using System.Dynamic;
 
-namespace Microsoft.ContentAuthenticity;
+// NOTE [8/28/25]: Cloud Data, Font Information, and Depthmap Assertion Authoring is not curently supported in Rust
+namespace ContentAuthenticity;
+
+public enum DigitalSourceType
+{
+    Empty,
+    TrainedAlgorithmicData,
+    DigitalCapture,
+    ComputationalCapture,
+    NegativeFilm,
+    PositiveFilm,
+    Print,
+    MinorHumanEdits,
+    HumanEdits,
+    CompositeWithTrainedAlgorithmicMedia,
+    AlgorithmicallyEnhanced,
+    SoftwareImage,
+    DigitalArt,
+    DigitalCreation,
+    DataDrivenMedia,
+    TrainedAlgorithmicMedia,
+    AlgorithmicMedia,
+    ScreenCapture,
+    VirtualRecording,
+    Composite,
+    CompositeCapture,
+    CompositeSynthetic,
+    Other
+}
+
+public enum AssetTypeEnum
+{
+    Classifier,
+    Cluster,
+    Dataset,
+    DatasetJax,
+    DatasetKeras,
+    DatasetMlNet,
+    DatasetMxNet,
+    DatasetOnnx,
+    DatasetOpenVino,
+    DatasetPyTorch,
+    DatasetTensoflow,
+    FormatNumpy,
+    FormatProtoBuf,
+    FormatPickle,
+    Generator,
+    GeneratorPrompt,
+    GeneratorSeed,
+    Model,
+    ModelJax,
+    ModelKeras,
+    ModelMlNet,
+    ModelMxNet,
+    ModelOnnx,
+    ModelOpenVino,
+    ModelOpenVinoParameter,
+    ModelOpenVinoTopology,
+    ModelPyTorch,
+    ModelTensorflow,
+    Regressor,
+    TensorflowHubModule,
+    TensorflowSaveModel,
+    Other,
+}
 
 public record Assertion(string Label, object Data)
 {
@@ -20,14 +84,6 @@ public record Assertion<T> : Assertion where T : notnull
     }
 }
 
-public record ThumbnailAssertionData(string Thumbnail, string InstanceID);
-
-public record ThumbnailAssertion(ThumbnailAssertionData Data) : Assertion<ThumbnailAssertionData>("c2pa.thumbnail", Data);
-
-public record ClaimThumbnailAssertion(ThumbnailAssertionData Data) : Assertion<ThumbnailAssertionData>("c2pa.thumbnail.claim", Data);
-
-public record IngredientThumbnailAssertion(ThumbnailAssertionData Data) : Assertion<ThumbnailAssertionData>("c2pa.thumbnail.ingredient", Data);
-
 public record ActionV1(
     string Action,
     [property: JsonPropertyName("softwareAgent")] string? SoftwareAgent = null,
@@ -42,21 +98,106 @@ public record ActionsAssertion(ActionAssertionData Data) : Assertion<ActionAsser
 
 public record ActionV2(
     string Action,
-    [property: JsonPropertyName("softwareAgent")] ClaimGeneratorInfo? SoftwareAgent = null,
-    string? Description = null,
-    [property: JsonPropertyName("digitalSourceType")] string? DigitalSourceType = null,
+    [property: JsonPropertyName("softwareAgent")] string? SoftwareAgent = null,
     DateTimeOffset? When = null,
-    Dictionary<string, object>? Changes = null,
-    List<dynamic>? Actors = null,
+    [property: JsonPropertyName("softwareAgentIndex")] UIntPtr? SoftwareAgentIndex = null,
+    string? Changed = null,
+    List<RegionOfInterestSetting>? Changes = null,
+    Dictionary<string, object>? Parameters = null,
+    List<Actor>? Actors = null,
+    [property: JsonPropertyName("digitalSourceType")] DigitalSourceType? SourceType = null,
     List<ActionV2>? Related = null,
     string? Reason = null,
-    Dictionary<string, object>? Parameters = null);
+    string? Description = null)
+{
+    public ActionV2(
+        string Action,
+        ClaimGeneratorInfo SoftwareAgent,
+        DateTimeOffset? When = null,
+        UIntPtr? SoftwareAgentIndex = null,
+        string? Changed = null,
+        List<RegionOfInterestSetting>? Changes = null,
+        Dictionary<string, object>? Parameters = null,
+        List<Actor>? Actors = null,
+        DigitalSourceType? SourceType = null,
+        List<ActionV2>? Related = null,
+        string? Reason = null,
+        string? Description = null) : this(Action, Utils.Serialize<ClaimGeneratorInfo>(SoftwareAgent), When, SoftwareAgentIndex, Changed, Changes, Parameters, Actors, SourceType, Related, Reason, Description)
+    {
+    }
+}
 
-public record Template(string DigitalSourceType, string Action);
+public record ActionTemplate(
+    string Action,
+    [property: JsonPropertyName("softwareAgents")] ClaimGeneratorInfo? SoftwareAgents = null,
+    [property: JsonPropertyName("softwareAgentIndex")] UIntPtr? SoftwareAgentIndex = null,
+    [property: JsonPropertyName("digitalSourceType")] DigitalSourceType? SourceType = null,
+    ResourceRef? Icon = null,
+    string? Description = null,
+    [property: JsonPropertyName("templateParameters")] Dictionary<string, object>? TemplateParameters = null);
 
-public record ActionsAssertionV2Data(List<ActionV2> Actions, bool AllActionsIncluded = false, Template[]? Templates = null);
+public record ActionsAssertionV2Data(
+    List<ActionV2> Actions,
+    [property: JsonPropertyName("softwareAgent")] ClaimGeneratorInfo? SoftwareAgent = null,
+    [property: JsonPropertyName("allActionsIncluded")] bool? AllActionsIncluded = true,
+    List<ActionTemplate>? Templates = null,
+    AssertionMetadata? Metadata = null);
 
 public record ActionsAssertionV2(ActionsAssertionV2Data Data) : Assertion<ActionsAssertionV2Data>("c2pa.actions.v2", Data);
+
+public record EmbeddedDataAssertionData(string ContentType, byte[] Data);
+
+public record EmbeddedDataAssertion(EmbeddedDataAssertionData Data) : Assertion<EmbeddedDataAssertionData>("c2pa.embedded-data", Data);
+
+[JsonConverter(typeof(MetadataAssertionConverter))]
+public record MetadataAssertionData(
+    [property: JsonPropertyName("@context")] Dictionary<string, string> Context,
+    Dictionary<string, object> Value);
+
+public record MetadataAssertion(MetadataAssertionData Data) : Assertion<MetadataAssertionData>("c2pa.metadata", Data);
+
+public record SoftBindingTimespan(UIntPtr Start, UIntPtr End);
+
+public record SoftBindingScope(SoftBindingTimespan? Timespan = null, RegionOfInterestSetting? Region = null, string? Extent = null);
+
+public record SoftBindingBlock(SoftBindingScope Scope, string value);
+
+public record ByteBuf(List<byte> Data);
+
+public record SoftBindingAssertionData(
+    List<SoftBindingBlock> Blocks,
+    List<byte> Pad,
+    string? Alg = null,
+    string? AlgParams = null,
+    [property: JsonConverter(typeof(ByteBufConverter))]ByteBuf? Pad2 = null,
+    string? Url = null)
+{
+    public SoftBindingAssertionData(List<SoftBindingBlock> Blocks, string? Alg = null, string? AlgParams = null, ByteBuf? Pad2 = null, string? Url = null)
+        : this(Blocks, new List<byte>(), Alg, AlgParams, Pad2, Url) { }
+}
+
+public record SoftBindingAssertion(SoftBindingAssertionData Data) : Assertion<SoftBindingAssertionData>("c2pa.soft-binding", Data);
+
+public record CertificateStatusAssertionData([property: JsonPropertyName("ocspVals")][property: JsonConverter(typeof(ByteBufListConverter))] List<ByteBuf> OcspVals);
+
+public record CertificateStatusAssertion(CertificateStatusAssertionData Data) : Assertion<CertificateStatusAssertionData>("c2pa.certificate-status", Data);
+
+[JsonConverter(typeof(TimeStampAssertionConverter))]
+public record TimeStampAssertionData(Dictionary<string, ByteBuf> Timestamps);
+
+public record TimeStampAssertion(TimeStampAssertionData Data) : Assertion<TimeStampAssertionData>("c2pa.time-stamp", Data);
+
+public record ReferenceUri(string Uri);
+
+public record ReferenceSetting(ReferenceUri Reference, string? Description = null);
+
+public record AssetReferenceAssertionData(List<ReferenceSetting> References);
+
+public record AssetReferenceAssertion(AssetReferenceAssertionData Data) : Assertion<AssetReferenceAssertionData>("c2pa.asset-ref", Data);
+
+public record AssetTypeAssertionData(List<AssetTypeEnum> Types, AssertionMetadata? Metadata = null);
+
+public record AssetTypeAssertion(AssetTypeAssertionData Data) : Assertion<AssetTypeAssertionData>("c2pa.asset-type", Data);
 
 public record CustomAssertion(string Label, dynamic Data) : Assertion<dynamic>(Label, (object)Data)
 {
@@ -87,13 +228,10 @@ public record CustomAssertion(string Label, dynamic Data) : Assertion<dynamic>(L
     }
 }
 
-
-public record AuthorInfo([property: JsonPropertyName("@type")] string Type, string Name);
-
 public record CreativeWorkAssertionData(
     [property: JsonPropertyName("@context")] string? Context = "",
     [property: JsonPropertyName("@type")] string? Type = "",
-    AuthorInfo[]? Authors = null);
+    Dictionary<string, object>? Value = null);
 
 public record CreativeWorkAssertion(CreativeWorkAssertionData Data) : Assertion<CreativeWorkAssertionData>("stds.schema-org.CreativeWork", Data);
 

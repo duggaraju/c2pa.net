@@ -1,13 +1,12 @@
 # c2pa.net
 
-.NET bindings for c2pa [Rust](https://github.com/contentauth/c2pa-rs) library.
+.NET bindings for c2pa Rust library.
 
 ## Prerequisites
 
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
 - [Rust toolchain](https://rustup.rs/) (for building the native c2pa-rs library)
 - [Git](https://git-scm.com/) with submodule support
-  [ClangSharp](https://github.com/dotnet/ClangSharp)
 
 ## Getting Started
 
@@ -55,11 +54,7 @@ git commit -m "Update c2pa-rs submodule to v0.28.1"
 
 ```bash
 # Build the entire solution
-dotnet restore && dotnet tool restore
 dotnet build
-
-# Only need this workround if running on Linux :-(
-ln -sf  ~/.nuget/packages/libclang.runtime.linux-x64/18.1.3/runtimes/linux-x64/native/libclang.so ~/.nuget/packages/libclang.runtime.linux-x64/18.1.3/runtimes/linux-x64/native/libclang.so.18.1
 
 # Build in Release mode
 dotnet build --configuration Release
@@ -105,7 +100,7 @@ dotnet pack -c Release -p RuntimeIdentitifer=linx-x64 # or win-x64 for Windows.
 
 ## Project Structure
 
-- `lib/` - Main .NET bindings library (Microsoft.ContentAuthenticity.Bindings)
+- `lib/` - Main .NET bindings library (ContentAuthenticity.Bindings)
 - `tests/` - Unit and integration tests
 - `example/` - Example CLI application demonstrating usage
 - `generator/` - Code generator for creating .NET bindings from Rust

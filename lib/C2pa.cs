@@ -1,5 +1,4 @@
-namespace Microsoft.ContentAuthenticity;
-
+namespace ContentAuthenticity;
 
 /// <summary>
 /// Top  level SDK entry point.

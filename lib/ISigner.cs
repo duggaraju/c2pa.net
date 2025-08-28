@@ -1,6 +1,6 @@
-using SigningAlg = Microsoft.ContentAuthenticity.Bindings.C2paSigningAlg;
+using SigningAlg = ContentAuthenticity.Bindings.C2paSigningAlg;
 
-namespace Microsoft.ContentAuthenticity;
+namespace ContentAuthenticity;
 
 public interface ISigner
 {
@@ -13,4 +13,8 @@ public interface ISigner
     public string? TimeAuthorityUrl { get; }
 
     public bool UseOcsp => false;
+
+    public string? EKUs {  get; }
+
+    public string? TrustAnchors { get; }
 }

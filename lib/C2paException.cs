@@ -1,4 +1,4 @@
-namespace Microsoft.ContentAuthenticity;
+namespace ContentAuthenticity;
 
 [Serializable]
 public class C2paException(string type, string message) : Exception(message)

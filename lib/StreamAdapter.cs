@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ContentAuthenticity;
+﻿namespace ContentAuthenticity;
 
 public sealed class StreamAdapter : IDisposable
 {
@@ -13,7 +13,7 @@ public sealed class StreamAdapter : IDisposable
             handle.Free();
         }
     }
-
+    
     public static unsafe implicit operator C2paStream*(StreamAdapter adapter) => adapter.stream;
 
     public StreamAdapter(Stream stream)
