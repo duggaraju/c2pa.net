@@ -48,17 +48,9 @@ class Program
         TokenCredential credential = new DefaultAzureCredential(true);
         TrustedSigner signer = new(credential);
 
-        var settings = """
-        {
-            "trust": {
-                "trust_config": "1.3.6.1.5.5.7.3.36\n1.3.6.1.4.1.311.76.59.1.9"
-            },
-            "verify": {
-                "verify_after_sign": false
-            }
-        }
-        """;
-        Settings.Load(settings);
+        var json = File.ReadAllText("settings.json");
+        var settings = Settings.FromJson(json);
+        settings.Load();
 
         ManifestDefinition manifest = new()
         {

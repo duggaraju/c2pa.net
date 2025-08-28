@@ -12,8 +12,7 @@
     "remote_manifest_fetch": true,
     "check_ingredient_trust": true,
     "skip_ingredient_conflict_resolution": false,
-    "string_v1_validation": false,
-    "detailed": true
+    "strict_v1_validation": false
   },
   "builder": {
     "thumbnail": {
