@@ -78,7 +78,7 @@ public class SettingsTests
                 "version_major": 1,
                 "version_minor": 0,
                 "trust": {
-                    "private_anchors": null,
+                    "user_anchors": null,
                     "trust_anchors": null,
                     "trust_config": null,
                     "allowed_list": null
@@ -103,7 +103,9 @@ public class SettingsTests
                     "strict_v1_validation": false
                 },
                 "builder": {
-                    "auto_thumbnail": true
+                    "thumbnail": {
+                      "enabled": true
+                    }
                 }
             }
             """;

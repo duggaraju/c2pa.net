@@ -75,24 +75,23 @@ public record Settings(
         Load(ToJson());
     }
 
-    private readonly static byte[] Format = Encoding.UTF8.GetBytes("json");
-
-    public static Settings Load(string settings, string format = "json")
+    public static Settings? Load(string settings, string format = "json")
     {
         unsafe
         {
-            var bytes = Encoding.UTF8.GetBytes(settings);
-            fixed (byte* p = bytes)
-            fixed (byte* f = Format)
+            fixed (byte* s = Encoding.UTF8.GetBytes(settings))
+            fixed (byte* f = Encoding.UTF8.GetBytes(format))
             {
-                var ret = C2paBindings.load_settings((sbyte*)p, (sbyte*)f);
+                var ret = C2paBindings.load_settings((sbyte*)s, (sbyte*)f);
                 if (ret != 0)
                 {
                     C2pa.CheckError();
                 }
             }
         }
-        return Utils.Deserialize<Settings>(settings);
+        if (format == "json")
+            return Utils.Deserialize<Settings>(settings);
+        return null;
     }
 
     public static Settings FromJson(string json) => Utils.Deserialize<Settings>(json);
