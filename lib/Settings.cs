@@ -26,7 +26,7 @@ public record ThumbnailSettings(
     string? Format = null);
 
 
-[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Skip)] 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Skip)]
 public record ActionSettings(
     );
 
