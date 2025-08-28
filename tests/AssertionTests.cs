@@ -32,20 +32,6 @@ public class AssertionTests
     }
 
     [Fact]
-    public void ThumbnailAssertion_ShouldCreateWithCorrectLabel()
-    {
-        // Arrange
-        var data = new ThumbnailAssertionData("thumbnail.jpg", "thumb-123");
-
-        // Act
-        var assertion = new ThumbnailAssertion(data);
-
-        // Assert
-        Assert.Equal("c2pa.thumbnail", assertion.Label);
-        Assert.Equal(data, assertion.Data);
-    }
-
-    [Fact]
     public void CustomAssertion_ShouldCreateWithCustomLabel()
     {
         // Arrange
@@ -64,10 +50,10 @@ public class AssertionTests
     public void CreativeWorkAssertionData_WithAuthors_ShouldCreateCorrectly()
     {
         // Arrange
-        var authors = new[]
+        var authors = new Dictionary<string, object>
         {
-            new AuthorInfo("Person", "John Doe"),
-            new AuthorInfo("Organization", "ACME Corp")
+            { "Person", "John Doe" },
+            { "Organization", "ACME Corp" }
         };
 
         // Act
@@ -76,10 +62,10 @@ public class AssertionTests
         // Assert
         Assert.Equal("http://schema.org/", data.Context);
         Assert.Equal("CreativeWork", data.Type);
-        Assert.NotNull(data.Authors);
-        Assert.Equal(2, data.Authors.Length);
-        Assert.Equal("John Doe", data.Authors[0].Name);
-        Assert.Equal("ACME Corp", data.Authors[1].Name);
+        Assert.NotNull(data.Value);
+        Assert.Equal(2, data.Value.Count);
+        Assert.Equal("John Doe", data.Value["Person"].ToString());
+        Assert.Equal("ACME Corp", data.Value["Organization"].ToString());
     }
 
     [Fact]

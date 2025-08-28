@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.Text.Json;
-using Microsoft.ContentAuthenticity;
-using Microsoft.ContentAuthenticity.Bindings;
+using ContentAuthenticity;
 
 namespace Cli;
 
@@ -9,11 +8,11 @@ class Program
 {
     static async Task<int> Main(string[] args)
     {
-        var rootCommand = new RootCommand("C2PA .NET CLI - Content Provenance and Authenticity tool");
+        var rootCommand = new RootCommand("C2PA .NET CLI - Content Provenance and Authenticity tools");
 
         // Add version command
         var versionCommand = new Command("version", "Display the C2PA SDK version");
-        versionCommand.SetAction((_) =>
+        versionCommand.SetHandler(() =>
         {
             Console.WriteLine("C2PA .NET CLI");
             Console.WriteLine($"C2PA SDK Version: {C2pa.Version}");
@@ -21,20 +20,19 @@ class Program
             Console.WriteLine($"Reader supported MimeTypes: {string.Join(", ", Reader.SupportedMimeTypes)}");
             Console.WriteLine($"Builder supported MimeTypes: {string.Join(", ", Builder.SupportedMimeTypes)}");
         });
-        rootCommand.Subcommands.Add(versionCommand);
+        rootCommand.AddCommand(versionCommand);
 
         // Add read command
         var readCommand = CreateReadCommand();
-        rootCommand.Subcommands.Add(readCommand);
+        rootCommand.AddCommand(readCommand);
 
         // Add sign command
         var signCommand = CreateSignCommand();
-        rootCommand.Subcommands.Add(signCommand);
+        rootCommand.AddCommand(signCommand);
 
         try
         {
-            var result = rootCommand.Parse(args);
-            return await result.InvokeAsync();
+            return await rootCommand.InvokeAsync(args);
         }
         catch (C2paException ex)
         {
@@ -53,57 +51,62 @@ class Program
         var readCommand = new Command("read", "Read and display C2PA manifest data from a file");
 
         var inputOption = new Option<FileInfo>(
-            "-i", "--input"
-            )
+            ["--input", "-i"],
+            "Input file path to read C2PA data from")
         {
-            Description = "Input file path to read C2PA data from",
-            Required = true
+            IsRequired = true
         };
-        inputOption.Validators.Add(result =>
+        inputOption.AddValidator(result =>
         {
-            var file = result.GetValue(inputOption);
+            var file = result.GetValueForOption(inputOption);
             if (file != null && !file.Exists)
             {
-                result.AddError($"Input file does not exist: {file.FullName}");
+                result.ErrorMessage = $"Input file does not exist: {file.FullName}";
             }
         });
 
         var prettyOption = new Option<bool>(
-            "--pretty", "-p"
-            )
+            ["--pretty", "-p"],
+            "Pretty print JSON output")
         {
-            Description = "Pretty print JSON output"
+            IsRequired = false
         };
 
-        readCommand.Options.Add(inputOption);
-        readCommand.Options.Add(prettyOption);
-        readCommand.SetAction(result =>
+        readCommand.AddOption(inputOption);
+        readCommand.AddOption(prettyOption);
+        readCommand.SetHandler((FileInfo input, bool pretty) =>
         {
-            var input = result.GetRequiredValue(inputOption);
-            var pretty = result.GetRequiredValue(prettyOption);
-            Console.WriteLine($"Reading C2PA data from: {input.FullName}");
-
-            using var reader = Reader.FromFile(input.FullName);
-            var json = reader.Json;
-
-            if (pretty)
+            try
             {
-                // Parse and re-format JSON for pretty printing
-                using var document = JsonDocument.Parse(json);
-                var options = new JsonSerializerOptions
+                Console.WriteLine($"Reading C2PA data from: {input.FullName}");
+
+                using var reader = Reader.FromFile(input.FullName);
+                var json = reader.Json;
+
+                if (pretty)
                 {
-                    WriteIndented = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-                };
-                json = JsonSerializer.Serialize(document.RootElement, options);
+                    // Parse and re-format JSON for pretty printing
+                    using var document = JsonDocument.Parse(json);
+                    var options = new JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+                    };
+                    json = JsonSerializer.Serialize(document.RootElement, options);
+                }
+
+                Console.WriteLine("C2PA Manifest Data:");
+                Console.WriteLine(json);
+
+                Console.WriteLine("Manifest Store:");
+                Console.WriteLine(reader.ManifestStore.ToJson());
             }
-
-            Console.WriteLine("C2PA Manifest Data:");
-            Console.WriteLine(json);
-
-            Console.WriteLine("Manifest Store:");
-            Console.WriteLine(reader.ManifestStore.ToJson());
-        });
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to read C2PA data: {ex.Message}");
+                Environment.Exit(1);
+            }
+        }, inputOption, prettyOption);
 
         return readCommand;
     }
@@ -113,127 +116,112 @@ class Program
         var signCommand = new Command("sign", "Sign a file with C2PA manifest");
 
         var inputOption = new Option<FileInfo>(
-            "--input", "-i"
-            )
+            ["--input", "-i"],
+            "Input file to sign");
+        inputOption.AddValidator(result =>
         {
-            Description = "Input file to sign",
-            Required = true
-        };
-
-        inputOption.Validators.Add(result =>
-        {
-            var file = result.GetValue(inputOption);
+            var file = result.GetValueForOption(inputOption);
             if (file != null && !file.Exists)
             {
-                result.AddError($"Input file does not exist: {file.FullName}");
+                result.ErrorMessage = $"Input file does not exist: {file.FullName}";
             }
         });
 
         var outputOption = new Option<FileInfo>(
-            "--output", "-o")
-        {
-            Description = "Output file path for signed file",
-            Required = true
-        };
+            ["--output", "-o"],
+            "Output file path for signed file");
 
         var manifestOption = new Option<FileInfo>(
-            "--manifest", "-m"
-            )
+            ["--manifest", "-m"],
+            "Manifest definition JSON file");
+        manifestOption.AddValidator(result =>
         {
-            Description = "Manifest definition JSON file",
-            Required = true
-        };
-        manifestOption.Validators.Add(result =>
-        {
-            var file = result.GetValue(manifestOption);
+            var file = result.GetValueForOption(manifestOption);
             if (file != null && !file.Exists)
             {
-                result.AddError($"Manifest file does not exist: {file.FullName}");
+                result.ErrorMessage = $"Manifest file does not exist: {file.FullName}";
             }
         });
 
         var certOption = new Option<FileInfo>(
-            "-c", "--certificate"
-            )
+            ["--cert", "--certificate"],
+            "Certificate file path (.pem or .crt)")
         {
-            Description = "Certificate file path (.pem or .crt)",
-            Required = true
         };
-        certOption.Validators.Add(result =>
+        certOption.AddValidator(result =>
         {
-            var file = result.GetValue(certOption);
+            var file = result.GetValueForOption(certOption);
             if (file != null && !file.Exists)
             {
-                result.AddError($"Certificate file does not exist: {file.FullName}");
+                result.ErrorMessage = $"Certificate file does not exist: {file.FullName}";
             }
         });
 
         var keyOption = new Option<FileInfo>(
-            "-k", "--private-key"
-            )
+            ["--key", "--private-key"],
+            "Private key file path (.pem or .key)")
         {
-            Description = "Private key file path (.pem or .key)"
         };
-        keyOption.Validators.Add(result =>
+        keyOption.AddValidator(result =>
         {
-            var file = result.GetValue(keyOption);
+            var file = result.GetValueForOption(keyOption);
             if (file != null && !file.Exists)
             {
-                result.AddError($"Private key file does not exist: {file.FullName}");
+                result.ErrorMessage = $"Private key file does not exist: {file.FullName}";
             }
         });
 
         var tsaUrlOption = new Option<string?>(
-            "--tsa-url"
-            )
+            ["--tsa-url"],
+            "Time Authority URL for timestamping")
         {
-            Description = "Time Authority URL for timestamping",
+            IsRequired = false
         };
 
-        var algorithmOption = new Option<C2paSigningAlg?>(
-            "Algorithm",
-            "-a", "--algorithm"
-            )
+        var algorithmOption = new Option<string?>(
+            ["--algorithm", "--alg"],
+            "Signing algorithm (ES256, ES384, ES512, PS256, PS384, PS512, Ed25519). If not specified, will be determined from the certificate.")
         {
-            Description = "Signing algorithm (ES256, ES384, ES512, PS256, PS384, PS512, Ed25519). If not specified, will be determined from the certificate.",
-            DefaultValueFactory = (_) => C2paSigningAlg.Es256
+            IsRequired = false
         };
 
-        signCommand.Add(inputOption);
-        signCommand.Add(outputOption);
-        signCommand.Add(manifestOption);
-        signCommand.Add(certOption);
-        signCommand.Add(keyOption);
-        signCommand.Add(tsaUrlOption);
+        signCommand.AddOption(inputOption);
+        signCommand.AddOption(outputOption);
+        signCommand.AddOption(manifestOption);
+        signCommand.AddOption(certOption);
+        signCommand.AddOption(keyOption);
+        signCommand.AddOption(tsaUrlOption);
 
-        signCommand.SetAction(result =>
+        signCommand.SetHandler((manifestFile, certFile, keyFile, input, output, tsaUrl) =>
         {
-            var input = result.GetRequiredValue(inputOption);
-            var output = result.GetRequiredValue(outputOption);
-            var manifestFile = result.GetRequiredValue(manifestOption);
-            var keyFile = result.GetRequiredValue(keyOption);
-            var certFile = result.GetRequiredValue(certOption);
-            var tsaUrl = result.GetValue(tsaUrlOption);
-            Console.WriteLine($"Signing file: {input.FullName}");
+            try
+            {
+                Console.WriteLine($"Signing file: {input.FullName}");
 
-            // Create or load manifest definition
-            var manifestJson = File.ReadAllText(manifestFile.FullName);
-            var manifest = ManifestDefinition.FromJson(manifestJson);
+                // Create or load manifest definition
+                var manifestJson = File.ReadAllText(manifestFile.FullName);
+                var manifest = ManifestDefinition.FromJson(manifestJson);
 
-            Console.WriteLine("Using file-based signer with provided certificate and key");
-            var certContent = File.ReadAllText(certFile.FullName);
-            var keyContent = File.ReadAllText(keyFile.FullName);
-            using var signer = new FileSigner(certContent, keyContent, tsaUrl, manifest.Alg);
+                Console.WriteLine("Using file-based signer with provided certificate and key");
+                var certContent = File.ReadAllText(certFile.FullName);
+                var keyContent = File.ReadAllText(keyFile.FullName);
+                using var signer = new FileSigner(certContent, keyContent, tsaUrl, manifest.Alg);
 
-            Console.WriteLine($"Detected/Selected signing algorithm: {signer.Alg}");
+                Console.WriteLine($"Detected/Selected signing algorithm: {signer.Alg}");
 
-            // Create builder and sign
-            using var builder = Builder.Create(manifest);
+                // Create builder and sign
+                using var builder = Builder.Create(manifest);
 
-            builder.Sign(signer, input.FullName, output.FullName);
+                builder.Sign(signer, input.FullName, output.FullName);
 
-            Console.WriteLine($"Successfully signed file: {output.FullName}");
-        });
+                Console.WriteLine($"Successfully signed file: {output.FullName}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to sign file: {ex.Message}");
+                Environment.Exit(1);
+            }
+        }, manifestOption, certOption, keyOption, inputOption, outputOption, tsaUrlOption);
 
         return signCommand;
     }

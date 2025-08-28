@@ -1,7 +1,8 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.ContentAuthenticity;
-using Microsoft.ContentAuthenticity.Bindings;
+using ContentAuthenticity;
+using ContentAuthenticity.Bindings;
+
 namespace Cli;
 
 /// <summary>
@@ -17,12 +18,13 @@ namespace Cli;
 /// The algorithm is automatically detected from the certificate type and key size,
 /// or can be explicitly specified during construction.
 /// </remarks>
-internal sealed class FileSigner : ISigner, IDisposable
+internal class FileSigner : ISigner, IDisposable
 {
     private readonly string _certs;
+    private readonly string _privateKey;
     private readonly string? _tsaUrl;
     private readonly C2paSigningAlg _algorithm;
-    private readonly AsymmetricAlgorithm _signingKey;
+    private readonly object _signingKey;
     private bool _disposed;
 
     /// <summary>
@@ -37,6 +39,7 @@ internal sealed class FileSigner : ISigner, IDisposable
     public FileSigner(string certs, string privateKey, string? tsaUrl = null, C2paSigningAlg? preferredAlgorithm = null)
     {
         _certs = certs;
+        _privateKey = privateKey;
         _tsaUrl = tsaUrl;
 
         // Parse the certificate to determine the algorithm and prepare the signing key
@@ -133,7 +136,7 @@ internal sealed class FileSigner : ISigner, IDisposable
         throw new NotImplementedException("Ed25519 signing is not yet implemented. Use ECDSA or RSA algorithms instead.");
     }
 
-    private static (C2paSigningAlg algorithm, AsymmetricAlgorithm signingKey) ParseCertificateAndKey(string certsPem, string privateKeyPem, C2paSigningAlg? preferredAlgorithm = null)
+    private static (C2paSigningAlg algorithm, object signingKey) ParseCertificateAndKey(string certsPem, string privateKeyPem, C2paSigningAlg? preferredAlgorithm = null)
     {
         try
         {
@@ -142,7 +145,7 @@ internal sealed class FileSigner : ISigner, IDisposable
             var publicKey = cert.PublicKey;
 
             // Parse the private key
-            AsymmetricAlgorithm privateKey;
+            object privateKey;
             C2paSigningAlg algorithm;
 
             if (IsECCertificate(publicKey))
@@ -276,4 +279,8 @@ internal sealed class FileSigner : ISigner, IDisposable
     {
         return algorithm is C2paSigningAlg.Ps256 or C2paSigningAlg.Ps384 or C2paSigningAlg.Ps512;
     }
+
+    public string? EKUs => null;
+
+    public string? TrustAnchors => null;
 }

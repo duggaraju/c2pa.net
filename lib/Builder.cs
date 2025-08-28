@@ -1,7 +1,6 @@
+namespace ContentAuthenticity;
 
-namespace Microsoft.ContentAuthenticity;
-
-public sealed class Builder : IDisposable
+public partial class Builder : IDisposable
 {
     private readonly unsafe C2paBuilder* builder;
 
@@ -58,7 +57,6 @@ public sealed class Builder : IDisposable
         return FromArchive(stream);
     }
 
-
     public static Builder FromArchive(Stream stream)
     {
         using var c2paStream = new StreamAdapter(stream);
@@ -88,9 +86,10 @@ public sealed class Builder : IDisposable
         }
     }
 
-    public unsafe void Sign(ISigner signer, Stream source, Stream dest, string format)
+    public unsafe byte[] Sign(ISigner signer, Stream source, Stream dest, string format)
     {
         var handle = GCHandle.Alloc(signer);
+        byte[] manifestBytes = [];
         try
         {
             using var inputStream = new StreamAdapter(source);
@@ -99,34 +98,40 @@ public sealed class Builder : IDisposable
             fixed (byte* certs = Encoding.UTF8.GetBytes(signer.Certs))
             fixed (byte* taUrl = signer.TimeAuthorityUrl == null ? null : Encoding.UTF8.GetBytes(signer.TimeAuthorityUrl))
             {
+                byte* manifest = null;
+                
                 var c2paSigner = C2paBindings.signer_create((void*)(nint)handle, &Sign, signer.Alg, (sbyte*)certs, (sbyte*)taUrl);
                 if (c2paSigner == null)
                     C2pa.CheckError();
-                byte* manifest = null;
+                    
                 var ret = C2paBindings.builder_sign(builder, (sbyte*)formatBytes, inputStream, outputStream, c2paSigner, &manifest);
                 C2paBindings.signer_free(c2paSigner);
                 if (ret == -1)
                     C2pa.CheckError();
+
+                manifestBytes = new byte[ret];
+                Marshal.Copy((IntPtr)manifest, manifestBytes, 0, manifestBytes.Length);
+
                 if (manifest != null)
-                {
                     C2paBindings.manifest_bytes_free(manifest);
-                }
             }
         }
         finally
         {
             handle.Free();
         }
+
+        return manifestBytes;
     }
 
     /// <summary>
     /// Sign the input file using the provided signer and write the C2PA manifest to the output file.
     /// </summary>
-    public void Sign(ISigner signer, string input, string output)
+    public byte[] Sign(ISigner signer, string input, string output)
     {
         using var inputStream = new FileStream(input, FileMode.Open);
         using var outputStream = new FileStream(output, FileMode.Create);
-        Sign(signer, inputStream, outputStream, Utils.GetMimeTypeFromExtension(Path.GetExtension(input)));
+        return Sign(signer, inputStream, outputStream, Utils.GetMimeTypeFromExtension(Path.GetExtension(input)));
     }
 
     /// <summary>
@@ -169,6 +174,11 @@ public sealed class Builder : IDisposable
         AddIngredient(Utils.Serialize(ingredient), Utils.GetMimeTypeFromExtension(Path.GetExtension(file)), stream);
     }
 
+    public void AddIngredient(Ingredient ingredient, string format, Stream stream)
+    {
+        AddIngredient(Utils.Serialize(ingredient), format, stream);
+    }
+
     public void AddIngredient(string ingredientJson, string ingredientFormat, Stream stream)
     {
         using var c2paStream = new StreamAdapter(stream);
@@ -190,7 +200,6 @@ public sealed class Builder : IDisposable
     {
         return "xmp:iid:" + Guid.NewGuid().ToString();
     }
-
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
     private static unsafe nint Sign(void* context, byte* data, nuint len, byte* signature, nuint sig_max_size)

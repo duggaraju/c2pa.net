@@ -1,4 +1,3 @@
-
 namespace ContentAuthenticity.Tests;
 
 public class ISignerTests
@@ -121,6 +120,10 @@ public class TestSigner : ISigner
     public string Certs { get; init; } = "test-certificate";
     public string? TimeAuthorityUrl { get; init; } = "https://timestamp.test.com";
     public bool UseOcsp { get; init; } = false;
+
+    public string? EKUs => null;
+
+    public string? TrustAnchors => null;
 
     public int Sign(ReadOnlySpan<byte> data, Span<byte> hash)
     {

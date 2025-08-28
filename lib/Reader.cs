@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ContentAuthenticity;
+﻿namespace ContentAuthenticity;
 
 public sealed class Reader : IDisposable
 {
@@ -22,12 +22,31 @@ public sealed class Reader : IDisposable
         }
     }
 
-    public void Dispose()
+        public void Dispose()
     {
         unsafe
         {
             C2paBindings.reader_free((C2paReader*)reader);
         }
+    }
+
+    public StreamAdapter ToStream(string uri = "")
+    {
+        StreamAdapter stream = new StreamAdapter(new MemoryStream());
+        
+        unsafe
+        {
+
+            var bytes = Encoding.UTF8.GetBytes(uri);
+            fixed (byte* p = bytes)
+            {
+                var ret = C2paBindings.reader_resource_to_stream((C2paReader*)reader, (sbyte*)p, stream);
+                if (ret == -1)
+                    C2pa.CheckError();
+            }
+        }
+
+        return stream;
     }
 
     public static Reader FromStream(Stream stream, string format)

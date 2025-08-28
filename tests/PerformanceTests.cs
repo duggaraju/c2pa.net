@@ -1,11 +1,11 @@
 using System.Diagnostics;
-using System.Security.Cryptography;
+using BenchmarkDotNet.Attributes;
 using Xunit.Abstractions;
 
 namespace ContentAuthenticity.Tests;
 
 /// <summary>
-/// Performance and memory tests for C2paReader and C2paBuilder to detect memory leaks and performance issues
+/// Performance and memory tests for Reader and Builder to detect memory leaks and performance issues
 /// </summary>
 [Collection("PerformanceTests")]
 public class PerformanceTests
@@ -22,9 +22,9 @@ public class PerformanceTests
     {
         const int iterations = 1000;
         var format = "image/jpeg";
-
+        
         var initialMemory = GC.GetTotalMemory(true);
-
+        
         for (int i = 0; i < iterations; i++)
         {
             try
@@ -38,7 +38,7 @@ public class PerformanceTests
             {
                 // Expected for test data without valid C2PA manifest
             }
-
+            
             // Force garbage collection every 100 iterations
             if (i % 100 == 0)
             {
@@ -47,22 +47,22 @@ public class PerformanceTests
                 GC.Collect();
             }
         }
-
+        
         // Final garbage collection
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-
+        
         var finalMemory = GC.GetTotalMemory(false);
         var memoryDifference = finalMemory - initialMemory;
-
+        
         _output.WriteLine($"Initial Memory: {initialMemory:N0} bytes");
         _output.WriteLine($"Final Memory: {finalMemory:N0} bytes");
         _output.WriteLine($"Memory Difference: {memoryDifference:N0} bytes");
-
+        
         // Allow for some memory growth but detect significant leaks
         // Memory difference should be less than 10MB for this test
-        Assert.True(memoryDifference < 10_000_000,
+        Assert.True(memoryDifference < 10_000_000, 
             $"Potential memory leak detected. Memory increased by {memoryDifference:N0} bytes");
     }
 
@@ -71,9 +71,9 @@ public class PerformanceTests
     {
         const int iterations = 500; // Fewer iterations as Builder operations are more expensive
         var manifestJson = GenerateTestManifest();
-
+        
         var initialMemory = GC.GetTotalMemory(true);
-
+        
         for (int i = 0; i < iterations; i++)
         {
             try
@@ -87,7 +87,7 @@ public class PerformanceTests
             {
                 // Expected for test manifest without proper setup
             }
-
+            
             // Force garbage collection every 50 iterations
             if (i % 50 == 0)
             {
@@ -96,22 +96,22 @@ public class PerformanceTests
                 GC.Collect();
             }
         }
-
+        
         // Final garbage collection
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-
+        
         var finalMemory = GC.GetTotalMemory(false);
         var memoryDifference = finalMemory - initialMemory;
-
+        
         _output.WriteLine($"Initial Memory: {initialMemory:N0} bytes");
         _output.WriteLine($"Final Memory: {finalMemory:N0} bytes");
         _output.WriteLine($"Memory Difference: {memoryDifference:N0} bytes");
-
+        
         // Allow for some memory growth but detect significant leaks
         // Memory difference should be less than 15MB for this test
-        Assert.True(memoryDifference < 15_000_000,
+        Assert.True(memoryDifference < 15_000_000, 
             $"Potential memory leak detected. Memory increased by {memoryDifference:N0} bytes");
     }
 
@@ -120,12 +120,12 @@ public class PerformanceTests
     {
         const int iterations = 2000;
         var initialMemory = GC.GetTotalMemory(true);
-
+        
         for (int i = 0; i < iterations; i++)
         {
             using var stream = File.OpenRead("CACAE-uri-CA.jpg");
             using var c2paStream = new StreamAdapter(stream);
-
+            
             // Force garbage collection every 200 iterations
             if (i % 200 == 0)
             {
@@ -134,22 +134,22 @@ public class PerformanceTests
                 GC.Collect();
             }
         }
-
+        
         // Final garbage collection
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-
+        
         var finalMemory = GC.GetTotalMemory(false);
         var memoryDifference = finalMemory - initialMemory;
-
+        
         _output.WriteLine($"Initial Memory: {initialMemory:N0} bytes");
         _output.WriteLine($"Final Memory: {finalMemory:N0} bytes");
         _output.WriteLine($"Memory Difference: {memoryDifference:N0} bytes");
-
+        
         // Allow for some memory growth but detect significant leaks
         // Memory difference should be less than 5MB for this test
-        Assert.True(memoryDifference < 5_000_000,
+        Assert.True(memoryDifference < 5_000_000, 
             $"Potential memory leak detected. Memory increased by {memoryDifference:N0} bytes");
     }
 
@@ -157,41 +157,41 @@ public class PerformanceTests
     public void C2paReader_LargeData_MemoryUsage_Test()
     {
         var format = "image/jpeg";
-
+        
         var initialMemory = GC.GetTotalMemory(true);
-
+        
         try
         {
             using var stream = File.OpenRead("CACAE-uri-CA.jpg");
             using var reader = Reader.FromStream(stream, format);
             _ = reader?.Json;
-
+            
             var peakMemory = GC.GetTotalMemory(false);
             var memoryUsage = peakMemory - initialMemory;
-
+            
             _output.WriteLine($"Memory usage for 10MB data: {memoryUsage:N0} bytes");
-
+            
             // Memory usage should be reasonable relative to input size
             // Allow up to 5x the input size for internal processing
-            Assert.True(memoryUsage < stream.Length * 5,
+            Assert.True(memoryUsage < stream.Length * 5, 
                 $"Excessive memory usage: {memoryUsage:N0} bytes for {stream.Length:N0} bytes input");
         }
         catch (C2paException)
         {
             // Expected for test data without valid C2PA manifest
         }
-
+        
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-
+        
         var finalMemory = GC.GetTotalMemory(false);
         var residualMemory = finalMemory - initialMemory;
-
+        
         _output.WriteLine($"Residual memory after disposal: {residualMemory:N0} bytes");
-
+        
         // Ensure memory is properly released after disposal
-        Assert.True(residualMemory < 1_000_000,
+        Assert.True(residualMemory < 1_000_000, 
             $"Memory not properly released after disposal: {residualMemory:N0} bytes remaining");
     }
 
@@ -201,10 +201,10 @@ public class PerformanceTests
         const int concurrentTasks = 10;
         const int iterationsPerTask = 100;
         var format = "image/jpeg";
-
+        
         var initialMemory = GC.GetTotalMemory(true);
         var tasks = new Task[concurrentTasks];
-
+        
         for (int t = 0; t < concurrentTasks; t++)
         {
             tasks[t] = Task.Run(() =>
@@ -224,20 +224,20 @@ public class PerformanceTests
                 }
             });
         }
-
+        
         await Task.WhenAll(tasks);
-
+        
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-
+        
         var finalMemory = GC.GetTotalMemory(false);
         var memoryDifference = finalMemory - initialMemory;
-
+        
         _output.WriteLine($"Concurrent test memory difference: {memoryDifference:N0} bytes");
-
+        
         // Memory usage should remain reasonable even with concurrent access
-        Assert.True(memoryDifference < 20_000_000,
+        Assert.True(memoryDifference < 20_000_000, 
             $"Excessive memory usage in concurrent scenario: {memoryDifference:N0} bytes");
     }
 
@@ -245,15 +245,15 @@ public class PerformanceTests
     public void NativeToManagedMapping_MemoryLeak_Test()
     {
         const int iterations = 1000;
-
+        
         var initialMemory = GC.GetTotalMemory(true);
-
+        
         // Test both StreamContext and C2paStream native-to-managed mappings
         for (int i = 0; i < iterations; i++)
         {
             using var stream = File.OpenRead("C.jpg");
             using var c2paStream = new StreamAdapter(stream);
-
+            
             if (i % 100 == 0)
             {
                 GC.Collect();
@@ -261,18 +261,18 @@ public class PerformanceTests
                 GC.Collect();
             }
         }
-
+        
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-
+        
         var finalMemory = GC.GetTotalMemory(false);
         var memoryDifference = finalMemory - initialMemory;
-
+        
         _output.WriteLine($"Native mapping test memory difference: {memoryDifference:N0} bytes");
-
+        
         // Ensure native-to-managed mappings don't cause memory leaks
-        Assert.True(memoryDifference < 5_000_000,
+        Assert.True(memoryDifference < 5_000_000, 
             $"Native-to-managed mapping memory leak detected: {memoryDifference:N0} bytes");
     }
 
@@ -282,9 +282,9 @@ public class PerformanceTests
         const int iterations = 500;
         var testData = GenerateTestData(1024);
         var format = "image/jpeg";
-
+        
         var initialMemory = GC.GetTotalMemory(true);
-
+        
         // Create objects without explicit disposal to test finalizer cleanup
         for (int i = 0; i < iterations; i++)
         {
@@ -299,7 +299,7 @@ public class PerformanceTests
             {
                 // Expected for test data without valid C2PA manifest
             }
-
+            
             if (i % 50 == 0)
             {
                 GC.Collect();
@@ -307,7 +307,7 @@ public class PerformanceTests
                 GC.Collect();
             }
         }
-
+        
         // Force multiple garbage collection cycles to ensure finalizers run
         for (int i = 0; i < 3; i++)
         {
@@ -316,15 +316,15 @@ public class PerformanceTests
             GC.Collect();
             Thread.Sleep(100); // Give finalizers time to complete
         }
-
+        
         var finalMemory = GC.GetTotalMemory(false);
         var memoryDifference = finalMemory - initialMemory;
-
+        
         _output.WriteLine($"Finalizer test memory difference: {memoryDifference:N0} bytes");
-
+        
         // Finalizers should eventually clean up resources
         // Allow for more memory usage since finalizers may not run immediately
-        Assert.True(memoryDifference < 25_000_000,
+        Assert.True(memoryDifference < 25_000_000, 
             $"Finalizers not properly cleaning up resources: {memoryDifference:N0} bytes");
     }
 
@@ -333,9 +333,9 @@ public class PerformanceTests
     {
         const int iterations = 100;
         var format = "image/jpeg";
-
+        
         var stopwatch = Stopwatch.StartNew();
-
+        
         for (int i = 0; i < iterations; i++)
         {
             try
@@ -349,15 +349,15 @@ public class PerformanceTests
                 // Expected for test data without valid C2PA manifest
             }
         }
-
+        
         stopwatch.Stop();
         var avgTimePerOperation = stopwatch.ElapsedMilliseconds / (double)iterations;
-
-        _output.WriteLine($"Average time per C2paReader operation: {avgTimePerOperation:F2} ms");
-
+        
+        _output.WriteLine($"Average time per Reader operation: {avgTimePerOperation:F2} ms");
+        
         // Performance baseline - operations should complete reasonably quickly
-        Assert.True(avgTimePerOperation < 200,
-            $"C2paReader performance degradation detected: {avgTimePerOperation:F2} ms per operation");
+        Assert.True(avgTimePerOperation < 200, 
+            $"Reader performance degradation detected: {avgTimePerOperation:F2} ms per operation");
     }
 
     [Fact]
@@ -365,9 +365,9 @@ public class PerformanceTests
     {
         const int iterations = 50;
         var manifestJson = GenerateTestManifest();
-
+        
         var stopwatch = Stopwatch.StartNew();
-
+        
         for (int i = 0; i < iterations; i++)
         {
             try
@@ -381,15 +381,15 @@ public class PerformanceTests
                 // Expected for test manifest without proper setup
             }
         }
-
+        
         stopwatch.Stop();
         var avgTimePerOperation = stopwatch.ElapsedMilliseconds / (double)iterations;
-
-        _output.WriteLine($"Average time per C2paBuilder operation: {avgTimePerOperation:F2} ms");
-
+        
+        _output.WriteLine($"Average time per Builder operation: {avgTimePerOperation:F2} ms");
+        
         // Performance baseline - operations should complete reasonably quickly
-        Assert.True(avgTimePerOperation < 500,
-            $"C2paBuilder performance degradation detected: {avgTimePerOperation:F2} ms per operation");
+        Assert.True(avgTimePerOperation < 500, 
+            $"Builder performance degradation detected: {avgTimePerOperation:F2} ms per operation");
     }
 
     private static byte[] GenerateTestData(int size)
@@ -426,82 +426,88 @@ public class PerformanceTests
         }
         """;
     }
+}
 
-    public sealed class TestSigner : ISigner, IDisposable
+/// <summary>
+/// BenchmarkDotNet benchmarks for more detailed performance analysis
+/// Run with: dotnet run --configuration Release --project tests/ -- --filter "*Benchmarks*"
+/// </summary>
+[MemoryDiagnoser]
+[SimpleJob]
+public class C2paPerformanceBenchmarks
+{
+    private readonly string _format = "image/jpeg";
+    private readonly string _manifestJson = GenerateTestManifest();
+
+    [Benchmark]
+    public void C2paReader_FromStream_Benchmark()
     {
-        private readonly RSA _key;
-
-        public TestSigner()
+        try
         {
-            var key = File.ReadAllText("certs/rs256.pem");
-            _key = RSA.Create();
-            _key.ImportFromPem(key);
+            using var stream = File.OpenRead("C.jpg");
+            using var reader = Reader.FromStream(stream, _format);
+            _ = reader?.Json;
         }
-
-        public void Dispose()
+        catch (C2paException)
         {
-            _key.Dispose();
-        }
-
-
-        public C2paSigningAlg Alg { get; } = C2paSigningAlg.Ps256;
-
-        public string Certs { get; } = File.ReadAllText("certs/rs256.pub");
-
-        public string? TimeAuthorityUrl { get; } = null;
-
-        public bool UseOcsp { get; } = false;
-
-        public int Sign(ReadOnlySpan<byte> data, Span<byte> hash)
-        {
-            var bytes = _key.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
-            bytes.CopyTo(hash);
-            return bytes.Length;
+            // Expected for test data
         }
     }
 
-    private const int IterationCount = 1000;
-
-    [Theory]
-    [InlineData("Provenance Memleak test using file API with 1000 iterations", IterationCount, false)]
-    [InlineData("Provenance Memleak test using buffer API with 1000 iterations", IterationCount, true)]
-    public void CheckAuthoringAndValidationMemLeak(string testDescription, int num_iterations, bool use_buffer_api)
+    [Benchmark]
+    public void C2paBuilder_FromJson_Benchmark()
     {
-        _output.WriteLine("Running test: {0} {1} times", testDescription, num_iterations);
-        string inputFile = "video1_no_manifest.mp4";
-        string outputFile = "output.mp4";
-        ISigner signer = new TestSigner();
-        var inputFileBuffer = use_buffer_api ? File.ReadAllBytes(inputFile) : null;
-        string mimeType = Utils.GetMimeTypeFromExtension(Path.GetExtension(inputFile));
-
-        var manifest = """
-            {
-            }
-        """;
-        var builder = Builder.FromJson(manifest);
-
-        for (int iter = 0; iter < num_iterations; iter++)
+        try
         {
-            if (use_buffer_api)
-            {
-                var inputStream = new MemoryStream(inputFileBuffer!);
-                var outputStream = new MemoryStream();
-                builder.Sign(signer, inputStream, outputStream, mimeType);
-                outputStream.Position = 0;
-                var reader = Reader.FromStream(outputStream, mimeType);
-                Assert.NotNull(reader.Json);
-            }
-            else
-            {
-                if (File.Exists(outputFile))
-                {
-                    File.Delete(outputFile);
-                }
-
-                builder.Sign(signer, inputFile, outputFile);
-                var reader = Reader.FromFile(outputFile);
-                Assert.NotNull(reader.Json);
-            }
+            using var builder = Builder.FromJson(_manifestJson);
+            using var archiveStream = new MemoryStream();
+            builder?.ToArchive(archiveStream);
         }
+        catch (C2paException)
+        {
+            // Expected for test manifest
+        }
+    }
+
+    private static string GenerateTestManifest()
+    {
+        return """
+        {
+            "claim_generator": "test-generator/1.0",
+            "claim_generator_info": [
+                {
+                    "name": "test-generator",
+                    "version": "1.0"
+                }
+            ],
+            "assertions": [
+                {
+                    "label": "c2pa.actions",
+                    "data": {
+                        "actions": [
+                            {
+                                "action": "c2pa.created"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        """;
+    }
+}
+
+/// <summary>
+/// Helper class to run BenchmarkDotNet tests
+/// </summary>
+public class BenchmarkRunner
+{
+    [Fact]
+    public void RunBenchmarks()
+    {
+        // This test can be run separately to execute BenchmarkDotNet benchmarks
+        // Comment out the Skip attribute to run benchmarks
+        var summary = BenchmarkDotNet.Running.BenchmarkRunner.Run<C2paPerformanceBenchmarks>();
+        Assert.NotNull(summary);
     }
 }

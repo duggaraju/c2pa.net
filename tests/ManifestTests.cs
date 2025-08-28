@@ -110,8 +110,7 @@ public class ManifestTests
         Assert.Equal(Relationship.ParentOf, ingredient.Relationship);
         Assert.Null(ingredient.DocumentID);
         Assert.Null(ingredient.InstanceID);
-        Assert.Null(ingredient.C2paManifest);
-        Assert.Null(ingredient.HashedManifestUri);
+        Assert.Null(ingredient.ManifestData);
         Assert.Null(ingredient.ValidationStatus);
         Assert.Null(ingredient.Thumbnail);
         Assert.Null(ingredient.Data);
