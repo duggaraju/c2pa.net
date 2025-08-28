@@ -58,6 +58,9 @@ git commit -m "Update c2pa-rs submodule to v0.28.1"
 dotnet restore && dotnet tool restore
 dotnet build
 
+# Only need this workround if running on Linux :-(
+ln -sf  ~/.nuget/packages/libclang.runtime.linux-x64/18.1.3/runtimes/linux-x64/native/libclang.so ~/.nuget/packages/libclang.runtime.linux-x64/18.1.3/runtimes/linux-x64/native/libclang.so.18.1
+
 # Build in Release mode
 dotnet build --configuration Release
 

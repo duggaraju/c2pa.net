@@ -5,7 +5,7 @@
   },
   "verify": {
     "verify_after_reading": true,
-    "verify_after_sign": false,
+    "verify_after_sign": true,
     "verify_trust": true,
     "verify_timestamp_trust": true,
     "ocsp_fetch": false,

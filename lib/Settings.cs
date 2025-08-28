@@ -27,11 +27,22 @@ public record ThumbnailSettings(
 
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Skip)] 
-public record ActionSettings();
+public record ActionSettings(
+    );
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Skip)]
+public record ActionsSettings(IList<ActionSettings>? Actions);
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Skip)]
+public record ClaimGeneratorInfoSettings(
+    string? Name,
+    string? Version,
+    string? OperatingSystem);
 
 public record BuilderSettings(
-    ThumbnailSettings? Thumbnail = null,
-    ActionSettings? Actions = null);
+    ClaimGeneratorInfoSettings? ClaimGeneratorInfo,
+    ThumbnailSettings? Thumbnail,
+    ActionsSettings? Actions);
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Skip)]
 public record CoreSettings(
