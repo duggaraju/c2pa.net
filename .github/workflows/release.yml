@@ -89,7 +89,7 @@ jobs:
 
       - name: Restore and build
         run: |
-          dotnet restore
+          dotnet restore && dotnet tool restore
           dotnet build lib/ContentAuthenticity.csproj --configuration Release -r ${{ matrix.rid }} --no-restore
 
       - name: Pack NuGet (runtime-specific)
