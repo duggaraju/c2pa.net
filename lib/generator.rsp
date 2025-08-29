@@ -1,0 +1,13 @@
+-c
+latest-codegen
+multi-file
+generate-file-scoped-namespaces
+generate-helper-types
+generate-tests-xunit
+-n
+Microsoft.ContentAuthenticity.Bindings
+-m
+C2paBindings
+-l $(C2paLibrary) -p c2pa_ --test-output ../tests/generated</InteropArgs>
+-r
+C2paSigningAlg=SigningAlg

@@ -444,7 +444,7 @@ public class PerformanceTests
         }
 
 
-        public C2paSigningAlg Alg { get; } = C2paSigningAlg.Ps256;
+        public SigningAlg Alg { get; } = SigningAlg.Ps256;
 
         public string Certs { get; } = File.ReadAllText("certs/rs256.pub");
 

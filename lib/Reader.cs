@@ -2,11 +2,11 @@
 
 public sealed class Reader : IDisposable
 {
-    private readonly nint reader;
+    private readonly unsafe C2paReader* reader;
 
     private unsafe Reader(C2paReader* reader)
     {
-        this.reader = (nint)reader;
+        this.reader = reader;
     }
 
     public static string[] SupportedMimeTypes
@@ -51,7 +51,18 @@ public sealed class Reader : IDisposable
         {
             unsafe
             {
-                return Utils.FromCString(C2paBindings.reader_json((C2paReader*)reader));
+                return Utils.FromCString(C2paBindings.reader_json(reader));
+            }
+        }
+    }
+
+    public bool IsEmbedded
+    {
+        get
+        {
+            unsafe
+            {
+                return C2paBindings.reader_is_embedded(reader) != 0;
             }
         }
     }

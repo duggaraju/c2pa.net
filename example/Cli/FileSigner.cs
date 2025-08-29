@@ -1,7 +1,7 @@
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using Microsoft.ContentAuthenticity;
 using Microsoft.ContentAuthenticity.Bindings;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 namespace Cli;
 
 /// <summary>
@@ -21,7 +21,7 @@ internal sealed class FileSigner : ISigner, IDisposable
 {
     private readonly string _certs;
     private readonly string? _tsaUrl;
-    private readonly C2paSigningAlg _algorithm;
+    private readonly SigningAlg _algorithm;
     private readonly AsymmetricAlgorithm _signingKey;
     private bool _disposed;
 
@@ -34,7 +34,7 @@ internal sealed class FileSigner : ISigner, IDisposable
     /// <param name="preferredAlgorithm">Optional preferred signing algorithm. If not specified, will be auto-detected from the certificate.</param>
     /// <exception cref="InvalidOperationException">Thrown when certificate parsing fails or algorithm is incompatible</exception>
     /// <exception cref="NotSupportedException">Thrown when certificate type is not supported</exception>
-    public FileSigner(string certs, string privateKey, string? tsaUrl = null, C2paSigningAlg? preferredAlgorithm = null)
+    public FileSigner(string certs, string privateKey, string? tsaUrl = null, SigningAlg? preferredAlgorithm = null)
     {
         _certs = certs;
         _tsaUrl = tsaUrl;
@@ -44,7 +44,7 @@ internal sealed class FileSigner : ISigner, IDisposable
     }
 
     /// <inheritdoc/>
-    public C2paSigningAlg Alg => _algorithm;
+    public SigningAlg Alg => _algorithm;
 
     /// <inheritdoc/>
     public string Certs => _certs;
@@ -69,13 +69,13 @@ internal sealed class FileSigner : ISigner, IDisposable
         {
             byte[] signatureBytes = _algorithm switch
             {
-                C2paSigningAlg.Es256 => SignWithECDsa(data, HashAlgorithmName.SHA256),
-                C2paSigningAlg.Es384 => SignWithECDsa(data, HashAlgorithmName.SHA384),
-                C2paSigningAlg.Es512 => SignWithECDsa(data, HashAlgorithmName.SHA512),
-                C2paSigningAlg.Ps256 => SignWithRSA(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pss),
-                C2paSigningAlg.Ps384 => SignWithRSA(data, HashAlgorithmName.SHA384, RSASignaturePadding.Pss),
-                C2paSigningAlg.Ps512 => SignWithRSA(data, HashAlgorithmName.SHA512, RSASignaturePadding.Pss),
-                C2paSigningAlg.Ed25519 => SignWithEd25519(data),
+                SigningAlg.Es256 => SignWithECDsa(data, HashAlgorithmName.SHA256),
+                SigningAlg.Es384 => SignWithECDsa(data, HashAlgorithmName.SHA384),
+                SigningAlg.Es512 => SignWithECDsa(data, HashAlgorithmName.SHA512),
+                SigningAlg.Ps256 => SignWithRSA(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pss),
+                SigningAlg.Ps384 => SignWithRSA(data, HashAlgorithmName.SHA384, RSASignaturePadding.Pss),
+                SigningAlg.Ps512 => SignWithRSA(data, HashAlgorithmName.SHA512, RSASignaturePadding.Pss),
+                SigningAlg.Ed25519 => SignWithEd25519(data),
                 _ => throw new NotSupportedException($"Signing algorithm {_algorithm} is not supported")
             };
 
@@ -133,7 +133,7 @@ internal sealed class FileSigner : ISigner, IDisposable
         throw new NotImplementedException("Ed25519 signing is not yet implemented. Use ECDSA or RSA algorithms instead.");
     }
 
-    private static (C2paSigningAlg algorithm, AsymmetricAlgorithm signingKey) ParseCertificateAndKey(string certsPem, string privateKeyPem, C2paSigningAlg? preferredAlgorithm = null)
+    private static (SigningAlg algorithm, AsymmetricAlgorithm signingKey) ParseCertificateAndKey(string certsPem, string privateKeyPem, SigningAlg? preferredAlgorithm = null)
     {
         try
         {
@@ -143,7 +143,7 @@ internal sealed class FileSigner : ISigner, IDisposable
 
             // Parse the private key
             AsymmetricAlgorithm privateKey;
-            C2paSigningAlg algorithm;
+            SigningAlg algorithm;
 
             if (IsECCertificate(publicKey))
             {
@@ -248,32 +248,32 @@ internal sealed class FileSigner : ISigner, IDisposable
         return publicKey.Oid.Value == "1.2.840.113549.1.1.1"; // RSA public key OID
     }
 
-    private static C2paSigningAlg DetermineECAlgorithm(ECDsa ecdsa)
+    private static SigningAlg DetermineECAlgorithm(ECDsa ecdsa)
     {
         var keySize = ecdsa.KeySize;
         return keySize switch
         {
-            256 => C2paSigningAlg.Es256,
-            384 => C2paSigningAlg.Es384,
-            521 => C2paSigningAlg.Es512, // P-521 uses 521 bits, not 512
-            _ => C2paSigningAlg.Es256 // Default to ES256
+            256 => SigningAlg.Es256,
+            384 => SigningAlg.Es384,
+            521 => SigningAlg.Es512, // P-521 uses 521 bits, not 512
+            _ => SigningAlg.Es256 // Default to ES256
         };
     }
 
-    private static C2paSigningAlg DetermineRSAAlgorithm(RSA _)
+    private static SigningAlg DetermineRSAAlgorithm(RSA _)
     {
         // For RSA, we default to PS256 (PSS padding with SHA-256)
         // Could be made configurable based on requirements
-        return C2paSigningAlg.Ps256;
+        return SigningAlg.Ps256;
     }
 
-    private static bool IsECAlgorithm(C2paSigningAlg algorithm)
+    private static bool IsECAlgorithm(SigningAlg algorithm)
     {
-        return algorithm is C2paSigningAlg.Es256 or C2paSigningAlg.Es384 or C2paSigningAlg.Es512 or C2paSigningAlg.Ed25519;
+        return algorithm is SigningAlg.Es256 or SigningAlg.Es384 or SigningAlg.Es512 or SigningAlg.Ed25519;
     }
 
-    private static bool IsRSAAlgorithm(C2paSigningAlg algorithm)
+    private static bool IsRSAAlgorithm(SigningAlg algorithm)
     {
-        return algorithm is C2paSigningAlg.Ps256 or C2paSigningAlg.Ps384 or C2paSigningAlg.Ps512;
+        return algorithm is SigningAlg.Ps256 or SigningAlg.Ps384 or SigningAlg.Ps512;
     }
 }

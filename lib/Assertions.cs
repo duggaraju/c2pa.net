@@ -108,3 +108,57 @@ public enum Training
 public record TrainingAssertionData(Dictionary<string, Training> Entries);
 
 public record TrainingAssertion(TrainingAssertionData Data) : Assertion<TrainingAssertionData>("c2pa.training-mining", Data);
+
+public record EmbeddedDataAssertionData(string ContentType, byte[] Data);
+
+public record EmbeddedDataAssertion(EmbeddedDataAssertionData Data) : Assertion<EmbeddedDataAssertionData>("c2pa.embedded-data", Data);
+
+public record MetadataAssertionData(
+    [property: JsonPropertyName("@context")] Dictionary<string, string> Context,
+    Dictionary<string, object> Value);
+
+public record MetadataAssertion(MetadataAssertionData Data) : Assertion<MetadataAssertionData>("c2pa.metadata", Data);
+
+public record SoftBindingTimespan(UIntPtr Start, UIntPtr End);
+
+public record SoftBindingScope(SoftBindingTimespan? Timespan = null, RegionOfInterestSetting? Region = null, string? Extent = null);
+
+public record SoftBindingBlock(SoftBindingScope Scope, string value);
+
+public record ByteBuf(List<byte> Data);
+
+public record SoftBindingAssertionData(
+    List<SoftBindingBlock> Blocks,
+    List<byte> Pad,
+    string? Alg = null,
+    string? AlgParams = null,
+    byte[]? Pad2 = null,
+    string? Url = null)
+{
+    public SoftBindingAssertionData(List<SoftBindingBlock> Blocks, string? Alg = null, string? AlgParams = null, byte[]? Pad2 = null, string? Url = null)
+        : this(Blocks, new List<byte>(), Alg, AlgParams, Pad2, Url) { }
+}
+
+public record SoftBindingAssertion(SoftBindingAssertionData Data) : Assertion<SoftBindingAssertionData>("c2pa.soft-binding", Data);
+
+public record CertificateStatusAssertionData(
+    [property: JsonPropertyName("ocspVals")]
+    IList<byte[]> OcspVals);
+
+public record CertificateStatusAssertion(CertificateStatusAssertionData Data) : Assertion<CertificateStatusAssertionData>("c2pa.certificate-status", Data);
+
+public record TimeStampAssertionData(Dictionary<string, byte[]> Timestamps);
+
+public record TimeStampAssertion(TimeStampAssertionData Data) : Assertion<TimeStampAssertionData>("c2pa.time-stamp", Data);
+
+public record ReferenceUri(string Uri);
+
+public record ReferenceSetting(ReferenceUri Reference, string? Description = null);
+
+public record AssetReferenceAssertionData(List<ReferenceSetting> References);
+
+public record AssetReferenceAssertion(AssetReferenceAssertionData Data) : Assertion<AssetReferenceAssertionData>("c2pa.asset-ref", Data);
+
+public record AssetTypeAssertionData(IList<AssetType> Types, AssertionMetadata? Metadata = null);
+
+public record AssetTypeAssertion(AssetTypeAssertionData Data) : Assertion<AssetTypeAssertionData>("c2pa.asset-type", Data);

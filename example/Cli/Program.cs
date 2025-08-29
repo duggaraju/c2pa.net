@@ -1,7 +1,7 @@
-using System.CommandLine;
-using System.Text.Json;
 using Microsoft.ContentAuthenticity;
 using Microsoft.ContentAuthenticity.Bindings;
+using System.CommandLine;
+using System.Text.Json;
 
 namespace Cli;
 
@@ -190,13 +190,13 @@ class Program
             Description = "Time Authority URL for timestamping",
         };
 
-        var algorithmOption = new Option<C2paSigningAlg?>(
+        var algorithmOption = new Option<SigningAlg?>(
             "Algorithm",
             "-a", "--algorithm"
             )
         {
             Description = "Signing algorithm (ES256, ES384, ES512, PS256, PS384, PS512, Ed25519). If not specified, will be determined from the certificate.",
-            DefaultValueFactory = (_) => C2paSigningAlg.Es256
+            DefaultValueFactory = (_) => SigningAlg.Es256
         };
 
         signCommand.Add(inputOption);

@@ -45,7 +45,7 @@ public class ManifestTests
     {
         // Arrange
         var url = "https://example.com/resource";
-        var alg = C2paSigningAlg.Es256;
+        var alg = SigningAlg.Es256;
         var hash = new byte[] { 1, 2, 3, 4 };
         var salt = new byte[] { 5, 6, 7, 8 };
 
@@ -80,11 +80,12 @@ public class ManifestTests
     public void ClaimGeneratorInfo_ShouldCreateWithDefaults()
     {
         // Arrange & Act
-        var info = new ClaimGeneratorInfo();
+        var info = new ClaimGeneratorInfo("dummy");
 
         // Assert
-        Assert.Equal("", info.Name);
-        Assert.Equal("", info.Version);
+        Assert.Equal("dummy", info.Name);
+        Assert.Null(info.Version);
+        Assert.Null(info.OperatingSystem);
     }
 
     [Fact]
@@ -96,6 +97,7 @@ public class ManifestTests
         // Assert
         Assert.Equal("TestApp", info.Name);
         Assert.Equal("2.0.1", info.Version);
+        Assert.Null(info.OperatingSystem);
     }
 
     [Fact]
@@ -105,28 +107,16 @@ public class ManifestTests
         var ingredient = new Ingredient();
 
         // Assert
-        Assert.Equal("", ingredient.Title);
-        Assert.Equal("", ingredient.Format);
-        Assert.Equal(Relationship.ParentOf, ingredient.Relationship);
-        Assert.Null(ingredient.DocumentID);
-        Assert.Null(ingredient.InstanceID);
+        Assert.Null(ingredient.Title);
+        Assert.Null(ingredient.Format);
+        Assert.Equal(Relationship.ComponentOf, ingredient.Relationship);
+        Assert.Null(ingredient.DocumentId);
+        Assert.Null(ingredient.InstanceId);
         Assert.Null(ingredient.C2paManifest);
         Assert.Null(ingredient.HashedManifestUri);
         Assert.Null(ingredient.ValidationStatus);
         Assert.Null(ingredient.Thumbnail);
         Assert.Null(ingredient.Data);
-    }
-
-    [Fact]
-    public void Ingredient_ShouldCreateWithTitleFormatAndRelationship()
-    {
-        // Arrange & Act
-        var ingredient = new Ingredient("Test Image", "image/jpeg", Relationship.ComponentOf);
-
-        // Assert
-        Assert.Equal("Test Image", ingredient.Title);
-        Assert.Equal("image/jpeg", ingredient.Format);
-        Assert.Equal(Relationship.ComponentOf, ingredient.Relationship);
     }
 
     [Theory]

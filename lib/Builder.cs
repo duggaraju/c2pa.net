@@ -88,28 +88,31 @@ public sealed class Builder : IDisposable
         }
     }
 
-    public unsafe void Sign(ISigner signer, Stream source, Stream dest, string format)
+    public byte[] Sign(ISigner signer, Stream source, Stream dest, string format)
     {
         var handle = GCHandle.Alloc(signer);
         try
         {
             using var inputStream = new StreamAdapter(source);
             using var outputStream = new StreamAdapter(dest);
-            fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
-            fixed (byte* certs = Encoding.UTF8.GetBytes(signer.Certs))
-            fixed (byte* taUrl = signer.TimeAuthorityUrl == null ? null : Encoding.UTF8.GetBytes(signer.TimeAuthorityUrl))
+            unsafe
             {
-                var c2paSigner = C2paBindings.signer_create((void*)(nint)handle, &Sign, signer.Alg, (sbyte*)certs, (sbyte*)taUrl);
-                if (c2paSigner == null)
-                    C2pa.CheckError();
-                byte* manifest = null;
-                var ret = C2paBindings.builder_sign(builder, (sbyte*)formatBytes, inputStream, outputStream, c2paSigner, &manifest);
-                C2paBindings.signer_free(c2paSigner);
-                if (ret == -1)
-                    C2pa.CheckError();
-                if (manifest != null)
+                fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
+                fixed (byte* certs = Encoding.UTF8.GetBytes(signer.Certs))
+                fixed (byte* taUrl = signer.TimeAuthorityUrl == null ? null : Encoding.UTF8.GetBytes(signer.TimeAuthorityUrl))
                 {
+                    var c2paSigner = C2paBindings.signer_create((void*)(nint)handle, &Sign, signer.Alg, (sbyte*)certs, (sbyte*)taUrl);
+                    if (c2paSigner == null)
+                        C2pa.CheckError();
+                    byte* manifest = null;
+                    var ret = C2paBindings.builder_sign(builder, (sbyte*)formatBytes, inputStream, outputStream, c2paSigner, &manifest);
+                    C2paBindings.signer_free(c2paSigner);
+                    if (ret == -1)
+                        C2pa.CheckError();
+                    var bytes = new byte[ret];
+                    Marshal.Copy((nint)manifest, bytes, 0, bytes.Length);
                     C2paBindings.manifest_bytes_free(manifest);
+                    return bytes;
                 }
             }
         }
@@ -122,11 +125,11 @@ public sealed class Builder : IDisposable
     /// <summary>
     /// Sign the input file using the provided signer and write the C2PA manifest to the output file.
     /// </summary>
-    public void Sign(ISigner signer, string input, string output)
+    public byte[] Sign(ISigner signer, string input, string output)
     {
         using var inputStream = new FileStream(input, FileMode.Open);
         using var outputStream = new FileStream(output, FileMode.Create);
-        Sign(signer, inputStream, outputStream, Utils.GetMimeTypeFromExtension(Path.GetExtension(input)));
+        return Sign(signer, inputStream, outputStream, Utils.GetMimeTypeFromExtension(Path.GetExtension(input)));
     }
 
     /// <summary>
@@ -160,6 +163,32 @@ public sealed class Builder : IDisposable
         unsafe
         {
             C2paBindings.builder_set_no_embed((C2paBuilder*)builder);
+        }
+    }
+
+    void SetBasePath(string path)
+    {
+        unsafe
+        {
+            fixed (byte* pathBytes = Encoding.UTF8.GetBytes(path))
+            {
+                var ret = C2paBindings.builder_set_base_path(builder, (sbyte*)pathBytes);
+                if (ret == -1)
+                    C2pa.CheckError();
+            }
+        }
+    }
+
+    void SetRemoteUrl(Uri uri)
+    {
+        unsafe
+        {
+            fixed (byte* urlBytes = Encoding.UTF8.GetBytes(uri.ToString()))
+            {
+                var ret = C2paBindings.builder_set_remote_url(builder, (sbyte*)urlBytes);
+                if (ret == -1)
+                    C2pa.CheckError();
+            }
         }
     }
 

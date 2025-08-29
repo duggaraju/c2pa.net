@@ -1,5 +1,3 @@
-using SigningAlg = Microsoft.ContentAuthenticity.Bindings.C2paSigningAlg;
-
 namespace Microsoft.ContentAuthenticity;
 
 public interface ISigner

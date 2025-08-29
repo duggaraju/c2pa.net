@@ -10,7 +10,7 @@ public class ManifestDefinitionTests
 
         // Assert
         Assert.Equal("application/octet-stream", manifest.Format);
-        Assert.Equal(C2paSigningAlg.Es256, manifest.Alg);
+        Assert.Equal(SigningAlg.Es256, manifest.Alg);
         Assert.NotNull(manifest.ClaimGeneratorInfo);
         Assert.Empty(manifest.ClaimGeneratorInfo);
         Assert.NotNull(manifest.Ingredients);

@@ -8,7 +8,7 @@ public class ISignerTests
     {
         // Arrange
         var mockSigner = new Mock<ISigner>();
-        mockSigner.Setup(s => s.Alg).Returns(C2paSigningAlg.Es256);
+        mockSigner.Setup(s => s.Alg).Returns(SigningAlg.Es256);
         mockSigner.Setup(s => s.Certs).Returns("certificate-data");
         mockSigner.Setup(s => s.TimeAuthorityUrl).Returns("https://timestamp.example.com");
         mockSigner.Setup(s => s.UseOcsp).Returns(false);
@@ -17,7 +17,7 @@ public class ISignerTests
         var signer = mockSigner.Object;
 
         // Assert
-        Assert.Equal(C2paSigningAlg.Es256, signer.Alg);
+        Assert.Equal(SigningAlg.Es256, signer.Alg);
         Assert.Equal("certificate-data", signer.Certs);
         Assert.Equal("https://timestamp.example.com", signer.TimeAuthorityUrl);
         Assert.False(signer.UseOcsp);
@@ -53,27 +53,6 @@ public class ISignerTests
         Assert.False(useOcsp);
     }
 
-    [Theory]
-    [InlineData(C2paSigningAlg.Es256)]
-    [InlineData(C2paSigningAlg.Es384)]
-    [InlineData(C2paSigningAlg.Es512)]
-    [InlineData(C2paSigningAlg.Ps256)]
-    [InlineData(C2paSigningAlg.Ps384)]
-    [InlineData(C2paSigningAlg.Ps512)]
-    [InlineData(C2paSigningAlg.Ed25519)]
-    public void ISigner_ShouldSupportAllSigningAlgorithms(C2paSigningAlg algorithm)
-    {
-        // Arrange
-        var mockSigner = new Mock<ISigner>();
-        mockSigner.Setup(s => s.Alg).Returns(algorithm);
-
-        // Act
-        var alg = mockSigner.Object.Alg;
-
-        // Assert
-        Assert.Equal(algorithm, alg);
-    }
-
     [Fact]
     public void ISigner_Sign_WithMockSigner_CanBeSetupWithCallback()
     {
@@ -100,14 +79,14 @@ public class ISignerTests
         // Arrange & Act
         var testSigner = new TestSigner
         {
-            Alg = C2paSigningAlg.Es384,
+            Alg = SigningAlg.Es384,
             Certs = "custom-cert",
             TimeAuthorityUrl = "https://custom.timestamp.com",
             UseOcsp = true
         };
 
         // Assert
-        Assert.Equal(C2paSigningAlg.Es384, testSigner.Alg);
+        Assert.Equal(SigningAlg.Es384, testSigner.Alg);
         Assert.Equal("custom-cert", testSigner.Certs);
         Assert.Equal("https://custom.timestamp.com", testSigner.TimeAuthorityUrl);
         Assert.True(testSigner.UseOcsp);
@@ -117,7 +96,7 @@ public class ISignerTests
 // Test implementation of ISigner for integration tests
 public class TestSigner : ISigner
 {
-    public C2paSigningAlg Alg { get; init; } = C2paSigningAlg.Es256;
+    public SigningAlg Alg { get; init; } = SigningAlg.Es256;
     public string Certs { get; init; } = "test-certificate";
     public string? TimeAuthorityUrl { get; init; } = "https://timestamp.test.com";
     public bool UseOcsp { get; init; } = false;

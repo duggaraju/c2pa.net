@@ -1,14 +1,12 @@
-﻿using System.Text;
-using System.Security.Cryptography;
-
+﻿using Azure.CodeSigning;
+using Azure.CodeSigning.Models;
 using Azure.Core;
 using Azure.Identity;
-using Azure.CodeSigning;
-using Azure.CodeSigning.Models;
-
-using System.Security.Cryptography.X509Certificates;
 using Microsoft.ContentAuthenticity;
 using Microsoft.ContentAuthenticity.Bindings;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace C2paSample;
 
@@ -54,7 +52,7 @@ class Program
 
         ManifestDefinition manifest = new()
         {
-            ClaimGeneratorInfo = { new ClaimGeneratorInfo { Name = "C# Binding test", Version = "1.0.0" } },
+            ClaimGeneratorInfo = { new ClaimGeneratorInfo("C# Binding test", "1.0.0") },
             Format = "jpg",
             Title = "C# Test Image",
             Assertions = { new CreativeWorkAssertion(new CreativeWorkAssertionData("http://schema.org/", "CreativeWork", [new AuthorInfo("person", "Isaiah Carrington")])) }
@@ -94,11 +92,6 @@ class Program
 
         public string GetCertificates()
         {
-            Random random = new();
-            byte[] hash = new byte[32];
-            random.NextBytes(hash);
-            byte[] digest = GetDigest(hash);
-
             using Stream stream = _client.GetSignCertificateChain(AccountName, CertificateProfile);
             var bytes = new byte[stream.Length];
             stream.Read(bytes, 0, bytes.Length);
@@ -117,7 +110,7 @@ class Program
             return pem;
         }
 
-        public C2paSigningAlg Alg => C2paSigningAlg.Ps384;
+        public SigningAlg Alg => SigningAlg.Ps384;
 
         public string Certs => GetCertificates();
 

@@ -20,15 +20,13 @@
     <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('Windows'))">win-x64</RuntimeIdentifier>
     <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('Linux'))">linux-x64</RuntimeIdentifier>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="libClangSharp.runtime.linux-x64" Version="18.1.3" Condition="$([MSBuild]::IsOSPlatform('Linux'))" GeneratePathProperty="true" />
-    <PackageReference Include="libclang.runtime.linux-x64" Version="18.1.3" Condition="$([MSBuild]::IsOSPlatform('Linux'))" GeneratePathProperty="true" />
+  <!-- Temporary workaournd for Linux till .NET 10 comes out -->
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <PackageReference Include="libClangSharp.runtime.linux-x64" Version="18.1.3" GeneratePathProperty="true" />
+    <PackageReference Include="libclang.runtime.linux-x64" Version="18.1.3" GeneratePathProperty="true" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/$(C2paLibrary)"
-      CopyToOutputDirectory="PreserveNewest" Pack="true"
-      PackagePath="runtimes/$(RuntimeIdentifier)/native/" />
+    <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/$(C2paLibrary)" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes/$(RuntimeIdentifier)/native/" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md">
@@ -36,28 +34,23 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-  <Target Name="GenerateBindings" DependsOnTargets="Cargo" BeforeTargets="CoreCompile"
-    Condition="!Exists('generated/C2paBindings.cs')">
+  <Target Name="GenerateBindings" DependsOnTargets="Cargo" BeforeTargets="CoreCompile" Condition="!Exists('generated/C2paBindings.cs')">
     <PropertyGroup>
-      <ConfigOptions>-c multi-file generate-file-scoped-namespaces generate-helper-types generate-tests-xunit</ConfigOptions>
-      <InteropArgs>-n $(RootNamespace).Bindings -m C2paBindings -l $(C2paLibrary) -p c2pa_ --test-output ../tests/generated</InteropArgs>
+      <ConfigOptions>-c latest-codegen multi-file generate-file-scoped-namespaces generate-helper-types generate-tests-xunit -fh header</ConfigOptions>
+      <InteropArgs>-n $(RootNamespace).Bindings -m C2paBindings -l $(C2paLibrary) -p c2pa_ --test-output ../tests/generated -r C2paSigningAlg=SigningAlg</InteropArgs>
       <PlatformArgs Condition="$([MSBuild]::IsOSPlatform('Linux'))">-I /usr/lib/gcc/x86_64-linux-gnu/14/include/</PlatformArgs>
       <EnvironmentVariables Condition="$([MSBuild]::IsOSPlatform('Linux'))">LD_LIBRARY_PATH=$(PkglibClangSharp_runtime_linux-x64)/runtimes/linux-x64/native:$(Pkglibclang_runtime_linux-x64)/runtimes/linux-x64/native</EnvironmentVariables>
     </PropertyGroup>
-    <Exec
-      Command="dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutput)c2pa.h -o generated $(InteropArgs) $(ConfigOptions) $(PlatformArgs)"
-      EnvironmentVariables="$(EnvironmentVariables)" IgnoreExitCode="true" />
+    <Exec Command="dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutput)c2pa.h -o generated $(InteropArgs) $(ConfigOptions) $(PlatformArgs)" EnvironmentVariables="$(EnvironmentVariables)" IgnoreExitCode="true" />
     <CreateItem Include="generated/*.cs">
       <Output TaskParameter="Include" ItemName="Compile" />
     </CreateItem>
   </Target>
 
-  <Target Name="Cargo" Inputs="$(MSBuildThisFileDirectory)../c2pa-rs/Cargo.toml"
-    Outputs="$(CargoOutput)c2pa.h">
+  <Target Name="Cargo" Inputs="$(MSBuildThisFileDirectory)../c2pa-rs/Cargo.toml" Outputs="$(CargoOutput)c2pa.h">
     <PropertyGroup>
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
     </PropertyGroup>
-    <Exec Command="cargo build $(CargoArgs) --features rust_native_crypto"
-      WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/c2pa_c_ffi" />
+    <Exec Command="cargo build $(CargoArgs) --features rust_native_crypto" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/c2pa_c_ffi" />
   </Target>
 </Project>
