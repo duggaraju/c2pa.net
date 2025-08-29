@@ -18,6 +18,126 @@ public class SettingsTests
     }
 
     [Fact]
+    public void Settings_ShouldHaveCorrectDefaults()
+    {
+        // Act
+        var settings = new Settings();
+
+        // Assert
+        Assert.Null(settings.Trust);
+        Assert.Null(settings.Verify);
+        Assert.Null(settings.Core);
+        Assert.Null(settings.Builder);
+        Assert.Equal(1, settings.MajorVersion);
+        Assert.Equal(0, settings.MinorVersion);
+    }
+
+    [Fact]
+    public void TrustSettings_ShouldHaveCorrectDefaults()
+    {
+        // Act
+        var trust = new TrustSettings();
+
+        // Assert
+        Assert.Null(trust.UserAnchors);
+        Assert.Null(trust.TrustAnchors);
+        Assert.Null(trust.TrustConfig);
+        Assert.Null(trust.AllowedList);
+    }
+
+    [Fact]
+    public void VerifySettings_ShouldHaveCorrectDefaults()
+    {
+        // Act
+        var verify = new VerifySettings();
+
+        // Assert
+        Assert.True(verify.VerifyAfterReading);
+        Assert.True(verify.VerifyAfterSign);
+        Assert.False(verify.VerifyTrust);
+        Assert.False(verify.VerifyTimestampTrust);
+        Assert.False(verify.OcspFetch);
+        Assert.True(verify.CheckIngredientTrust);
+        Assert.False(verify.SkipIngredientConflictResolution);
+        Assert.True(verify.RemoteManifestFetch);
+        Assert.False(verify.StrictV1Validation);
+    }
+
+    [Fact]
+    public void CoreSettings_ShouldHaveCorrectDefaults()
+    {
+        // Act
+        var core = new CoreSettings();
+
+        // Assert
+        Assert.False(core.Debug);
+        Assert.Equal("sha256", core.HashAlg);
+        Assert.True(core.SaltJumbfBoxes);
+        Assert.False(core.PreferBoxHash);
+        Assert.True(core.CompressManifest);
+        Assert.Null(core.MaxMemoryUsage);
+    }
+
+    [Fact]
+    public void ThumbnailSettings_ShouldHaveCorrectDefaults()
+    {
+        // Act
+        var thumbnail = new ThumbnailSettings();
+
+        // Assert
+        Assert.True(thumbnail.Enabled);
+        Assert.True(thumbnail.IgnoreErrors);
+        Assert.Equal(1024, thumbnail.LongEdge);
+        Assert.True(thumbnail.PreferSmallestFormat);
+        Assert.Equal("Medium", thumbnail.Quality);
+        Assert.Null(thumbnail.Format);
+    }
+
+    [Fact]
+    public void BuilderSettings_ShouldHaveCorrectDefaults()
+    {
+        // Act
+        var builder = new BuilderSettings(null, null, null);
+
+        // Assert
+        Assert.Null(builder.ClaimGeneratorInfo);
+        Assert.Null(builder.Thumbnail);
+        Assert.Null(builder.Actions);
+    }
+
+    [Fact]
+    public void ActionSettings_ShouldHaveCorrectDefaults()
+    {
+        // Act
+        var action = new ActionSettings();
+
+        // Assert - ActionSettings has no properties with defaults, just ensuring it can be constructed
+        Assert.NotNull(action);
+    }
+
+    [Fact]
+    public void ActionsSettings_ShouldHaveCorrectDefaults()
+    {
+        // Act
+        var actions = new ActionsSettings(null);
+
+        // Assert
+        Assert.Null(actions.Actions);
+    }
+
+    [Fact]
+    public void ClaimGeneratorInfoSettings_ShouldHaveCorrectDefaults()
+    {
+        // Act
+        var info = new ClaimGeneratorInfoSettings(null, null, null);
+
+        // Assert
+        Assert.Null(info.Name);
+        Assert.Null(info.Version);
+        Assert.Null(info.OperatingSystem);
+    }
+
+    [Fact]
     public void ToJson_ShouldReturnValidJson()
     {
         // Arrange

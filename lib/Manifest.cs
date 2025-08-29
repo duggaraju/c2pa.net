@@ -80,7 +80,7 @@ public record AssetType(
 // Ingredient
 public record HashedUri(string Url, SigningAlg Alg, byte[] Hash, byte[] Salt);
 
-public record ValidationStatus(string Code, string? Url, string? Explanation, bool? Success, string? IngredientUri);
+public record ValidationStatus(string Code, string? Url, string? Explanation, bool? Success = false, string? IngredientUri = null);
 
 public record ValidationResults(
     [property: JsonPropertyName("activeManifest")] StatusCodes? ActiveManifest,
