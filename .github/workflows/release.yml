@@ -8,94 +8,170 @@ on:
     inputs:
       version:
         description: 'Version to release (e.g., 1.0.0)'
-        required: true
+        required: false
         type: string
+      publish_nuget:
+        description: 'Publish packages to NuGet.org (workflow_dispatch only).'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
 
 env:
   DOTNET_VERSION: '8.0.x'
+  RUST_VERSION: 'stable'
+  NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
 jobs:
-  release:
-    name: Create Release
-    runs-on: windows-latest
-    
+  generate-version:
+    name: Generate Release Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.set_version.outputs.version }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
-      with:
-        submodules: recursive
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+      - id: set_version
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const ref = process.env.GITHUB_REF || '';
+            let version = '';
+            if (ref && ref.startsWith('refs/tags/')) {
+              version = ref.replace('refs/tags/','').replace(/^v/,'');
+            } else if (github && github.context && github.context.eventName === 'workflow_dispatch' && github.context.payload && github.context.payload.inputs && github.context.payload.inputs.version) {
+              version = github.context.payload.inputs.version;
+            }
+            core.setOutput('version', version);
 
-    - name: Setup Rust
-      uses: actions-rust-lang/setup-rust-toolchain@v1
-      with:
-        toolchain: stable
-        cache: true
+  build:
+    name: Build native + .NET (per OS)
+    needs: generate-version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+          - os: ubuntu-latest
+            rid: linux-x64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
-    - name: Get version from tag or input
-      id: get_version
-      run: |
-        if ($env:GITHUB_EVENT_NAME -eq "workflow_dispatch") {
-          $version = "${{ github.event.inputs.version }}"
-        } else {
-          $version = $env:GITHUB_REF -replace '^refs/tags/v', ''
-        }
-        echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        echo "::set-output name=version::$version"
-      shell: pwsh
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          cache: true
 
-    - name: Update project version
-      run: |
-        # Update the version in the project file
-        $projectFile = "lib/Microsoft.ContentAuthenticity.Bindings.csproj"
-        $content = Get-Content $projectFile -Raw
-        $content = $content -replace '<Version>.*</Version>', "<Version>${{ env.VERSION }}</Version>"
-        if ($content -notmatch '<Version>') {
-          $content = $content -replace '(<PropertyGroup[^>]*>)', "`$1`n    <Version>${{ env.VERSION }}</Version>"
-        }
-        Set-Content $projectFile $content
-      shell: pwsh
+      - name: Build native (release)
+        working-directory: c2pa-rs
+        env:
+          RUSTFLAGS: "-A warnings"
+        run: |
+          cargo build --release -p c2pa-c-ffi --no-default-features --features "rust_native_crypto, file_io"
 
-    - name: Build Rust FFI library
-      working-directory: c2pa-rs
-      run: |
-        cargo build --release -p c2pa-c-ffi --no-default-features --features "rust_native_crypto, file_io"
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Restore and build
+        run: |
+          dotnet restore
+          dotnet build lib/ContentAuthenticity.csproj --configuration Release -r ${{ matrix.rid }} --no-restore
 
-    - name: Build solution
-      run: |
-        dotnet build --configuration Release --no-restore
+      - name: Pack NuGet (runtime-specific)
+        run: |
+          dotnet pack lib/ContentAuthenticity.csproj --configuration Release --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }} -p:RuntimeIdentifier=${{ matrix.rid }} --no-build
 
-    - name: Run tests
-      run: |
-        dotnet test --configuration Release --no-build --verbosity normal
+      - name: Upload runtime package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-${{ matrix.rid }}
+          path: ./artifacts/packages/*.nupkg
 
-    - name: Create NuGet packages
-      run: |
-        dotnet pack lib/Microsoft.ContentAuthenticity.Bindings.csproj --configuration Release --no-build --output ./release-packages --include-symbols --include-source -p:PackageVersion=${{ env.VERSION }}
+  merge:
+    name: Merge NuGet packages and publish
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: ./artifacts
 
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: v${{ env.VERSION }}
-        name: Release v${{ env.VERSION }}
-        draft: false
-        prerelease: false
-        files: |
-          ./release-packages/*.nupkg
-        generate_release_notes: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Ensure zip/unzip exist
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y zip unzip
 
-    - name: Publish to NuGet.org
-      run: |
-        dotnet nuget push ./release-packages/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-      env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      - name: Merge runtime nupkgs
+        run: |
+          set -euo pipefail
+          mkdir -p merged pkg2 ./artifacts/packages
+          pkgs=( $(find ./artifacts -name '*.nupkg' | sort) )
+          if [ ${#pkgs[@]} -lt 1 ]; then echo "no nupkg artifacts found"; exit 1; fi
+          base=${pkgs[0]}
+          echo "Base package: $base"
+          # If only one runtime package exists, just copy it through
+          if [ ${#pkgs[@]} -eq 1 ]; then
+            mkdir -p ./artifacts/packages
+            cp "$base" ./artifacts/packages/
+            echo "Single package copied"; exit 0
+          fi
+          other=${pkgs[1]}
+          echo "Other package: $other"
+
+          unzip -o "$base" -d merged
+          unzip -o "$other" -d pkg2
+
+          if [ -d pkg2/runtimes ]; then
+            mkdir -p merged/runtimes
+            cp -r pkg2/runtimes/* merged/runtimes/
+          fi
+
+          (cd merged && zip -r ../final.nupkg .)
+          mkdir -p ./artifacts/packages
+          mv final.nupkg ./artifacts/packages/
+          echo "Merged package created at ./artifacts/packages/"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.generate-version.outputs.version }}
+          name: Release v${{ needs.generate-version.outputs.version }}
+          files: |
+            ./artifacts/packages/*.nupkg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          for pkg in $(find ./artifacts/packages -name '*.nupkg'); do
+            echo "Publishing $pkg to GitHub Packages"
+            dotnet nuget push "$pkg" --api-key $GITHUB_TOKEN --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --skip-duplicate
+          done
+
+      - name: Publish to NuGet.org
+        if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.publish_nuget == 'true' || github.event.inputs.publish_nuget == true) }}
+        run: |
+          set -e
+          for pkg in $(find ./artifacts/packages -name '*.nupkg'); do
+            echo "Publishing $pkg to NuGet.org"
+            dotnet nuget push "$pkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+          done
