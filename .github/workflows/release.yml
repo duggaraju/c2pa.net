@@ -8,7 +8,7 @@ on:
     inputs:
       version:
         description: 'Version to release (e.g., 1.0.0)'
-        required: false
+        required: true
         type: string
       publish_nuget:
         description: 'Publish packages to NuGet.org (workflow_dispatch only).'
@@ -48,6 +48,10 @@ jobs:
               version = ref.replace('refs/tags/','').replace(/^v/,'');
             } else if (github && github.context && github.context.eventName === 'workflow_dispatch' && github.context.payload && github.context.payload.inputs && github.context.payload.inputs.version) {
               version = github.context.payload.inputs.version;
+            }
+            if (!version) {
+              core.setFailed('Release workflow requires a version derived from a git tag or provided via the workflow_dispatch input "version". Aborting.');
+              return;
             }
             core.setOutput('version', version);
 
