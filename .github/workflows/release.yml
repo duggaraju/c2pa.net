@@ -151,16 +151,6 @@ jobs:
           mv final.nupkg ./artifacts/packages/
           echo "Merged package created at ./artifacts/packages/"
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ needs.generate-version.outputs.version }}
-          name: Release v${{ needs.generate-version.outputs.version }}
-          files: |
-            ./artifacts/packages/*.nupkg
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Publish to GitHub Packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
