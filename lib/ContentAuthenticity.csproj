@@ -37,11 +37,11 @@
   <Target Name="GenerateBindings" DependsOnTargets="Cargo" BeforeTargets="CoreCompile" Condition="!Exists('generated/C2paBindings.cs')">
     <PropertyGroup>
       <ConfigOptions>-c latest-codegen multi-file generate-file-scoped-namespaces generate-helper-types generate-tests-xunit -fh header</ConfigOptions>
-      <InteropArgs>-n $(RootNamespace).Bindings -m C2paBindings -l $(C2paLibrary) -p c2pa_ --test-output ../tests/generated -r C2paSigningAlg=SigningAlg</InteropArgs>
-      <PlatformArgs Condition="$([MSBuild]::IsOSPlatform('Linux'))">-I /usr/lib/gcc/x86_64-linux-gnu/14/include/ -Wno-ignored-attributes</PlatformArgs>
+      <InteropArgs>-n $(RootNamespace).Bindings -m C2paBindings -l $(C2paLibrary) -p c2pa_ --test-output ../tests/generated -r C2paSigningAlg=SigningAlg -x c</InteropArgs>
+      <PlatformArgs Condition="$([MSBuild]::IsOSPlatform('Linux'))">-I /usr/lib/gcc/x86_64-linux-gnu/14/include/ -Wno-ignored-attributes -Wno-attributes</PlatformArgs>
       <EnvironmentVariables Condition="$([MSBuild]::IsOSPlatform('Linux'))">LD_LIBRARY_PATH=$(PkglibClangSharp_runtime_linux-x64)/runtimes/linux-x64/native:$(Pkglibclang_runtime_linux-x64)/runtimes/linux-x64/native</EnvironmentVariables>
     </PropertyGroup>
-    <Exec Command="dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutput)c2pa.h -o generated $(InteropArgs) $(ConfigOptions) $(PlatformArgs)" EnvironmentVariables="$(EnvironmentVariables)" IgnoreExitCode="true" />
+    <Exec Command="dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutput)c2pa.h -o generated $(InteropArgs) $(ConfigOptions) $(PlatformArgs)" EnvironmentVariables="$(EnvironmentVariables)" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" />
     <CreateItem Include="generated/*.cs">
       <Output TaskParameter="Include" ItemName="Compile" />
     </CreateItem>
