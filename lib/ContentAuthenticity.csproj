@@ -22,7 +22,7 @@
   </PropertyGroup>
   <!-- Temporary workaournd for Linux till .NET 10 comes out -->
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-    <PackageReference Include="libClangSharp.runtime.linux-x64" Version="18.1.3" GeneratePathProperty="true" />
+    <PackageReference Include="libClangSharp.runtime.linux-x64" Version="20.1.2" GeneratePathProperty="true" />
     <PackageReference Include="libclang.runtime.linux-x64" Version="18.1.3" GeneratePathProperty="true" />
   </ItemGroup>
   <ItemGroup>
