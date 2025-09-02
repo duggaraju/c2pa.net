@@ -41,7 +41,7 @@
       <PlatformArgs Condition="$([MSBuild]::IsOSPlatform('Linux'))">-I /usr/lib/gcc/x86_64-linux-gnu/14/include/ -Wno-ignored-attributes</PlatformArgs>
       <EnvironmentVariables Condition="$([MSBuild]::IsOSPlatform('Linux'))">LD_LIBRARY_PATH=$(PkglibClangSharp_runtime_linux-x64)/runtimes/linux-x64/native:$(Pkglibclang_runtime_linux-x64)/runtimes/linux-x64/native</EnvironmentVariables>
     </PropertyGroup>
-    <Exec Command="dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutput)c2pa.h -o generated $(InteropArgs) $(ConfigOptions) $(PlatformArgs)" EnvironmentVariables="$(EnvironmentVariables)" />
+    <Exec Command="dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutput)c2pa.h -o generated $(InteropArgs) $(ConfigOptions) $(PlatformArgs)" EnvironmentVariables="$(EnvironmentVariables)" IgnoreExitCode="true" />
     <CreateItem Include="generated/*.cs">
       <Output TaskParameter="Include" ItemName="Compile" />
     </CreateItem>
