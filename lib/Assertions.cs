@@ -128,22 +128,18 @@ public record SoftBindingBlock(SoftBindingScope Scope, string value);
 public record ByteBuf(List<byte> Data);
 
 public record SoftBindingAssertionData(
-    List<SoftBindingBlock> Blocks,
-    List<byte> Pad,
+    IList<SoftBindingBlock> Blocks,
+    IList<byte> Pad,
     string? Alg = null,
     string? AlgParams = null,
-    byte[]? Pad2 = null,
-    string? Url = null)
-{
-    public SoftBindingAssertionData(List<SoftBindingBlock> Blocks, string? Alg = null, string? AlgParams = null, byte[]? Pad2 = null, string? Url = null)
-        : this(Blocks, new List<byte>(), Alg, AlgParams, Pad2, Url) { }
-}
+    IList<byte>? Pad2 = null,
+    string? Url = null);
 
 public record SoftBindingAssertion(SoftBindingAssertionData Data) : Assertion<SoftBindingAssertionData>("c2pa.soft-binding", Data);
 
 public record CertificateStatusAssertionData(
     [property: JsonPropertyName("ocspVals")]
-    IList<byte[]> OcspVals);
+    IList<IList<byte>> OcspVals);
 
 public record CertificateStatusAssertion(CertificateStatusAssertionData Data) : Assertion<CertificateStatusAssertionData>("c2pa.certificate-status", Data);
 

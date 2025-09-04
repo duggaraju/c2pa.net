@@ -72,6 +72,6 @@ public sealed class Reader : IDisposable
     public static Reader FromFile(string path)
     {
         using var stream = File.OpenRead(path);
-        return FromStream(stream, Utils.GetMimeTypeFromExtension(Path.GetExtension(path)));
+        return FromStream(stream, path.GetMimeType());
     }
 }

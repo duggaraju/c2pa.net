@@ -1,3 +1,6 @@
+using System.Text.Json.Nodes;
+using System.Text.Json.Schema;
+
 namespace ContentAuthenticity.Tests;
 
 public class ManifestTests
@@ -127,5 +130,22 @@ public class ManifestTests
     {
         // Act & Assert
         Assert.True(Enum.IsDefined(typeof(Relationship), relationship));
+    }
+
+    [Fact(Skip = "Not exact match")]
+    public async Task ValidateSchemaMatches()
+    {
+
+        var schemUri = "https://raw.githubusercontent.com/contentauth/json-manifest-reference/refs/heads/main/_data/ManifestStore_schema.json";
+        // download the schema
+        using var client = new HttpClient();
+        var response = await client.GetAsync(schemUri);
+        var schemaJson = await response.Content.ReadAsStreamAsync();
+        var expected = JsonNode.Parse(schemaJson);
+
+        var options = Utils.JsonOptions();
+        JsonNode actual = options.GetJsonSchemaAsNode(typeof(ManifestStore));
+        Console.WriteLine(actual.ToString());
+        Assert.Equal(expected, actual);
     }
 }

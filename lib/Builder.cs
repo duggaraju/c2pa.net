@@ -129,7 +129,7 @@ public sealed class Builder : IDisposable
     {
         using var inputStream = new FileStream(input, FileMode.Open);
         using var outputStream = new FileStream(output, FileMode.Create);
-        return Sign(signer, inputStream, outputStream, Utils.GetMimeTypeFromExtension(Path.GetExtension(input)));
+        return Sign(signer, inputStream, outputStream, input.GetMimeType());
     }
 
     /// <summary>

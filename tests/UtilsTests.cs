@@ -46,6 +46,13 @@ public class UtilsTests
     [InlineData("c2pa.thumbnail.claim.123", typeof(ClaimThumbnailAssertion))]
     [InlineData("c2pa.thumbnail.ingredient.456", typeof(IngredientThumbnailAssertion))]
     [InlineData("stds.schema-org.CreativeWork", typeof(CreativeWorkAssertion))]
+    [InlineData("c2pa.metadata", typeof(MetadataAssertion))]
+    [InlineData("c2pa.soft-binding", typeof(SoftBindingAssertion))]
+    [InlineData("c2pa.asset-type", typeof(AssetTypeAssertion))]
+    [InlineData("c2pa.asset-ref", typeof(AssetReferenceAssertion))]
+    [InlineData("c2pa.time-stamp", typeof(TimeStampAssertion))]
+    [InlineData("c2pa.certificate-status", typeof(CertificateStatusAssertion))]
+    [InlineData("c2pa.embedded-data", typeof(EmbeddedDataAssertion))]
     [InlineData("custom.assertion", typeof(CustomAssertion))]
     public void GetAssertionTypeFromLabel_ShouldReturnCorrectType(string label, Type expectedType)
     {
@@ -115,7 +122,7 @@ public class UtilsTests
         var obj = new TestObject { Name = "Test", Value = 42 };
 
         // Act
-        var json = JsonSerializer.Serialize(obj, Utils.JsonOptions);
+        var json = Utils.Serialize(obj);
 
         // Assert
         Assert.Contains("name", json);

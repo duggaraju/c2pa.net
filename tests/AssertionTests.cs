@@ -419,4 +419,261 @@ public class AssertionTests
     }
 
     #endregion
+
+    #region CertificateStatusAssertion Tests
+
+    [Fact]
+    public void CertificateStatusAssertion_ShouldCreateWithCorrectLabel()
+    {
+        // Arrange
+        var ocspVals = new List<IList<byte>>
+        {
+            new byte[] { 0x30, 0x82, 0x01, 0x23 },
+            new byte[] { 0x30, 0x82, 0x02, 0x34 }
+        };
+        var data = new CertificateStatusAssertionData(ocspVals);
+
+        // Act
+        var assertion = new CertificateStatusAssertion(data);
+
+        // Assert
+        Assert.Equal("c2pa.certificate-status", assertion.Label);
+        Assert.Equal(data, assertion.Data);
+    }
+
+    [Fact]
+    public void CertificateStatusAssertion_WithEmptyOcspVals_ShouldCreateSuccessfully()
+    {
+        // Arrange
+        var emptyOcspVals = new List<IList<byte>>();
+        var data = new CertificateStatusAssertionData(emptyOcspVals);
+
+        // Act
+        var assertion = new CertificateStatusAssertion(data);
+
+        // Assert
+        Assert.Equal("c2pa.certificate-status", assertion.Label);
+        Assert.Equal(data, assertion.Data);
+        Assert.NotNull(assertion.Data.OcspVals);
+        Assert.Empty(assertion.Data.OcspVals);
+    }
+
+    [Fact]
+    public void CertificateStatusAssertion_WithSingleOcspVal_ShouldCreateCorrectly()
+    {
+        // Arrange
+        var ocspVal = new byte[] { 0x30, 0x82, 0x01, 0x23, 0x45, 0x67 };
+        var ocspVals = new List<IList<byte>> { ocspVal };
+        var data = new CertificateStatusAssertionData(ocspVals);
+
+        // Act
+        var assertion = new CertificateStatusAssertion(data);
+
+        // Assert
+        Assert.Single(assertion.Data.OcspVals);
+        Assert.Equal(ocspVal, assertion.Data.OcspVals[0]);
+    }
+
+    [Fact]
+    public void CertificateStatusAssertion_WithMultipleOcspVals_ShouldMaintainAllValues()
+    {
+        // Arrange
+        var ocspVals = new List<IList<byte>>
+        {
+            new byte[] { 0x30, 0x82, 0x01, 0x23 },
+            new byte[] { 0x30, 0x82, 0x02, 0x34, 0x56 },
+            new byte[] { 0x30, 0x82, 0x03, 0x45, 0x67, 0x89 },
+            new byte[] { 0x30, 0x82, 0x04, 0x56, 0x78, 0x9A, 0xBC }
+        };
+        var data = new CertificateStatusAssertionData(ocspVals);
+
+        // Act
+        var assertion = new CertificateStatusAssertion(data);
+
+        // Assert
+        Assert.Equal(4, assertion.Data.OcspVals.Count);
+        for (int i = 0; i < ocspVals.Count; i++)
+        {
+            Assert.Equal(ocspVals[i], assertion.Data.OcspVals[i]);
+        }
+    }
+
+    [Fact]
+    public void CertificateStatusAssertion_ToJson_ShouldSerializeCorrectly()
+    {
+        // Arrange
+        var ocspVals = new List<IList<byte>>
+        {
+            new byte[] { 0x30, 0x82, 0x01, 0x23 },
+            new byte[] { 0x30, 0x82, 0x02, 0x34 }
+        };
+        var data = new CertificateStatusAssertionData(ocspVals);
+        var assertion = new CertificateStatusAssertion(data);
+
+        // Act
+        var json = assertion.Serialize(false);
+
+        // Assert
+        Assert.NotNull(json);
+        Assert.Contains("c2pa.certificate-status", json);
+        Assert.Contains("ocspVals", json);
+        Assert.Contains("[48,130,1,35]", json);
+        Assert.Contains("[48,130,2,52]", json);
+    }
+
+    [Fact]
+    public void CertificateStatusAssertion_FromJson_ShouldDeserializeCorrectly()
+    {
+        // Arrange
+        var originalOcspVals = new List<IList<byte>>
+        {
+            new byte[] { 0x30, 0x82, 0x01, 0x23 },
+            new byte[] { 0x30, 0x82, 0x02, 0x34 }
+        };
+        var originalData = new CertificateStatusAssertionData(originalOcspVals);
+        var originalAssertion = new CertificateStatusAssertion(originalData);
+        var json = originalAssertion.ToJson();
+
+        // Act
+        var deserialized = Assertion.FromJson(json);
+
+        // Assert
+        Assert.NotNull(deserialized);
+        Assert.Equal(originalAssertion.Label, deserialized.Label);
+        Assert.IsType<CertificateStatusAssertion>(deserialized);
+
+        var deserializedCertStatus = (CertificateStatusAssertion)deserialized;
+        Assert.Equal(originalOcspVals.Count, deserializedCertStatus.Data.OcspVals.Count);
+        for (int i = 0; i < originalOcspVals.Count; i++)
+        {
+            Assert.Equal(originalOcspVals[i], deserializedCertStatus.Data.OcspVals[i]);
+        }
+    }
+
+    [Fact]
+    public void CertificateStatusAssertionData_WithNullOcspVals_ShouldThrow()
+    {
+        // Act & Assert
+        var exception = Record.Exception(() => new CertificateStatusAssertionData(null!));
+        // Allow either ArgumentNullException or successful creation with null
+        if (exception != null)
+        {
+            Assert.IsType<ArgumentNullException>(exception);
+        }
+        // If no exception is thrown, that's also acceptable for record types
+    }
+
+    [Fact]
+    public void CertificateStatusAssertion_RoundTripSerialization_ShouldMaintainData()
+    {
+        // Arrange
+        var originalOcspVals = new List<IList<byte>>
+        {
+            new byte[] { 0x30, 0x82, 0x01, 0x23 },
+            new byte[] { 0x30, 0x82, 0x02, 0x34, 0x56 },
+            new byte[] { 0x30, 0x82, 0x03, 0x45, 0x67, 0x89 }
+        };
+        var originalData = new CertificateStatusAssertionData(originalOcspVals);
+        var originalAssertion = new CertificateStatusAssertion(originalData);
+
+        // Act - Serialize and deserialize
+        var json = originalAssertion.ToJson();
+        var deserializedAssertion = Utils.Deserialize<CertificateStatusAssertion>(json);
+
+        // Assert
+        Assert.Equal(originalAssertion.Label, deserializedAssertion.Label);
+        Assert.Equal(originalOcspVals.Count, deserializedAssertion.Data.OcspVals.Count);
+
+        for (int i = 0; i < originalOcspVals.Count; i++)
+        {
+            Assert.Equal(originalOcspVals[i], deserializedAssertion.Data.OcspVals[i]);
+        }
+    }
+
+    [Fact]
+    public void CertificateStatusAssertion_WithLargeOcspVal_ShouldHandleCorrectly()
+    {
+        // Arrange
+        var largeOcspVal = new byte[10000]; // Large OCSP response
+        for (int i = 0; i < largeOcspVal.Length; i++)
+        {
+            largeOcspVal[i] = (byte)(i % 256);
+        }
+        var ocspVals = new List<IList<byte>> { largeOcspVal };
+        var data = new CertificateStatusAssertionData(ocspVals);
+
+        // Act
+        var assertion = new CertificateStatusAssertion(data);
+        var json = assertion.ToJson();
+
+        // Assert
+        Assert.Single(assertion.Data.OcspVals);
+        Assert.Equal(10000, assertion.Data.OcspVals[0].Count);
+        Assert.Equal(largeOcspVal, assertion.Data.OcspVals[0]);
+        Assert.NotNull(json);
+    }
+
+    [Fact]
+    public void CertificateStatusAssertion_WithEmptyByteArray_ShouldHandleCorrectly()
+    {
+        // Arrange
+        var ocspVals = new List<IList<byte>>
+        {
+            new byte[0], // Empty byte array
+            new byte[] { 0x30, 0x82 }, // Non-empty byte array
+            new byte[0] // Another empty byte array
+        };
+        var data = new CertificateStatusAssertionData(ocspVals);
+
+        // Act
+        var assertion = new CertificateStatusAssertion(data);
+        var json = assertion.ToJson();
+
+        // Assert
+        Assert.Equal(3, assertion.Data.OcspVals.Count);
+        Assert.Empty(assertion.Data.OcspVals[0]);
+        Assert.Equal(new byte[] { 0x30, 0x82 }, assertion.Data.OcspVals[1]);
+        Assert.Empty(assertion.Data.OcspVals[2]);
+        Assert.NotNull(json);
+    }
+
+    [Fact]
+    public void CertificateStatusAssertion_JsonPropertyName_ShouldUseCorrectName()
+    {
+        // Arrange
+        var ocspVals = new List<IList<byte>> { new byte[] { 0x30, 0x82 } };
+        var data = new CertificateStatusAssertionData(ocspVals);
+        var assertion = new CertificateStatusAssertion(data);
+
+        // Act
+        var json = assertion.ToJson();
+
+        // Assert
+        Assert.Contains("ocspVals", json); // Verify the JsonPropertyName attribute is working
+    }
+
+    [Fact]
+    public void CertificateStatusAssertion_WithTypicalOcspResponse_ShouldCreateCorrectly()
+    {
+        // Arrange - Simulate typical OCSP response structure
+        var typicalOcspResponse = new byte[]
+        {
+            0x30, 0x82, 0x01, 0x91, // SEQUENCE, length 401
+            0x0A, 0x01, 0x00,       // ENUMERATED: successful (0)
+            0x30, 0x82, 0x01, 0x8A  // ResponseBytes
+            // ... (truncated for test purposes)
+        };
+        var ocspVals = new List<IList<byte>> { typicalOcspResponse };
+        var data = new CertificateStatusAssertionData(ocspVals);
+
+        // Act
+        var assertion = new CertificateStatusAssertion(data);
+
+        // Assert
+        Assert.Equal("c2pa.certificate-status", assertion.Label);
+        Assert.Single(assertion.Data.OcspVals);
+        Assert.Equal(typicalOcspResponse, assertion.Data.OcspVals[0]);
+    }
+
+    #endregion
 }

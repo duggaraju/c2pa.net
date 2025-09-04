@@ -472,7 +472,7 @@ public class PerformanceTests
         string outputFile = "output.mp4";
         ISigner signer = new TestSigner();
         var inputFileBuffer = use_buffer_api ? File.ReadAllBytes(inputFile) : null;
-        string mimeType = Utils.GetMimeTypeFromExtension(Path.GetExtension(inputFile));
+        string mimeType = inputFile.GetMimeType();
 
         var manifest = """
             {

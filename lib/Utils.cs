@@ -8,10 +8,7 @@ public class AssertionTypeConverter : JsonConverter<Assertion>
         JsonElement root = doc.RootElement;
         string? label = root.GetProperty("label").GetString() ?? throw new JsonException("Missing label property");
         Type assertionType = GetAssertionTypeFromLabel(label);
-
-        string rawJson = root.GetRawText();
-
-        return JsonSerializer.Deserialize(root.GetRawText(), assertionType, options) as Assertion;
+        return JsonSerializer.Deserialize(doc, assertionType, options) as Assertion;
     }
 
     public override void Write(Utf8JsonWriter writer, Assertion value, JsonSerializerOptions options)
@@ -27,7 +24,7 @@ public class AssertionTypeConverter : JsonConverter<Assertion>
 
 public static class Utils
 {
-    public static readonly JsonSerializerOptions JsonOptions = new()
+    public static JsonSerializerOptions JsonOptions(bool indented = true) => new()
     {
         Converters =
         {
@@ -37,18 +34,15 @@ public static class Utils
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-        WriteIndented = true
+        WriteIndented = indented
     };
 
     public static T Deserialize<T>(string json)
     {
-        return JsonSerializer.Deserialize<T>(json, JsonOptions) ?? throw new JsonException("Failed to deserialize JSON.");
+        return JsonSerializer.Deserialize<T>(json, JsonOptions()) ?? throw new JsonException("Failed to deserialize JSON.");
     }
 
-    public static string Serialize<T>(T obj)
-    {
-        return JsonSerializer.Serialize(obj, JsonOptions);
-    }
+    public static string Serialize<T>(this T obj, bool indented = true) => JsonSerializer.Serialize(obj, JsonOptions(indented));
 
     public static Type GetAssertionTypeFromLabel(string label)
     {
@@ -58,9 +52,16 @@ public static class Utils
             "c2pa.actions.v2" => typeof(ActionsAssertionV2),
             "c2pa.thumbnail" => typeof(ThumbnailAssertion),
             "c2pa.training-mining" => typeof(TrainingAssertion),
+            "c2pa.soft-binding" => typeof(SoftBindingAssertion),
+            "c2pa.asset-type" => typeof(AssetTypeAssertion),
+            "c2pa.asset-ref" => typeof(AssetReferenceAssertion),
+            "c2pa.time-stamp" => typeof(TimeStampAssertion),
+            "c2pa.certificate-status" => typeof(CertificateStatusAssertion),
+            "c2pa.embedded-data" => typeof(EmbeddedDataAssertion),
+            "c2pa.metadata" => typeof(MetadataAssertion),
+            "stds.schema-org.CreativeWork" => typeof(CreativeWorkAssertion),
             string s when s.StartsWith("c2pa.thumbnail.claim") => typeof(ClaimThumbnailAssertion),
             string s when s.StartsWith("c2pa.thumbnail.ingredient") => typeof(IngredientThumbnailAssertion),
-            "stds.schema-org.CreativeWork" => typeof(CreativeWorkAssertion),
             _ => typeof(CustomAssertion),
         };
     }
@@ -110,5 +111,7 @@ public static class Utils
             _ => "application/octet-stream"
         };
     }
+
+    public static string GetMimeType(this string Filename) => GetMimeTypeFromExtension(Path.GetExtension(Filename));
 
 }
