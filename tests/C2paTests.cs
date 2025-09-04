@@ -12,7 +12,7 @@ public class C2paTests
 
         // Assert
         Assert.NotNull(version);
-        const string Version = "0.60.1";
+        const string Version = "0.61.0";
 
         Assert.Equal($"c2pa-c-ffi/{Version} c2pa-rs/{Version}", version);
     }

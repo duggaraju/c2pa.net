@@ -1,5 +1,5 @@
 target/
 obj/
 bin/
-generated/
+Bindings/
 .vs/
