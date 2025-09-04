@@ -1,3 +1,5 @@
+// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
 namespace ContentAuthenticity.Tests;
 
 public class UtilsTests
@@ -57,7 +59,7 @@ public class UtilsTests
     public void GetAssertionTypeFromLabel_ShouldReturnCorrectType(string label, Type expectedType)
     {
         // Act
-        var type = Utils.GetAssertionTypeFromLabel(label);
+        var type = JsonExtensions.GetAssertionTypeFromLabel(label);
 
         // Assert
         Assert.Equal(expectedType, type);
@@ -70,7 +72,7 @@ public class UtilsTests
         var obj = new { Name = "Test", Value = 42 };
 
         // Act
-        var json = Utils.Serialize(obj);
+        var json = obj.ToJson();
 
         // Assert
         Assert.NotNull(json);
@@ -87,7 +89,7 @@ public class UtilsTests
         var json = """{"name": "Test", "value": 42}""";
 
         // Act
-        var obj = Utils.Deserialize<TestObject>(json);
+        var obj = json.Deserialize<TestObject>();
 
         // Assert
         Assert.NotNull(obj);
@@ -102,7 +104,7 @@ public class UtilsTests
         var invalidJson = "invalid json";
 
         // Act & Assert
-        Assert.Throws<JsonException>(() => Utils.Deserialize<TestObject>(invalidJson));
+        Assert.Throws<JsonException>(() => invalidJson.Deserialize<TestObject>());
     }
 
     [Fact]
@@ -112,7 +114,7 @@ public class UtilsTests
         var nullJson = "null";
 
         // Act & Assert
-        Assert.Throws<JsonException>(() => Utils.Deserialize<TestObject>(nullJson));
+        Assert.Throws<JsonException>(() => nullJson.Deserialize<TestObject>());
     }
 
     [Fact]
@@ -122,7 +124,7 @@ public class UtilsTests
         var obj = new TestObject { Name = "Test", Value = 42 };
 
         // Act
-        var json = Utils.Serialize(obj);
+        var json = obj.ToJson();
 
         // Assert
         Assert.Contains("name", json);

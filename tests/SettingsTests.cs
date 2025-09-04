@@ -1,3 +1,5 @@
+// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
 namespace ContentAuthenticity.Tests;
 
 public class SettingsTests
@@ -109,19 +111,25 @@ public class SettingsTests
     public void ActionSettings_ShouldHaveCorrectDefaults()
     {
         // Act
-        var action = new ActionSettings();
+        var action = new ActionSettings("action", null, null, null, null, null);
 
         // Assert - ActionSettings has no properties with defaults, just ensuring it can be constructed
-        Assert.NotNull(action);
+        Assert.NotNull(action.Action);
+        Assert.Null(action.When);
+        Assert.Null(action.SoftwareAgent);
+        Assert.Null(action.SoftwareAgentIndex);
+        Assert.Null(action.changes);
+        Assert.Null(action.Parameters);
     }
 
     [Fact]
     public void ActionsSettings_ShouldHaveCorrectDefaults()
     {
         // Act
-        var actions = new ActionsSettings(null);
+        var actions = new ActionsSettings(null, null);
 
         // Assert
+        Assert.Null(actions.Templates);
         Assert.Null(actions.Actions);
     }
 
@@ -129,12 +137,14 @@ public class SettingsTests
     public void ClaimGeneratorInfoSettings_ShouldHaveCorrectDefaults()
     {
         // Act
-        var info = new ClaimGeneratorInfoSettings(null, null, null);
+        var info = new ClaimGeneratorInfoSettings(string.Empty, null, null, null, null);
 
         // Assert
-        Assert.Null(info.Name);
+        Assert.NotNull(info.Name);
         Assert.Null(info.Version);
         Assert.Null(info.OperatingSystem);
+        Assert.Null(info.Icon);
+        Assert.Null(info.Other);
     }
 
     [Fact]

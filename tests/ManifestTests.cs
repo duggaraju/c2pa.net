@@ -1,3 +1,5 @@
+// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
 using System.Text.Json.Nodes;
 using System.Text.Json.Schema;
 
@@ -14,7 +16,7 @@ public class ManifestTests
         // Assert
         Assert.Equal("image/jpeg", thumbnail.Format);
         Assert.Equal("thumb-123", thumbnail.Identifier);
-        Assert.IsAssignableFrom<ResourceRef>(thumbnail);
+        Assert.IsType<ResourceRef>(thumbnail, exactMatch: false);
     }
 
     [Fact]
@@ -143,7 +145,7 @@ public class ManifestTests
         var schemaJson = await response.Content.ReadAsStreamAsync();
         var expected = JsonNode.Parse(schemaJson);
 
-        var options = Utils.JsonOptions();
+        var options = JsonExtensions.JsonOptions();
         JsonNode actual = options.GetJsonSchemaAsNode(typeof(ManifestStore));
         Console.WriteLine(actual.ToString());
         Assert.Equal(expected, actual);

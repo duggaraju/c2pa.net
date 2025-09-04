@@ -1,4 +1,6 @@
-﻿namespace Microsoft.ContentAuthenticity;
+﻿// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
+namespace ContentAuthenticity;
 
 // See https://opensource.contentauthenticity.org/docs/manifest/json-ref/manifest-def for the schema.
 public record ManifestDefinition(string Format = "application/octet-stream")
@@ -23,13 +25,8 @@ public record ManifestDefinition(string Format = "application/octet-stream")
 
     public string? Label { get; set; }
 
-    public string ToJson()
-    {
-        return Utils.Serialize(this);
-    }
-
     public static ManifestDefinition FromJson(string json)
     {
-        return Utils.Deserialize<ManifestDefinition>(json);
+        return JsonExtensions.Deserialize<ManifestDefinition>(json);
     }
 }

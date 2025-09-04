@@ -2,8 +2,8 @@
 using Azure.CodeSigning.Models;
 using Azure.Core;
 using Azure.Identity;
-using Microsoft.ContentAuthenticity;
-using Microsoft.ContentAuthenticity.Bindings;
+using ContentAuthenticity;
+using ContentAuthenticity.Bindings;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;

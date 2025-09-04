@@ -16,7 +16,6 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/duggaraju/c2pa.net</RepositoryUrl>
     <CargoOutput>$(MSBuildThisFileDirectory)../c2pa-rs/target/$(Configuration.ToLower())/</CargoOutput>
-    <RootNamespace>Microsoft.ContentAuthenticity</RootNamespace>
     <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('Windows'))">win-x64</RuntimeIdentifier>
     <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('Linux'))">linux-x64</RuntimeIdentifier>
   </PropertyGroup>
@@ -37,7 +36,7 @@
   <Target Name="GenerateBindings" DependsOnTargets="Cargo" BeforeTargets="CoreCompile" Condition="!Exists('generated/C2paBindings.cs')">
     <PropertyGroup>
       <ConfigOptions>-c latest-codegen multi-file generate-file-scoped-namespaces generate-helper-types generate-tests-xunit -fh header</ConfigOptions>
-      <InteropArgs>-n $(RootNamespace).Bindings -m C2paBindings -l $(C2paLibrary) -p c2pa_ --test-output ../tests/generated -r C2paSigningAlg=SigningAlg -x c</InteropArgs>
+      <InteropArgs>-n ContentAuthenticity.Bindings -m C2paBindings -l $(C2paLibrary) -p c2pa_ --test-output ../tests/generated -r C2paSigningAlg=SigningAlg -x c</InteropArgs>
       <PlatformArgs Condition="$([MSBuild]::IsOSPlatform('Linux'))">-I /usr/lib/gcc/x86_64-linux-gnu/14/include/ -Wno-ignored-attributes -Wno-attributes</PlatformArgs>
       <EnvironmentVariables Condition="$([MSBuild]::IsOSPlatform('Linux'))">LD_LIBRARY_PATH=$(PkglibClangSharp_runtime_linux-x64)/runtimes/linux-x64/native:$(Pkglibclang_runtime_linux-x64)/runtimes/linux-x64/native</EnvironmentVariables>
     </PropertyGroup>

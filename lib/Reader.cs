@@ -1,4 +1,6 @@
-﻿namespace Microsoft.ContentAuthenticity;
+﻿// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
+namespace ContentAuthenticity;
 
 public sealed class Reader : IDisposable
 {
@@ -26,7 +28,7 @@ public sealed class Reader : IDisposable
     {
         unsafe
         {
-            C2paBindings.reader_free((C2paReader*)reader);
+            C2paBindings.reader_free(reader);
         }
     }
 

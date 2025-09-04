@@ -1,29 +1,32 @@
-﻿namespace Microsoft.ContentAuthenticity;
+﻿// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
-public class AssertionTypeConverter : JsonConverter<Assertion>
+namespace ContentAuthenticity;
+
+
+public static class JsonExtensions
 {
-    public override Assertion? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public class AssertionTypeConverter : JsonConverter<Assertion>
     {
-        using JsonDocument doc = JsonDocument.ParseValue(ref reader);
-        JsonElement root = doc.RootElement;
-        string? label = root.GetProperty("label").GetString() ?? throw new JsonException("Missing label property");
-        Type assertionType = GetAssertionTypeFromLabel(label);
-        return JsonSerializer.Deserialize(doc, assertionType, options) as Assertion;
+        public override Assertion? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            using JsonDocument doc = JsonDocument.ParseValue(ref reader);
+            JsonElement root = doc.RootElement;
+            string? label = root.GetProperty("label").GetString() ?? throw new JsonException("Missing label property");
+            Type assertionType = GetAssertionTypeFromLabel(label);
+            return doc.Deserialize(assertionType, options) as Assertion;
+        }
+
+        public override void Write(Utf8JsonWriter writer, Assertion value, JsonSerializerOptions options)
+        {
+            JsonSerializer.Serialize(writer, value, value.GetType(), options);
+        }
+
+        private static Type GetAssertionTypeFromLabel(string label)
+        {
+            return JsonExtensions.GetAssertionTypeFromLabel(label) ?? throw new JsonException();
+        }
     }
 
-    public override void Write(Utf8JsonWriter writer, Assertion value, JsonSerializerOptions options)
-    {
-        JsonSerializer.Serialize(writer, value, value.GetType(), options);
-    }
-
-    private static Type GetAssertionTypeFromLabel(string label)
-    {
-        return Utils.GetAssertionTypeFromLabel(label) ?? throw new JsonException();
-    }
-}
-
-public static class Utils
-{
     public static JsonSerializerOptions JsonOptions(bool indented = true) => new()
     {
         Converters =
@@ -37,7 +40,7 @@ public static class Utils
         WriteIndented = indented
     };
 
-    public static T Deserialize<T>(string json)
+    public static T Deserialize<T>(this string json)
     {
         return JsonSerializer.Deserialize<T>(json, JsonOptions()) ?? throw new JsonException("Failed to deserialize JSON.");
     }
@@ -65,6 +68,12 @@ public static class Utils
             _ => typeof(CustomAssertion),
         };
     }
+
+    public static string ToJson<T>(this T obj, bool indented = true) => JsonSerializer.Serialize(obj, JsonOptions(indented));
+}
+
+public static class Utils
+{
 
     public unsafe static string FromCString(sbyte* ptr, bool freeResource = true)
     {

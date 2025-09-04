@@ -1,15 +1,18 @@
+// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
 using System.Dynamic;
 
-namespace Microsoft.ContentAuthenticity;
+namespace ContentAuthenticity;
 
-public record Assertion(string Label, object Data)
+public abstract record Assertion(string Label, object Data)
 {
-    public string ToJson() => Utils.Serialize(this);
-
-    public static Assertion FromJson(string json) => Utils.Deserialize<Assertion>(json);
+    public static Assertion FromJson(string json)
+    {
+        return JsonExtensions.Deserialize<Assertion>(json);
+    }
 }
 
-public record Assertion<T> : Assertion where T : notnull
+public abstract record Assertion<T> : Assertion where T : notnull
 {
     public new T Data { get; init; }
 
@@ -65,7 +68,7 @@ public record CustomAssertion(string Label, dynamic Data) : Assertion<dynamic>(L
         return ConvertElementToExpandoObject(Data);
     }
 
-    private ExpandoObject ConvertElementToExpandoObject(JsonElement element)
+    private static ExpandoObject ConvertElementToExpandoObject(JsonElement element)
     {
         dynamic dataResult = new ExpandoObject();
 
@@ -119,13 +122,11 @@ public record MetadataAssertionData(
 
 public record MetadataAssertion(MetadataAssertionData Data) : Assertion<MetadataAssertionData>("c2pa.metadata", Data);
 
-public record SoftBindingTimespan(UIntPtr Start, UIntPtr End);
+public record SoftBindingTimespan(nuint Start, nuint End);
 
 public record SoftBindingScope(SoftBindingTimespan? Timespan = null, RegionOfInterestSetting? Region = null, string? Extent = null);
 
-public record SoftBindingBlock(SoftBindingScope Scope, string value);
-
-public record ByteBuf(List<byte> Data);
+public record SoftBindingBlock(SoftBindingScope Scope, string Value);
 
 public record SoftBindingAssertionData(
     IList<SoftBindingBlock> Blocks,

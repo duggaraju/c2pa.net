@@ -1,6 +1,8 @@
-﻿using System.Runtime.Serialization;
+﻿// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
-namespace Microsoft.ContentAuthenticity;
+using System.Runtime.Serialization;
+
+namespace ContentAuthenticity;
 
 // See https://opensource.contentauthenticity.org/docs/manifest/json-ref/reader for the schema.
 
@@ -140,9 +142,9 @@ public record TimeSetting(TimeType TimeType = TimeType.Ntp, int? Start = null, i
 
 public record FrameSetting(int? Start = null, int? End = null);
 
-public record TextSetting(List<TextSelectorRange>? selectors = null);
+public record TextSetting(List<TextSelectorRange>? Selectors = null);
 
-public record TextSelectorRange(TextSelector selector, TextSelector? End = null);
+public record TextSelectorRange(TextSelector Selector, TextSelector? End = null);
 
 public record TextSelector(string Fragment, int? Start = null, int? End = null);
 
@@ -227,11 +229,6 @@ public record ManifestStore(
 {
     public static ManifestStore FromJson(string json)
     {
-        return Utils.Deserialize<ManifestStore>(json);
-    }
-
-    public string ToJson()
-    {
-        return Utils.Serialize(this);
+        return json.Deserialize<ManifestStore>();
     }
 }

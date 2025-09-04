@@ -1,4 +1,6 @@
-﻿namespace Microsoft.ContentAuthenticity;
+﻿// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
+namespace ContentAuthenticity;
 
 public record TrustSettings(
     string? UserAnchors = null,
@@ -27,17 +29,37 @@ public record ThumbnailSettings(
 
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Skip)]
-public record ActionSettings(
-    );
+public record ActionTemplateSettings(
+    string Action,
+    ClaimGeneratorInfo? SoftwareAgent,
+    int? SoftwareAgentIndex,
+    string? SourceType,
+    ResourceRef? Icon,
+    string? Description,
+    Dictionary<string, object>? TemplateParameters);
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Skip)]
-public record ActionsSettings(IList<ActionSettings>? Actions);
+public record ActionsSettings(
+    IList<ActionTemplateSettings>? Templates,
+    IList<ActionSettings>? Actions);
+
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Skip)]
+public record ActionSettings(
+    string Action,
+    DateTimeOffset? When,
+    ClaimGeneratorInfo? SoftwareAgent,
+    int? SoftwareAgentIndex,
+    IList<RegionOfInterestSetting>? changes,
+    Dictionary<string, object>? Parameters);
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Skip)]
 public record ClaimGeneratorInfoSettings(
-    string? Name,
+    string Name,
     string? Version,
-    string? OperatingSystem);
+    string? OperatingSystem,
+    ResourceRef? Icon,
+    Dictionary<string, object>? Other);
 
 public record BuilderSettings(
     ClaimGeneratorInfoSettings? ClaimGeneratorInfo,
@@ -65,14 +87,9 @@ public record Settings(
     [JsonPropertyName("version_minor")]
     public int MinorVersion { get; init; } = 0;
 
-    public string ToJson()
-    {
-        return Utils.Serialize(this);
-    }
-
     public void Load()
     {
-        Load(ToJson());
+        Load(this.ToJson());
     }
 
     public static Settings? Load(string settings, string format = "json")
@@ -90,9 +107,9 @@ public record Settings(
             }
         }
         if (format == "json")
-            return Utils.Deserialize<Settings>(settings);
+            return settings.Deserialize<Settings>();
         return null;
     }
 
-    public static Settings FromJson(string json) => Utils.Deserialize<Settings>(json);
+    public static Settings FromJson(string json) => json.Deserialize<Settings>();
 }

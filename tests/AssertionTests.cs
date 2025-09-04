@@ -1,3 +1,5 @@
+// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
 namespace ContentAuthenticity.Tests;
 
 public class AssertionTests
@@ -384,7 +386,7 @@ public class AssertionTests
 
         // Act - Serialize and deserialize
         var json = originalAssertion.ToJson();
-        var deserializedAssertion = Utils.Deserialize<TrainingAssertion>(json);
+        var deserializedAssertion = json.Deserialize<TrainingAssertion>();
 
         // Assert
         Assert.Equal(originalAssertion.Label, deserializedAssertion.Label);
@@ -511,7 +513,7 @@ public class AssertionTests
         var assertion = new CertificateStatusAssertion(data);
 
         // Act
-        var json = assertion.Serialize(false);
+        var json = assertion.ToJson(false);
 
         // Assert
         Assert.NotNull(json);
@@ -578,7 +580,7 @@ public class AssertionTests
 
         // Act - Serialize and deserialize
         var json = originalAssertion.ToJson();
-        var deserializedAssertion = Utils.Deserialize<CertificateStatusAssertion>(json);
+        var deserializedAssertion = json.Deserialize<CertificateStatusAssertion>();
 
         // Assert
         Assert.Equal(originalAssertion.Label, deserializedAssertion.Label);
@@ -619,9 +621,9 @@ public class AssertionTests
         // Arrange
         var ocspVals = new List<IList<byte>>
         {
-            new byte[0], // Empty byte array
+            Array.Empty<byte>(), // Empty byte array
             new byte[] { 0x30, 0x82 }, // Non-empty byte array
-            new byte[0] // Another empty byte array
+            Array.Empty<byte>() // Another empty byte array
         };
         var data = new CertificateStatusAssertionData(ocspVals);
 
@@ -632,7 +634,7 @@ public class AssertionTests
         // Assert
         Assert.Equal(3, assertion.Data.OcspVals.Count);
         Assert.Empty(assertion.Data.OcspVals[0]);
-        Assert.Equal(new byte[] { 0x30, 0x82 }, assertion.Data.OcspVals[1]);
+        Assert.Equal([0x30, 0x82], assertion.Data.OcspVals[1]);
         Assert.Empty(assertion.Data.OcspVals[2]);
         Assert.NotNull(json);
     }

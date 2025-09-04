@@ -1,5 +1,6 @@
+// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
-namespace Microsoft.ContentAuthenticity;
+namespace ContentAuthenticity;
 
 public sealed class Builder : IDisposable
 {
@@ -162,7 +163,7 @@ public sealed class Builder : IDisposable
     {
         unsafe
         {
-            C2paBindings.builder_set_no_embed((C2paBuilder*)builder);
+            C2paBindings.builder_set_no_embed(builder);
         }
     }
 
@@ -195,7 +196,7 @@ public sealed class Builder : IDisposable
     public void AddIngredient(Ingredient ingredient, string file)
     {
         using var stream = File.OpenRead(file);
-        AddIngredient(Utils.Serialize(ingredient), Utils.GetMimeTypeFromExtension(Path.GetExtension(file)), stream);
+        AddIngredient(ingredient.ToJson(), Utils.GetMimeTypeFromExtension(Path.GetExtension(file)), stream);
     }
 
     public void AddIngredient(string ingredientJson, string ingredientFormat, Stream stream)

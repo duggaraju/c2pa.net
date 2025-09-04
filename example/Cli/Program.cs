@@ -1,5 +1,7 @@
-using Microsoft.ContentAuthenticity;
-using Microsoft.ContentAuthenticity.Bindings;
+// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
+using ContentAuthenticity;
+using ContentAuthenticity.Bindings;
 using System.CommandLine;
 using System.Text.Json;
 
