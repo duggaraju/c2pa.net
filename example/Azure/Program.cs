@@ -97,7 +97,6 @@ class Program
             stream.Read(bytes, 0, bytes.Length);
             var certCollection = new X509Certificate2Collection();
             certCollection.Import(bytes);
-            StringBuilder builder = new();
 
             List<X509Certificate2> sortedCerts;
             if (certCollection.Count == 1)
@@ -130,6 +129,7 @@ class Program
             }
 
 
+            StringBuilder builder = new();
             foreach (var cert in sortedCerts)
             {
                 // Console.WriteLine("Subject = {0} Issuer = {1} Expiry = {2}", cert.Subject, cert.Issuer, cert.GetExpirationDateString());
