@@ -99,15 +99,44 @@ class Program
             certCollection.Import(bytes);
             StringBuilder builder = new();
 
-            foreach (var cert in certCollection)
+            List<X509Certificate2> sortedCerts;
+            if (certCollection.Count == 1)
             {
-                Console.WriteLine("Subject = {0} Issuer = {1} Expiry = {2}", cert.Subject, cert.Issuer, cert.GetExpirationDateString());
-                builder.Insert(0, '\n');
-                builder.Insert(0, cert.ExportCertificatePem());
+                // Special case: single certificate in chain
+                sortedCerts = certCollection.Cast<X509Certificate2>().ToList();
+            }
+            else
+            {
+                // Build hash tables for O(1) lookup by subject and issuer names
+                var certsBySubject = certCollection.Cast<X509Certificate2>()
+                    .ToDictionary(cert => cert.SubjectName.Name, cert => cert);
+                var certsByIssuer = certCollection.Cast<X509Certificate2>()
+                    .GroupBy(cert => cert.IssuerName.Name)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                // Find leaf certificate (no other cert has this as issuer, excluding self-signed)
+                var leafCert = certCollection.Cast<X509Certificate2>()
+                    .FirstOrDefault(cert => cert.SubjectName.Name != cert.IssuerName.Name && 
+                                       !certsByIssuer.ContainsKey(cert.SubjectName.Name));
+                // Build chain in single pass following issuer links
+                sortedCerts = new List<X509Certificate2>();
+                var currentCert = leafCert;
+
+                while (currentCert != null && currentCert.SubjectName.Name != currentCert.IssuerName.Name)
+                {
+                    sortedCerts.Add(currentCert);
+                    certsBySubject.TryGetValue(currentCert.IssuerName.Name, out currentCert);
+                }
             }
 
-            string pem = builder.ToString();
-            return pem;
+
+            foreach (var cert in sortedCerts)
+            {
+                // Console.WriteLine("Subject = {0} Issuer = {1} Expiry = {2}", cert.Subject, cert.Issuer, cert.GetExpirationDateString());
+                builder.AppendLine(cert.ExportCertificatePem());
+            }
+
+            return builder.ToString();
         }
 
         public SigningAlg Alg => SigningAlg.Ps384;
