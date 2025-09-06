@@ -41,14 +41,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const github = require('@actions/github');
-            console.log('GITHUB EVENT CONTEXT:', JSON.stringify(github.context, null, 2));
+            console.log('GITHUB EVENT CONTEXT:', JSON.stringify(context, null, 2));
       - id: set_version
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const github = require('@actions/github');
             const ref = process.env.GITHUB_REF || '';
             let version = '';
             if (ref && ref.startsWith('refs/tags/')) {
