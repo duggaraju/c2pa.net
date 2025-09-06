@@ -48,7 +48,7 @@ jobs:
             if (ref && ref.startsWith('refs/tags/')) {
               version = ref.replace('refs/tags/','').replace(/^v/,'');
             } else if (context && context.eventName === 'workflow_dispatch' && context.payload && context.payload.inputs && context.payload.inputs.version) {
-              version = github.context.payload.inputs.version;
+              version = context.payload.inputs.version;
             }
             if (!version) {
               core.setFailed('Release workflow requires a version derived from a git tag or provided via the workflow_dispatch input "version". Aborting.');
