@@ -37,21 +37,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Debug github.event
-        uses: actions/github-script@v7
-        with:
-          script: |
-            console.log('GITHUB EVENT CONTEXT:', JSON.stringify(context, null, 2));
       - id: set_version
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            console.log('GITHUB EVENT CONTEXT:', JSON.stringify(context, null, 2));
             const ref = process.env.GITHUB_REF || '';
             let version = '';
             if (ref && ref.startsWith('refs/tags/')) {
               version = ref.replace('refs/tags/','').replace(/^v/,'');
-            } else if (github && github.context && github.context.eventName === 'workflow_dispatch' && github.context.payload && github.context.payload.inputs && github.context.payload.inputs.version) {
+            } else if (context && context.eventName === 'workflow_dispatch' && context.payload && context.payload.inputs && context.payload.inputs.version) {
               version = github.context.payload.inputs.version;
             }
             if (!version) {
