@@ -34,7 +34,7 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-  <Target Name="GenerateBindings" DependsOnTargets="Cargo" BeforeTargets="CoreCompile" Condition="!Exists('$(BindingsFolder)/C2paBindings.cs')">
+  <Target Name="GenerateBindings" DependsOnTargets="Cargo" BeforeTargets="CoreCompile" Condition="!Exists('$(BindingsFolder)/C2paBindings.cs')" Inputs="$(CargoOutput)/c2pa.h" Outputs="$(BindingsFolder)/C2paBindings.cs">
     <PropertyGroup>
       <ConfigOptions>-c latest-codegen multi-file generate-file-scoped-namespaces generate-helper-types generate-tests-xunit -fh header</ConfigOptions>
       <InteropArgs>-n ContentAuthenticity.Bindings -m C2paBindings -l $(C2paLibrary) -p c2pa_ --test-output ../tests/$(BindingsFolder) -r C2paSigningAlg=SigningAlg -x c</InteropArgs>
@@ -47,7 +47,7 @@
     </CreateItem>
   </Target>
 
-  <Target Name="Cargo" Inputs="$(MSBuildThisFileDirectory)../c2pa-rs/Cargo.toml" Outputs="$(CargoOutput)c2pa.h">
+  <Target Name="Cargo" Inputs="$(MSBuildThisFileDirectory)../c2pa-rs/Cargo.toml" Outputs="$(CargoOutput)c2pa.h;$(CargoOutput)/$(C2paLibrary)">
     <PropertyGroup>
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
     </PropertyGroup>

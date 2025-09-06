@@ -163,7 +163,11 @@ public enum Relationship
 }
 
 // Manifest
-public record ClaimGeneratorInfo(string Name, string? Version = null, string? OperatingSystem = null);
+public record ClaimGeneratorInfo(string Name, string? Version = null, string? OperatingSystem = null)
+{
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement> Other { get; set; }
+}
 
 public record Ingredient(Relationship Relationship = Relationship.ComponentOf)
 {

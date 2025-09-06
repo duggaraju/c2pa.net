@@ -6,9 +6,9 @@ namespace ContentAuthenticity;
 
 public abstract record Assertion(string Label, object Data)
 {
-    public static Assertion FromJson(string json)
+    public static T FromJson<T>(string json) where T : Assertion
     {
-        return JsonExtensions.Deserialize<Assertion>(json);
+        return JsonExtensions.Deserialize<T>(json);
     }
 }
 
@@ -91,12 +91,21 @@ public record CustomAssertion(string Label, dynamic Data) : Assertion<dynamic>(L
 }
 
 
-public record AuthorInfo([property: JsonPropertyName("@type")] string Type, string Name);
+public record SchemaDotOrg(
+    [property: JsonPropertyName("@context")] object? Context = null,
+    [property: JsonPropertyName("@type")] string ObjectType = "default_type")
+{
+    [JsonExtensionData]
+    public IDictionary<string, object>? Value { get; set; } = null;
+}
 
 public record CreativeWorkAssertionData(
-    [property: JsonPropertyName("@context")] string? Context = "",
-    [property: JsonPropertyName("@type")] string? Type = "",
-    AuthorInfo[]? Authors = null);
+    [property: JsonPropertyName("@context")] object? Context = null,
+    [property: JsonPropertyName("@type")] string? Type = "")
+{
+    [JsonExtensionData]
+    public IDictionary<string, object>? Value { get; set; } = null;
+}
 
 public record CreativeWorkAssertion(CreativeWorkAssertionData Data) : Assertion<CreativeWorkAssertionData>("stds.schema-org.CreativeWork", Data);
 
@@ -118,7 +127,8 @@ public record EmbeddedDataAssertion(EmbeddedDataAssertionData Data) : Assertion<
 
 public record MetadataAssertionData(
     [property: JsonPropertyName("@context")] Dictionary<string, string> Context,
-    Dictionary<string, object> Value);
+    [property: JsonExtensionData] Dictionary<string, object>? Value,
+    string? CustomMetadataLabel);
 
 public record MetadataAssertion(MetadataAssertionData Data) : Assertion<MetadataAssertionData>("c2pa.metadata", Data);
 

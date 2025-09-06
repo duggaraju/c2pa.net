@@ -63,25 +63,27 @@ public class AssertionTests
     }
 
     [Fact]
-    public void CreativeWorkAssertionData_WithAuthors_ShouldCreateCorrectly()
+    public void CreativeWorkAssertionData_WithAuthors_ShouldSerializeCorrectly()
     {
         // Arrange
-        var authors = new[]
+        var value = new Dictionary<string, object>
         {
-            new AuthorInfo("Person", "John Doe"),
-            new AuthorInfo("Organization", "ACME Corp")
+            { "Person", "John Doe" },
+            { "Organization", "ACME Corp" }
         };
 
         // Act
-        var data = new CreativeWorkAssertionData("http://schema.org/", "CreativeWork", authors);
+        var data = new CreativeWorkAssertionData("http://schema.org/", "CreativeWork")
+        {
+            Value = value
+        };
+
+        var assertion = new CreativeWorkAssertion(data);
+        var json = assertion.ToJson();
+        var newAssertion = Assertion.FromJson<CreativeWorkAssertion>(json);
 
         // Assert
-        Assert.Equal("http://schema.org/", data.Context);
-        Assert.Equal("CreativeWork", data.Type);
-        Assert.NotNull(data.Authors);
-        Assert.Equal(2, data.Authors.Length);
-        Assert.Equal("John Doe", data.Authors[0].Name);
-        Assert.Equal("ACME Corp", data.Authors[1].Name);
+        Assert.Equal(assertion.Data.ToJson(), newAssertion.Data.ToJson());
     }
 
     [Fact]
@@ -129,7 +131,7 @@ public class AssertionTests
         var json = original.ToJson();
 
         // Act
-        var deserialized = Assertion.FromJson(json);
+        var deserialized = Assertion.FromJson<CreativeWorkAssertion>(json);
 
         // Assert
         Assert.NotNull(deserialized);
@@ -282,7 +284,7 @@ public class AssertionTests
         var json = originalAssertion.ToJson();
 
         // Act
-        var deserialized = Assertion.FromJson(json);
+        var deserialized = Assertion.FromJson<TrainingAssertion>(json);
 
         // Assert
         Assert.NotNull(deserialized);
@@ -537,7 +539,7 @@ public class AssertionTests
         var json = originalAssertion.ToJson();
 
         // Act
-        var deserialized = Assertion.FromJson(json);
+        var deserialized = Assertion.FromJson<CertificateStatusAssertion>(json);
 
         // Assert
         Assert.NotNull(deserialized);
