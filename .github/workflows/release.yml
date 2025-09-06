@@ -37,6 +37,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Debug github.event
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('GITHUB EVENT CONTEXT:', JSON.stringify(github.context, null, 2));
       - id: set_version
         uses: actions/github-script@v7
         with:
