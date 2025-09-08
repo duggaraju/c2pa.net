@@ -7,7 +7,7 @@
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
 - [Rust toolchain](https://rustup.rs/) (for building the native c2pa-rs library)
 - [Git](https://git-scm.com/) with submodule support
-  [ClangSharp](https://github.com/dotnet/ClangSharp)
+- [ClangSharp](https://github.com/dotnet/ClangSharp)
 
 ## Getting Started
 
