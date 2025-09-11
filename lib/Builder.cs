@@ -216,10 +216,7 @@ public sealed class Builder : IDisposable
         }
     }
 
-    public static string GenerateInstanceID()
-    {
-        return "xmp:iid:" + Guid.NewGuid().ToString();
-    }
+    public static string GenerateInstanceID() => $"xmp:iid:{Guid.NewGuid()}";
 
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]

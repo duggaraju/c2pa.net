@@ -1,12 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <C2paLibrary Condition="$([MSBuild]::IsOSPlatform('Windows'))">c2pa_c.dll</C2paLibrary>
-    <C2paLibrary Condition="$([MSBuild]::IsOSPlatform('Linux'))">libc2pa_c.so</C2paLibrary>
     <Title>Content Authenticity .NET Library</Title>
     <Company>Microsoft</Company>
     <Authors>Prakash Duggaraju</Authors>
@@ -16,9 +14,15 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/duggaraju/c2pa.net</RepositoryUrl>
     <CargoOutput>$(MSBuildThisFileDirectory)../c2pa-rs/target/$(Configuration.ToLower())/</CargoOutput>
-    <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('Windows'))">win-x64</RuntimeIdentifier>
-    <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('Linux'))">linux-x64</RuntimeIdentifier>
     <BindingsFolder>Bindings</BindingsFolder>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <C2paLibrary>c2pa_c.dll</C2paLibrary>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <C2paLibrary>libc2pa_c.so</C2paLibrary>
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Text.Json" />
@@ -29,7 +33,7 @@
     <PackageReference Include="libclang.runtime.linux-x64" GeneratePathProperty="true" IncludeAssets="none"/>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/$(C2paLibrary)" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes/$(RuntimeIdentifier)/native/" />
+    <Content Include="$(CargoOutput)$(C2paLibrary)" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes/$(RuntimeIdentifier)/native/" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md">

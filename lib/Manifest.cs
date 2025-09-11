@@ -205,7 +205,7 @@ public record SignatureInfo(
     bool? RevocationStatus);
 
 public record Manifest(
-    string ClaimGenerator = null,
+    string? ClaimGenerator = null,
     IList<ClaimGeneratorInfo>? ClaimGeneratorInfo = null,
     string? Title = null,
     string Format = "application/octet-stream",

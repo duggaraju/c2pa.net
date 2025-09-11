@@ -71,10 +71,7 @@ public class ManifestDefinitionTests
         var deserialized = ManifestDefinition.FromJson(json);
 
         // Assert
-        Assert.Equal(original.Format, deserialized.Format);
-        Assert.Equal(original.Title, deserialized.Title);
-        Assert.Equal(original.Vendor, deserialized.Vendor);
-        Assert.Equal(original.Alg, deserialized.Alg);
+        Assert.Equivalent(original, deserialized);
     }
 
     [Fact]
@@ -88,9 +85,9 @@ public class ManifestDefinitionTests
         manifest.ClaimGeneratorInfo.Add(claimGenerator);
 
         // Assert
-        Assert.Single(manifest.ClaimGeneratorInfo);
-        Assert.Equal("TestApp", manifest.ClaimGeneratorInfo[0].Name);
-        Assert.Equal("1.0.0", manifest.ClaimGeneratorInfo[0].Version);
+        var claim = Assert.Single(manifest.ClaimGeneratorInfo);
+        Assert.Equal("TestApp", claim.Name);
+        Assert.Equal("1.0.0", claim.Version);
     }
 
     [Fact]
