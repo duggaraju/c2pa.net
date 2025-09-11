@@ -1,7 +1,5 @@
 ﻿// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
-using System.Runtime.Serialization;
-
 namespace ContentAuthenticity;
 
 // See https://opensource.contentauthenticity.org/docs/manifest/json-ref/reader for the schema.
@@ -60,14 +58,18 @@ public enum Role
     Styled,
     Watermarked,
 }
-public record ManifestAssertion(string Label, object Data, AssertionKind Kind, int? Instance = null) : Assertion(Label, Data);
+public record ManifestAssertion(
+    string Label,
+    dynamic Data,
+    AssertionKind? Kind = null,
+    int? Instance = null);
 
 
 public record Thumbnail(string Format, string Identifier) : ResourceRef(Format, Identifier);
 
 public record ResourceRef(string Format, string Identifier)
 {
-    public List<AssetType>? DataTypes { get; set; } = [];
+    public List<AssetType>? DataTypes { get; set; } = null;
 
     public string? Alg { get; set; } = null;
 
@@ -82,7 +84,7 @@ public record AssetType(
 // Ingredient
 public record HashedUri(string Url, SigningAlg Alg, byte[] Hash, byte[] Salt);
 
-public record ValidationStatus(string Code, string? Url, string? Explanation, bool? Success = false, string? IngredientUri = null);
+public record ValidationStatus(string Code, string? Url, string? Explanation, bool? Success = null, string? IngredientUri = null);
 
 public record ValidationResults(
     [property: JsonPropertyName("activeManifest")] StatusCodes? ActiveManifest,
@@ -152,13 +154,13 @@ public record ItemSettings(string Identifier, string Value);
 
 public enum Relationship
 {
-    [EnumMember(Value = "parentOf")]
+    [JsonStringEnumMemberName("parentOf")]
     ParentOf,
 
-    [EnumMember(Value = "componentOf")]
+    [JsonStringEnumMemberName("componentOf")]
     ComponentOf,
 
-    [EnumMember(Value = "inputTo")]
+    [JsonStringEnumMemberName("inputTo")]
     InputTo,
 }
 
@@ -166,22 +168,18 @@ public enum Relationship
 public record ClaimGeneratorInfo(string Name, string? Version = null, string? OperatingSystem = null)
 {
     [JsonExtensionData]
-    public Dictionary<string, JsonElement> Other { get; set; }
+    public Dictionary<string, JsonElement>? Other { get; set; }
 }
 
-public record Ingredient(Relationship Relationship = Relationship.ComponentOf)
+public record Ingredient(
+    string? Title = null,
+    string? Format = null,
+    string? DocumentId = null,
+    string? InstanceId = null,
+    Thumbnail? Thumbnail = null,
+    Relationship Relationship = Relationship.ComponentOf)
 {
-    public string? Title { get; set; }
-
-    public string? Format { get; set; }
-
     public string? ActiveManifest { get; set; }
-
-    public string? Label { get; set; }
-
-    public string? DocumentId { get; set; }
-
-    public string? InstanceId { get; set; }
 
     public HashedUri? C2paManifest { get; set; }
 
@@ -189,7 +187,7 @@ public record Ingredient(Relationship Relationship = Relationship.ComponentOf)
 
     public List<ValidationStatus>? ValidationStatus { get; set; }
 
-    public Thumbnail? Thumbnail { get; set; }
+    public string? Label { get; set; }
 
     public HashedUri? Data { get; set; }
 
@@ -202,27 +200,21 @@ public record SignatureInfo(
     SigningAlg? Alg,
     string? Issuer,
     string? CommonName,
-    DateTimeOffset? Time,
     string? CertSerialNumber,
+    DateTimeOffset? Time,
     bool? RevocationStatus);
 
 public record Manifest(
-    string ClaimGenerator,
-    string Format,
-    string? Title,
-    string? InstanceId,
-    string? Label)
-{
-    public List<ClaimGeneratorInfo> ClaimGeneratorInfo { get; set; } = [];
-
-    public Thumbnail? Thumbnail { get; set; }
-
-    public List<Ingredient> Ingredients { get; set; } = [];
-
-    public List<ManifestAssertion> Assertions { get; set; } = [];
-
-    public SignatureInfo? SignatureInfo { get; set; } = null;
-}
+    string ClaimGenerator = null,
+    IList<ClaimGeneratorInfo>? ClaimGeneratorInfo = null,
+    string? Title = null,
+    string Format = "application/octet-stream",
+    string? InstanceId = null,
+    Thumbnail? Thumbnail = null,
+    IList<Ingredient>? Ingredients = null,
+    IList<ManifestAssertion>? Assertions = null,
+    SignatureInfo? SignatureInfo = null,
+    string? Label = null);
 
 public record ManifestStore(
     string ActiveManifest,

@@ -1,0 +1,29 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Azure.CodeSigning.Sdk" Version="0.1.135" />
+    <PackageVersion Include="Azure.Identity" Version="1.16.0" />
+    <PackageVersion Include="Azure.ResourceManager" Version="1.13.2" />
+    <PackageVersion Include="Azure.ResourceManager.TrustedSigning" Version="1.0.0-beta.1" />
+    <PackageVersion Include="Azure.Security.KeyVault.Keys" Version="4.8.0" />
+    <PackageVersion Include="Azure.Security.KeyVault.Secrets" Version="4.8.0" />
+    <PackageVersion Include="BenchmarkDotNet" Version="0.15.2" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="Moq" Version="4.20.72" />
+    <PackageVersion Include="NJsonSchema.CodeGeneration.CSharp" Version="11.4.0" />
+    <PackageVersion Include="System.CommandLine" Version="2.0.0-beta7.25380.108" />
+    <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.22272.1" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.9" />
+    <PackageVersion Include="System.Text.Json" Version="9.0.9" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <PackageVersion Include="libclang.runtime.linux-x64" Version="20.1.2" />
+    <PackageVersion Include="libClangSharp.runtime.linux-x64" Version="20.1.2" />
+  </ItemGroup>
+</Project>

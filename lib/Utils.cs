@@ -27,7 +27,7 @@ public static class JsonExtensions
         }
     }
 
-    public static JsonSerializerOptions JsonOptions(bool indented = true) => new()
+    public static JsonSerializerOptions JsonSerializerOptions(bool indented = true) => new()
     {
         Converters =
         {
@@ -37,15 +37,17 @@ public static class JsonExtensions
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-        WriteIndented = indented
+        WriteIndented = indented,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        NewLine = "\n"
     };
 
     public static T Deserialize<T>(this string json)
     {
-        return JsonSerializer.Deserialize<T>(json, JsonOptions()) ?? throw new JsonException("Failed to deserialize JSON.");
+        return JsonSerializer.Deserialize<T>(json, JsonSerializerOptions()) ?? throw new JsonException("Failed to deserialize JSON.");
     }
 
-    public static string Serialize<T>(this T obj, bool indented = true) => JsonSerializer.Serialize(obj, JsonOptions(indented));
+    public static string Serialize<T>(this T obj, bool indented = true) => JsonSerializer.Serialize(obj, JsonSerializerOptions(indented));
 
     public static Type GetAssertionTypeFromLabel(string label)
     {
@@ -69,7 +71,7 @@ public static class JsonExtensions
         };
     }
 
-    public static string ToJson<T>(this T obj, bool indented = true) => JsonSerializer.Serialize(obj, JsonOptions(indented));
+    public static string ToJson<T>(this T obj, bool indented = true) => JsonSerializer.Serialize(obj, JsonSerializerOptions(indented));
 }
 
 public static class Utils

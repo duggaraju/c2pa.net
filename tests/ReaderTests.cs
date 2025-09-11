@@ -47,4 +47,18 @@ public class ReaderTests
         // Act & Assert
         Assert.Throws<FileNotFoundException>(() => Reader.FromFile(nonExistentFile));
     }
+
+    [Fact]
+    public void JsonRoundTrip_ShouldPreserveDataIntegrity()
+    {
+        var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.jpg");
+        foreach (var file in files)
+        {
+            var reader = Reader.FromFile("CACAE-uri-CA.jpg");
+            var originalJson = reader.Json;
+            var store = reader.ManifestStore;
+            var roundTrippedJson = store.ToJson();
+            Assert.Equal(originalJson, roundTrippedJson);
+        }
+    }
 }

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -20,10 +20,13 @@
     <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('Linux'))">linux-x64</RuntimeIdentifier>
     <BindingsFolder>Bindings</BindingsFolder>
   </PropertyGroup>
-  <!-- Temporary workaournd for Linux till .NET 10 comes out -->
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
+  <!-- Temporary workaround for Linux till .NET 10 comes out -->
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-    <PackageReference Include="libClangSharp.runtime.linux-x64" Version="20.1.2" GeneratePathProperty="true" />
-    <PackageReference Include="libclang.runtime.linux-x64" Version="20.1.2" GeneratePathProperty="true" />
+    <PackageReference Include="libClangSharp.runtime.linux-x64" GeneratePathProperty="true" />
+    <PackageReference Include="libclang.runtime.linux-x64" GeneratePathProperty="true" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="../c2pa-rs/target/$(Configuration.ToLower())/$(C2paLibrary)" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes/$(RuntimeIdentifier)/native/" />

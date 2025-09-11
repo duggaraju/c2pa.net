@@ -14,3 +14,16 @@ public interface ISigner
 
     public bool UseOcsp => false;
 }
+
+public interface IAsyncSigner : ISigner
+{
+    Task<ReadOnlyMemory<byte>> SignAsync(ReadOnlyMemory<byte> data);
+
+    new int Sign(ReadOnlySpan<byte> data, Span<byte> hash)
+    {
+        var input = data.ToArray();
+        var output = Task.Run(async () => await SignAsync(input)).Result;
+        output.Span.CopyTo(hash);
+        return output.Length;
+    }
+}

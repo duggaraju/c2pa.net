@@ -28,8 +28,7 @@ public class ManifestTests
         // Assert
         Assert.Equal("image/png", resourceRef.Format);
         Assert.Equal("resource-456", resourceRef.Identifier);
-        Assert.NotNull(resourceRef.DataTypes);
-        Assert.Empty(resourceRef.DataTypes);
+        Assert.Null(resourceRef.DataTypes);
         Assert.Null(resourceRef.Alg);
         Assert.Null(resourceRef.Hash);
     }
@@ -145,7 +144,7 @@ public class ManifestTests
         var schemaJson = await response.Content.ReadAsStreamAsync();
         var expected = JsonNode.Parse(schemaJson);
 
-        var options = JsonExtensions.JsonOptions();
+        var options = JsonExtensions.JsonSerializerOptions();
         JsonNode actual = options.GetJsonSchemaAsNode(typeof(ManifestStore));
         Console.WriteLine(actual.ToString());
         Assert.Equal(expected, actual);

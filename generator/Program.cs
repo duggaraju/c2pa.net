@@ -2,6 +2,7 @@
 // Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
 using NJsonSchema;
+using NJsonSchema.CodeGeneration;
 using NJsonSchema.CodeGeneration.CSharp;
 
 // Check for required arguments
@@ -26,9 +27,13 @@ if (!File.Exists(schemaFile))
 Console.WriteLine($"Reading schema from: {schemaFile}");
 var schema = await JsonSchema.FromFileAsync(schemaFile);
 
-var generator = new CSharpGenerator(schema);
-generator.Settings.Namespace = "ContentAuthenticity";
-generator.Settings.JsonLibrary = CSharpJsonLibrary.SystemTextJson;
+var settings = new CSharpGeneratorSettings
+{
+    PropertyNameGenerator = new SnakeCaseToPascalCasePropertyNameGenerator(),
+    Namespace = "ContentAuthenticity",
+    JsonLibrary = CSharpJsonLibrary.SystemTextJson
+};
+var generator = new CSharpGenerator(schema,settings);
 
 var file = generator.GenerateFile();
 
@@ -42,3 +47,20 @@ if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
 await File.WriteAllTextAsync(outputFile, file);
 Console.WriteLine($"Generated C# code written to: {outputFile}");
 return 0;
+
+public class SnakeCaseToPascalCasePropertyNameGenerator : IPropertyNameGenerator
+{
+    public string Generate(JsonSchemaProperty property)
+    {
+        // Split the snake_case name by underscore
+        var parts = property.Name.Split('_');
+
+        // Capitalize the first letter of each part and concatenate them
+        var pascalCaseName = string.Concat(parts.Select(part =>
+            char.ToUpperInvariant(part[0]) + part.Substring(1)
+        ));
+
+        return pascalCaseName;
+    }
+}
+
