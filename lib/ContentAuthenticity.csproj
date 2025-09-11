@@ -11,7 +11,7 @@
     <Company>Microsoft</Company>
     <Authors>Prakash Duggaraju</Authors>
     <Description>.NET Bindings on top of Rust c2pa-rs library.</Description>
-    <Copyright>Microsoft Corporation</Copyright>
+    <Copyright>Copyright (c) Prakash Duggaraju 2025</Copyright>
     <PackageProjectUrl>https://github.com/duggaraju/c2pa.net</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/duggaraju/c2pa.net</RepositoryUrl>

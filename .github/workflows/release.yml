@@ -13,7 +13,7 @@ on:
       publish_nuget:
         description: 'Publish packages to NuGet.org (workflow_dispatch only).'
         required: false
-        default: false
+        default: true
         type: boolean
 
 permissions:
@@ -163,7 +163,6 @@ jobs:
           done
 
       - name: Publish to NuGet.org
-        if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.publish_nuget == 'true' || github.event.inputs.publish_nuget == true) }}
         run: |
           set -e
           for pkg in $(find ./artifacts/packages -name '*.nupkg'); do
