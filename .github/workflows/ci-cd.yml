@@ -16,6 +16,7 @@ permissions:
 env:
   DOTNET_VERSION: '8.0.x'
   RUST_VERSION: '1.88.0'
+  BASE_VERSION: '0.4.0'
   NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
   
 jobs:
@@ -36,14 +37,28 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const ref = process.env.GITHUB_REF || '';
+            let baseVersion = process.env.BASE_VERSION || '0.4.0';
             let version = '';
+
+            // If triggered by a tag, use the tag version (strip leading 'v')
             if (ref && ref.startsWith('refs/tags/')) {
               version = ref.replace('refs/tags/','').replace(/^v/,'');
             } else {
+              // Try to discover the most recent tag in the repo and use it as the base
+              try {
+                const { execSync } = require('child_process');
+                const latestTag = execSync('git describe --tags --abbrev=0').toString().trim();
+                if (latestTag) {
+                  baseVersion = latestTag.replace(/^v/,'');
+                }
+              } catch (e) {
+                // no tags available or git not present; fall back to BASE_VERSION
+              }
+
               const runNumber = process.env.GITHUB_RUN_NUMBER || '0';
               const sha = (process.env.GITHUB_SHA || '').slice(0,8);
               const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
-              version = `1.0.0-ci-${date}.${runNumber}.${sha}`;
+              version = `${baseVersion}-ci-${date}.${runNumber}.${sha}`;
             }
             core.setOutput('version', version);
 
