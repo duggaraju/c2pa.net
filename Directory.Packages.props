@@ -12,7 +12,7 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="NJsonSchema.CodeGeneration.CSharp" Version="11.4.0" />
-    <PackageVersion Include="System.CommandLine" Version="2.0.0-beta7.25380.108" />
+    <PackageVersion Include="System.CommandLine" Version="2.0.0-rc.1.25451.107" />
     <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.22272.1" />
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.9" />
     <PackageVersion Include="System.Text.Json" Version="9.0.9" />
