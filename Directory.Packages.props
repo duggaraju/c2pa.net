@@ -6,12 +6,11 @@
   <ItemGroup>
     <PackageVersion Include="Azure.CodeSigning.Sdk" Version="0.1.135" />
     <PackageVersion Include="Azure.Identity" Version="1.16.0" />
-    <PackageVersion Include="Azure.ResourceManager.TrustedSigning" Version="1.0.0-beta.2" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.4" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Moq" Version="4.20.72" />
-    <PackageVersion Include="NJsonSchema.CodeGeneration.CSharp" Version="11.4.0" />
+    <PackageVersion Include="NJsonSchema.CodeGeneration.CSharp" Version="11.5.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-rc.1.25451.107" />
     <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.25306.1" />
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.9" />
