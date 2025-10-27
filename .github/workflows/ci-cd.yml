@@ -151,7 +151,7 @@ jobs:
 
     # Upload test results
     - name: Upload test results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: test-results-${{ matrix.os }}-${{ matrix.configuration }}
@@ -176,7 +176,7 @@ jobs:
     # Upload NuGet packages as artifacts
     - name: Upload NuGet packages
       if: matrix.os == 'windows-latest' && matrix.configuration == 'Release'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: nuget-packages
         path: ./artifacts/packages/*.nupkg
