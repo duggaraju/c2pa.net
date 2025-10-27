@@ -116,7 +116,7 @@ jobs:
     - name: Install system dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        brew install pkg-config openssl clang llvm
+        brew install pkg-config llvm
 
     # Build Rust c2pa-c-ffi library
     - name: Build Rust FFI library (Release)
