@@ -69,7 +69,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
         configuration: [Debug, Release]
         exclude:
           # Only run Debug builds on Ubuntu to save resources
@@ -168,8 +168,7 @@ jobs:
         fail_ci_if_error: false
 
     # Create NuGet packages (only on Windows Release)
-    - name: Create NuGet packages
-      if: matrix.os == 'windows-latest' && matrix.configuration == 'Release'
+    - name: Create NuGet package
       run: |
         dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
 
