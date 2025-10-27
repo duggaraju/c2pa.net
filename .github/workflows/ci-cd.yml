@@ -71,12 +71,41 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
         configuration: [Debug, Release]
+        arch: [x64, arm64]
         exclude:
-          # Only run Debug builds on Ubuntu to save resources
+          # Only run Release builds on Ubuntu to save resources
           - os: ubuntu-latest
             configuration: Debug
           - os: macos-latest
             configuration: Debug
+          # macOS arm64 only; skip macOS x64 builds
+          - os: macos-latest
+            arch: x64
+          # Windows arm64 Debug currently unsupported
+          - os: windows-latest
+            configuration: Debug
+            arch: arm64
+        include:
+          - os: windows-latest
+            arch: x64
+            rust_target: x86_64-pc-windows-msvc
+            runtime: win-x64
+          - os: windows-latest
+            arch: arm64
+            rust_target: aarch64-pc-windows-msvc
+            runtime: win-arm64
+          - os: ubuntu-latest
+            arch: x64
+            rust_target: x86_64-unknown-linux-gnu
+            runtime: linux-x64
+          - os: ubuntu-latest
+            arch: arm64
+            rust_target: aarch64-unknown-linux-gnu
+            runtime: linux-arm64
+          - os: macos-latest
+            arch: arm64
+            rust_target: aarch64-apple-darwin
+            runtime: osx-arm64
     
     steps:
     - name: Checkout code
@@ -95,6 +124,7 @@ jobs:
       with:
         toolchain: ${{ env.RUST_VERSION }}
         cache: true
+        targets: ${{ matrix.rust_target }}
 
     # Cache .NET dependencies
     - name: Cache .NET dependencies
@@ -103,37 +133,29 @@ jobs:
         path: |
           ~/.nuget/packages
           ~/.dotnet
-        key: ${{ matrix.os }}-dotnet-${{ hashFiles('**/*.csproj', '**/*.props') }}
+        key: ${{ matrix.os }}-${{ matrix.arch }}-dotnet-${{ hashFiles('**/*.csproj', '**/*.props') }}
         restore-keys: |
-          ${{ matrix.os }}-dotnet-
+          ${{ matrix.os }}-${{ matrix.arch }}-dotnet-
 
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential pkg-config libssl-dev llvm-18 clang-18
+        sudo apt-get install -y llvm-18 clang-18
 
     - name: Install system dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        brew install pkg-config llvm
+        brew install llvm
 
     # Build Rust c2pa-c-ffi library
     - name: Build Rust FFI library (Release)
-      if: matrix.configuration == 'Release'
       working-directory: c2pa-rs
       env:
         RUSTFLAGS: "-A warnings"
       run: |
-        cargo build --release -p c2pa-c-ffi --no-default-features --features "rust_native_crypto"
+        cargo build ${{ matrix.configuration == 'release' && '--release' || '' }} -p c2pa-c-ffi --no-default-features --features "rust_native_crypto" --target ${{ matrix.rust_target }}
 
-    - name: Build Rust FFI library (Debug)
-      if: matrix.configuration == 'Debug'
-      working-directory: c2pa-rs
-      env:
-        RUSTFLAGS: "-A warnings"
-      run: |
-        cargo build -p c2pa-c-ffi --no-default-features --features "rust_native_crypto"
 
     # Restore .NET dependencies
     - name: Restore dependencies
@@ -154,7 +176,7 @@ jobs:
       uses: actions/upload-artifact@v5
       if: always()
       with:
-        name: test-results-${{ matrix.os }}-${{ matrix.configuration }}
+        name: test-results-${{ matrix.os }}-${{ matrix.configuration }}-${{ matrix.arch }}
         path: |
           **/TestResults/**/*.trx
           **/TestResults/**/*.xml
