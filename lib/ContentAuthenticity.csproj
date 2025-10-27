@@ -24,6 +24,10 @@
     <C2paLibrary>libc2pa_c.so</C2paLibrary>
     <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
   </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <C2paLibrary>libc2pa_c.dylib</C2paLibrary>
+    <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Text.Json" />
   </ItemGroup>
