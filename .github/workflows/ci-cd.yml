@@ -124,7 +124,7 @@ jobs:
       with:
         toolchain: ${{ env.RUST_VERSION }}
         cache: true
-        targets: ${{ matrix.rust_target }}
+        target: ${{ matrix.rust_target }}
 
     # Cache .NET dependencies
     - name: Cache .NET dependencies
