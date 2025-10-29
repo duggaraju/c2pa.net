@@ -71,7 +71,7 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest] #macos-latest
         configuration: [Debug, Release]
-        arch: [x64] # arm64
+        arch: [x64, arm64]
         exclude:
           # Only run Release builds on Ubuntu to save resources
           - os: ubuntu-latest
@@ -141,7 +141,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y llvm-18 clang-18
+        sudo apt-get install -y llvm-18 clang-18 ${{ matrix.arch == 'arm64' && 'gcc-aarch64-linux-gnu' || '' }}
 
     - name: Install system dependencies (macOS)
       if: matrix.os == 'macos-latest'
