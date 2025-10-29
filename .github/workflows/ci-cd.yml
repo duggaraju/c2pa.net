@@ -69,9 +69,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest] #macos-latest
-        configuration: [Debug, Release]
+        os: [windows-latest, ubuntu-latest, macos-latest] 
         arch: [x64, arm64]
+        configuration: [Debug, Release]
         exclude:
           # Only run Release builds on Ubuntu to save resources
           - os: ubuntu-latest
