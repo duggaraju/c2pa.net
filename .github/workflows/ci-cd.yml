@@ -69,12 +69,12 @@ jobs:
     runs-on: ${{ matrix.os }}${{ matrix.arch == 'arm64' && '-arm64' || '' }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest] 
+        os: [windows-latest, ubuntu-24.04, macos-latest] 
         arch: [x64, arm64]
         configuration: [Debug, Release]
         exclude:
           # Only run Release builds on Ubuntu to save resources
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             configuration: Debug
           - os: macos-latest
             configuration: Debug
@@ -94,11 +94,11 @@ jobs:
             arch: arm64
             rust_target: aarch64-pc-windows-msvc
             runtime: win-arm64
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             arch: x64
             rust_target: x86_64-unknown-linux-gnu
             runtime: linux-x64
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             arch: arm64
             rust_target: aarch64-unknown-linux-gnu
             runtime: linux-arm64
@@ -138,7 +138,7 @@ jobs:
           ${{ matrix.os }}-${{ matrix.arch }}-dotnet-
 
     - name: Install system dependencies (Ubuntu)
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04'
       run: |
         sudo apt-get update
         sudo apt-get install -y llvm-18 clang-18 ${{ matrix.arch == 'arm64' && 'gcc-aarch64-linux-gnu' || '' }}
@@ -183,7 +183,7 @@ jobs:
 
     # Upload coverage reports
     - name: Upload coverage to Codecov
-      if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release'
+      if: (matrix.os == 'ubuntu-24.04' || matrix.os == 'ubuntu-latest') && matrix.configuration == 'Release'
       uses: codecov/codecov-action@v5
       with:
         files: "**/TestResults/**/coverage.cobertura.xml"
@@ -193,7 +193,7 @@ jobs:
     - name: Create NuGet packages
       if: matrix.configuration == 'Release'
       run: |
-        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --runtime ${{ matrix.runtime }}--no-build --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
+        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --runtime ${{ matrix.runtime }} --no-build --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
 
     # Upload NuGet packages as artifacts
     - name: Upload NuGet packages
