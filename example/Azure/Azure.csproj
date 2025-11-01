@@ -18,6 +18,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+  	<PackageReference Include="System.Text.Json" VersionOverride="9.0.10" />
 	  <None Update="settings.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
