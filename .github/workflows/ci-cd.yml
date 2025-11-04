@@ -83,8 +83,8 @@ jobs:
             arch: x64
           - os: macos-latest
             arch: arm64
-            rust_target: aarch64-apple-darwin
-            runtime: osx-arm64
+            #rust_target: aarch64-apple-darwin
+            #runtime: osx-arm64
           # Windows arm64 Debug currently unsupported
           - os: windows-latest
             configuration: Debug
