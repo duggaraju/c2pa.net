@@ -81,6 +81,10 @@ jobs:
           # macOS arm64 only; skip macOS x64 builds
           - os: macos-latest
             arch: x64
+          - os: macos-latest
+            arch: arm64
+            rust_target: aarch64-apple-darwin
+            runtime: osx-arm64
           # Windows arm64 Debug currently unsupported
           - os: windows-latest
             configuration: Debug
@@ -102,10 +106,6 @@ jobs:
             arch: arm64
             rust_target: aarch64-unknown-linux-gnu
             runtime: linux-arm64
-          - os: macos-latest
-            arch: arm64
-            rust_target: aarch64-apple-darwin
-            runtime: osx-arm64
     
     steps:
     - name: Checkout code
