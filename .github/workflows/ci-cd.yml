@@ -193,15 +193,17 @@ jobs:
     - name: Create NuGet packages
       if: matrix.configuration == 'Release'
       run: |
-        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --runtime ${{ matrix.runtime }} --no-build --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
+        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --runtime ${{ matrix.runtime }} --no-build --output ./artifacts/packages/${{matrix.runtime}} --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
 
     # Upload NuGet packages as artifacts
     - name: Upload NuGet packages
       if: matrix.os == 'windows-latest' && matrix.configuration == 'Release'
       uses: actions/upload-artifact@v5
       with:
-        name: nuget-packages
-        path: ./artifacts/packages/*.nupkg
+        name: nuget-packages-${{ matrix.runtime }}
+        path: |
+          artifacts/packages/${{ matrix.runtime }}/*.nupkg
+          artifacts/packages/${{ matrix.runtime }}/*.snupkg
 
   # Publish job that runs only on main branch pushes or releases
   publish:
@@ -216,8 +218,9 @@ jobs:
     - name: Download NuGet packages
       uses: actions/download-artifact@v6
       with:
-        name: nuget-packages
+        pattern: nuget-packages-*
         path: ./packages
+        merge-multiple: true
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
