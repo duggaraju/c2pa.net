@@ -76,6 +76,8 @@ jobs:
           # Only run Release builds on Ubuntu to save resources
           - os: ubuntu-24.04
             configuration: Debug
+          - os: ubuntu-24.04
+            arch: arm64
           - os: macos-latest
             configuration: Debug
           # macOS arm64 only; skip macOS x64 builds
