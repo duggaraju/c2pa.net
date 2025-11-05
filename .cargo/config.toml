@@ -1,0 +1,2 @@
+[target.aarch64-unknown-linux-gnu] # Or your specific ARM64 target triple
+linker = "aarch64-linux-gnu-gcc" # Or the name of your ARM64 cross-linker

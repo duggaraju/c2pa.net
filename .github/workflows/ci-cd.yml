@@ -66,18 +66,16 @@ jobs:
   build-and-test:
     name: Build and Test
     needs: generate-version
-    runs-on: ${{ matrix.os }}${{ matrix.arch == 'arm64' && matrix.os == 'ubuntu-24.04' && '-arm64' || '' }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-24.04, macos-latest] 
+        os: [windows-latest, ubuntu-latest, macos-latest] 
         arch: [x64, arm64]
         configuration: [Debug, Release]
         exclude:
           # Only run Release builds on Ubuntu to save resources
-          - os: ubuntu-24.04
+          - os: ubuntu-latest
             configuration: Debug
-          - os: ubuntu-24.04
-            arch: arm64
           - os: macos-latest
             configuration: Debug
           # macOS arm64 only; skip macOS x64 builds
