@@ -133,49 +133,6 @@ jobs:
       run: |
         cargo build --release -p c2pa-c-ffi --no-default-features --features "rust_native_crypto" --target ${{ matrix.rust_target }}
 
-    # Restore .NET dependencies
-    - name: Restore dependencies
-      run: dotnet restore && dotnet tool restore
-
-    # Build .NET solution
-    - name: Build solution
-      run: |
-        dotnet build --configuration ${{ matrix.configuration }} --no-restore --verbosity normal
-
-    # Create NuGet packages
-    - name: Create NuGet packages
-      if: matrix.configuration == 'Release'
-      run: |
-        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --runtime ${{ matrix.runtime }} --no-build --output ./artifacts/packages/${{matrix.runtime}} --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }}
-
-    # Upload NuGet packages as artifacts
-    - name: Upload NuGet packages
-      uses: actions/upload-artifact@v5
-      with:
-        name: nuget-packages-${{ matrix.runtime }}
-        path: |
-          artifacts/packages/${{ matrix.runtime }}/*.nupkg
-          artifacts/packages/${{ matrix.runtime }}/*.snupkg
-
-  # Publish job for releases
-  publish:
-    name: Publish NuGet Package
-    needs: [build, generate-version]
-    runs-on: windows-latest
-    
-    steps:
-    - name: Download NuGet packages
-      uses: actions/download-artifact@v6
-      with:
-        pattern: nuget-packages-*
-        path: ./packages
-        merge-multiple: true
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-
       - name: Restore and build
         run: |
           dotnet restore && dotnet tool restore
