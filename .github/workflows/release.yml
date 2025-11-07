@@ -133,20 +133,20 @@ jobs:
       run: |
         cargo build --release -p c2pa-c-ffi --no-default-features --features "rust_native_crypto" --target ${{ matrix.rust_target }}
 
-      - name: Restore and build
-        run: |
-          dotnet restore && dotnet tool restore
-          dotnet build lib/ContentAuthenticity.csproj --configuration Release -r ${{ matrix.rid }} --no-restore
+    - name: Restore and build
+      run: |
+        dotnet restore && dotnet tool restore
+        dotnet build lib/ContentAuthenticity.csproj --configuration Release -r ${{ matrix.rid }} --no-restore
 
-      - name: Pack NuGet (runtime-specific)
-        run: |
-          dotnet pack lib/ContentAuthenticity.csproj --configuration Release --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }} -p:RuntimeIdentifier=${{ matrix.rid }} --no-build
+    - name: Pack NuGet (runtime-specific)
+      run: |
+        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }} -p:RuntimeIdentifier=${{ matrix.rid }} --no-build
 
-      - name: Upload runtime package
-        uses: actions/upload-artifact@v5
-        with:
-          name: nuget-${{ matrix.rid }}
-          path: ./artifacts/packages/*.nupkg
+    - name: Upload runtime package
+      uses: actions/upload-artifact@v5
+      with:
+        name: nuget-${{ matrix.rid }}
+        path: ./artifacts/packages/*.nupkg
 
   merge:
     name: Merge NuGet packages and publish
