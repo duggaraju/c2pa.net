@@ -135,13 +135,16 @@ jobs:
 
     - name: Pack NuGet (runtime-specific)
       run: |
-        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }} --runtime ${{ matrix.runtime }} --no-build
+        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --runtime ${{ matrix.runtime }} --no-build --output ./artifacts/packages/${{matrix.runtime}} --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }}
 
-    - name: Upload runtime package
+    # Upload NuGet packages as artifacts
+    - name: Upload NuGet packages
       uses: actions/upload-artifact@v5
       with:
-        name: nuget-${{ matrix.rid }}
-        path: ./artifacts/packages/*.nupkg
+        name: nuget-packages-${{ matrix.runtime }}
+        path: |
+          artifacts/packages/${{ matrix.runtime }}/*.nupkg
+          artifacts/packages/${{ matrix.runtime }}/*.snupkg
 
   merge:
     name: Merge NuGet packages and publish
@@ -152,6 +155,7 @@ jobs:
         uses: actions/download-artifact@v6
         with:
           path: ./artifacts
+          pattern: nuget-packages-*
 
       - name: Ensure zip/unzip exist
         run: |
