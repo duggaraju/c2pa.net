@@ -1,4 +1,5 @@
 namespace ContentAuthenticity.Tests;
+
 using Xunit.Abstractions;
 
 public class ReaderTests(ITestOutputHelper output)
