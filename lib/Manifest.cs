@@ -62,7 +62,8 @@ public record ManifestAssertion(
     string Label,
     dynamic Data,
     AssertionKind? Kind = null,
-    int? Instance = null);
+    int? Instance = null,
+    bool? created = null);
 
 
 public record Thumbnail(string Format, string Identifier) : ResourceRef(Format, Identifier);
@@ -187,6 +188,10 @@ public record Ingredient(
 
     public List<ValidationStatus>? ValidationStatus { get; set; }
 
+    public object? Metadata { get; set; }
+
+    public Dictionary<string, object>? ManifestData { get; set; }
+
     public string? Label { get; set; }
 
     public HashedUri? Data { get; set; }
@@ -212,6 +217,7 @@ public record Manifest(
     string? InstanceId = null,
     Thumbnail? Thumbnail = null,
     IList<Ingredient>? Ingredients = null,
+    IList<dynamic>? Credentials = null,
     IList<ManifestAssertion>? Assertions = null,
     SignatureInfo? SignatureInfo = null,
     string? Label = null);

@@ -16,6 +16,7 @@
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.9" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="ContentAuthenticity" Version="$(NugetPackageVersion)" />
   </ItemGroup>
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
     <PackageVersion Include="libclang.runtime.linux-x64" Version="20.1.2" />

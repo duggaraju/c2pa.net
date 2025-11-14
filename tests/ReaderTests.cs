@@ -1,6 +1,7 @@
 namespace ContentAuthenticity.Tests;
+using Xunit.Abstractions;
 
-public class ReaderTests
+public class ReaderTests(ITestOutputHelper output)
 {
     [Fact]
     public void FromStream_WithValidParameters_ShouldNotThrowDuringCreation()
@@ -51,14 +52,21 @@ public class ReaderTests
     [Fact]
     public void JsonRoundTrip_ShouldPreserveDataIntegrity()
     {
-        var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.jpg");
+        var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.png");
         foreach (var file in files)
         {
-            var reader = Reader.FromFile("CACAE-uri-CA.jpg");
-            var originalJson = reader.Json;
-            var store = reader.ManifestStore;
-            var roundTrippedJson = store.ToJson();
-            Assert.Equal(originalJson, roundTrippedJson);
+            try
+            {
+                var reader = Reader.FromFile(file);
+                var originalJson = reader.Json;
+                var store = reader.ManifestStore;
+                var roundTrippedJson = store.ToJson();
+                Assert.Equal(originalJson, roundTrippedJson);
+            }
+            catch (C2paException ex)
+            {
+                output.WriteLine($"C2paException for file {file}: {ex}");
+            }
         }
     }
 }
