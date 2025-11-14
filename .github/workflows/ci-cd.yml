@@ -164,7 +164,7 @@ jobs:
     # Build .NET solution
     - name: Build solution
       run: |
-        dotnet build --configuration ${{ matrix.configuration }} --no-restore --verbosity normal
+        dotnet build --configuration ${{ matrix.configuration }} --no-restore --verbosity normal -p CargoTarget=${{ matrix.rust_target }}
 
     # Run tests
     - name: Run tests

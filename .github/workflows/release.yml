@@ -131,7 +131,7 @@ jobs:
     - name: Restore and build
       run: |
         dotnet restore && dotnet tool restore
-        dotnet build lib/ContentAuthenticity.csproj --configuration Release --no-restore
+        dotnet build lib/ContentAuthenticity.csproj --configuration Release --no-restore -p CargoTarget=${{ matrix.rust_target }}
 
     - name: Pack NuGet (runtime-specific)
       run: |

@@ -12,20 +12,25 @@
     <PackageProjectUrl>https://github.com/duggaraju/c2pa.net</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/duggaraju/c2pa.net</RepositoryUrl>
-    <CargoOutput>$(MSBuildThisFileDirectory)../c2pa-rs/target/$(Configuration.ToLower())/</CargoOutput>
     <BindingsFolder>Bindings</BindingsFolder>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
     <C2paLibrary>c2pa_c.dll</C2paLibrary>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <CargoTarget>x86_64-pc-windows-msvc</CargoTarget>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
     <C2paLibrary>libc2pa_c.so</C2paLibrary>
     <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <CargoTarget>x86_64-unknown-linux-gnu</CargoTarget>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
     <C2paLibrary>libc2pa_c.dylib</C2paLibrary>
     <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
+    <CargoTarget>aarch64-apple-darwin</CargoTarget>
+  </PropertyGroup>
+  <PropertyGroup>
+    <CargoOutput>$(MSBuildThisFileDirectory)../c2pa-rs/target/$(CargoTarget)/$(Configuration.ToLower())/</CargoOutput>
   </PropertyGroup>
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
     <PackageReference Include="libClangSharp.runtime.linux-x64" GeneratePathProperty="true" IncludeAssets="none "/>
@@ -57,6 +62,6 @@
     <PropertyGroup>
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
     </PropertyGroup>
-    <Exec Command="cargo build $(CargoArgs) --features rust_native_crypto" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/c2pa_c_ffi" />
+    <Exec Command="cargo build $(CargoArgs) --features rust_native_crypto --target $(CargoTarget)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/c2pa_c_ffi" />
   </Target>
 </Project>
