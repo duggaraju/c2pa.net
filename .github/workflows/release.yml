@@ -23,7 +23,7 @@ permissions:
   actions: read
 
 env:
-  DOTNET_VERSION: '8.0.x'
+  DOTNET_VERSION: '10.0.x'
   RUST_VERSION: '1.88.0'
   BASE_VERSION: '0.4.0'
   NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

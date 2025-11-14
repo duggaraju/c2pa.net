@@ -193,7 +193,7 @@ internal sealed class FileSigner : ISigner, IDisposable
         var base64 = string.Join("", lines);
         var certBytes = Convert.FromBase64String(base64);
 
-        return new X509Certificate2(certBytes);
+        return X509CertificateLoader.LoadCertificate(certBytes);
     }
 
     private static ECDsa ParseECPrivateKeyFromPem(string privateKeyPem)

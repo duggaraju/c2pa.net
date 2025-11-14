@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -28,10 +27,6 @@
     <C2paLibrary>libc2pa_c.dylib</C2paLibrary>
     <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="System.Text.Json" />
-  </ItemGroup>
-  <!-- Temporary workaround for Linux till .NET 10 comes out -->
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
     <PackageReference Include="libClangSharp.runtime.linux-x64" GeneratePathProperty="true" IncludeAssets="none "/>
     <PackageReference Include="libclang.runtime.linux-x64" GeneratePathProperty="true" IncludeAssets="none"/>
@@ -48,7 +43,7 @@
   <Target Name="GenerateBindings" DependsOnTargets="Cargo" BeforeTargets="CoreCompile" Condition="!Exists('$(BindingsFolder)/C2paBindings.cs')" Inputs="$(CargoOutput)/c2pa.h;$(CargoOutput)/$(C2paLibrary)" Outputs="$(BindingsFolder)/C2paBindings.cs">
     <PropertyGroup>
       <ConfigOptions>-c latest-codegen multi-file generate-file-scoped-namespaces generate-helper-types generate-tests-xunit -fh header</ConfigOptions>
-      <InteropArgs>-n ContentAuthenticity.Bindings -m C2paBindings -l $(C2paLibrary) -p c2pa_ --test-output ../tests/$(BindingsFolder) -r C2paSigningAlg=SigningAlg -x c</InteropArgs>
+      <InteropArgs>-n ContentAuthenticity.Bindings -m C2paBindings -l c2pa_c -p c2pa_ --test-output ../tests/$(BindingsFolder) -r C2paSigningAlg=SigningAlg -x c</InteropArgs>
       <PlatformArgs Condition="$([MSBuild]::IsOSPlatform('Linux'))">-I /usr/lib/gcc/x86_64-linux-gnu/14/include/ -Wno-ignored-attributes -Wno-attributes</PlatformArgs>
       <EnvironmentVariables Condition="$([MSBuild]::IsOSPlatform('Linux'))">LD_LIBRARY_PATH=$(PkglibClangSharp_runtime_linux-x64)/runtimes/linux-x64/native:$(Pkglibclang_runtime_linux-x64)/runtimes/linux-x64/native</EnvironmentVariables>
     </PropertyGroup>

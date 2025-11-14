@@ -57,9 +57,8 @@ class TrustedSigner : ISigner
     {
         using Stream stream = _client.GetSignCertificateChain(_config.AccountName, _config.CertificateProfile);
         var bytes = new byte[stream.Length];
-        stream.Read(bytes, 0, bytes.Length);
-        var certCollection = new X509Certificate2Collection();
-        certCollection.Import(bytes);
+        stream.ReadExactly(bytes, 0, bytes.Length);
+        var certCollection = X509CertificateLoader.LoadPkcs12Collection(bytes, password: null);
 
         List<X509Certificate2> sortedCerts;
         if (certCollection.Count == 1)
