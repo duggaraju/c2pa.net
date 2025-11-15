@@ -184,7 +184,7 @@ jobs:
 
     # Upload coverage reports
     - name: Upload coverage to Codecov
-      if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release'
+      if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release' && martrix.arch == 'x64'
       uses: codecov/codecov-action@v5
       with:
         files: "**/TestResults/**/coverage.cobertura.xml"
