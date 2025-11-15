@@ -159,7 +159,7 @@ jobs:
 
     # Restore .NET dependencies
     - name: Restore dependencies
-      run: dotnet restore && dotnet tool restore
+      run: dotnet restore -r ${{ matrix.runtime }} && dotnet tool restore
 
     # Build .NET solution
     - name: Build solution

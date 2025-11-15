@@ -127,11 +127,10 @@ jobs:
         RUSTFLAGS: "-A warnings"
       run: |
         cargo build --release -p c2pa-c-ffi --no-default-features --features "rust_native_crypto" --target ${{ matrix.rust_target }}
-
     - name: Restore and build
       run: |
-        dotnet restore && dotnet tool restore
-        dotnet build lib/ContentAuthenticity.csproj --configuration Release --no-restore -p CargoTarget=${{ matrix.rust_target }}
+        dotnet restore -r ${{ matrix.runtime }} && dotnet tool restore
+        dotnet build lib/ContentAuthenticity.csproj --configuration Release --no-restore -p CargoTarget=${{ matrix.rust_target }} -r ${{ matrix.runtime }}
 
     - name: Pack NuGet (runtime-specific)
       run: |
