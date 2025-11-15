@@ -168,13 +168,14 @@ jobs:
 
     # Run tests
     - name: Run tests
+      if: matrix.arch == 'x64'  # Run tests only on x64 since the nodes are x64.
       run: |
         dotnet test --configuration ${{ matrix.configuration }} --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage"
 
     # Upload test results
     - name: Upload test results
       uses: actions/upload-artifact@v5
-      if: always()
+      if: matrix.arch == 'x64'
       with:
         name: test-results-${{ matrix.os }}-${{ matrix.configuration }}-${{ matrix.arch }}
         path: |
