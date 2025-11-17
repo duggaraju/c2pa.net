@@ -13,31 +13,50 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/duggaraju/c2pa.net</RepositoryUrl>
     <BindingsFolder>Bindings</BindingsFolder>
-  </PropertyGroup>
-  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
-    <C2paLibrary>c2pa_c.dll</C2paLibrary>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <CargoTarget>x86_64-pc-windows-msvc</CargoTarget>
-  </PropertyGroup>
-  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-    <C2paLibrary>libc2pa_c.so</C2paLibrary>
-    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
-    <CargoTarget>x86_64-unknown-linux-gnu</CargoTarget>
-  </PropertyGroup>
-  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
-    <C2paLibrary>libc2pa_c.dylib</C2paLibrary>
-    <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
-    <CargoTarget>aarch64-apple-darwin</CargoTarget>
-  </PropertyGroup>
-  <PropertyGroup>
-    <CargoOutput>$(MSBuildThisFileDirectory)../c2pa-rs/target/$(CargoTarget)/$(Configuration.ToLower())/</CargoOutput>
-  </PropertyGroup>
+    <IncludeArm64 Condition="'$(IncludeArm64)' == ''">false</IncludeArm64>
+  </PropertyGroup>  
+  <!-- Define architecture targets as items -->
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <Architecture Include="x64">
+      <CargoTarget>x86_64-pc-windows-msvc</CargoTarget>
+      <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+      <C2paLibrary>c2pa_c.dll</C2paLibrary>
+    </Architecture>
+    <Architecture Include="arm64" Condition="'$(IncludeArm64)' == 'true'">
+      <CargoTarget>aarch64-pc-windows-msvc</CargoTarget>
+      <RuntimeIdentifier>win-arm64</RuntimeIdentifier>
+      <C2paLibrary>c2pa_c.dll</C2paLibrary>
+    </Architecture>
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <Architecture Include="x64">
+      <CargoTarget>x86_64-unknown-linux-gnu</CargoTarget>
+      <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+      <C2paLibrary>libc2pa_c.so</C2paLibrary>
+    </Architecture>
+    <Architecture Include="arm64" Condition="'$(IncludeArm64)' == 'true'">
+      <CargoTarget>aarch64-unknown-linux-gnu</CargoTarget>
+      <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
+      <C2paLibrary>libc2pa_c.so</C2paLibrary>
+    </Architecture>
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <Architecture Include="arm64">
+      <CargoTarget>aarch64-apple-darwin</CargoTarget>
+      <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
+      <C2paLibrary>libc2pa_c.dylib</C2paLibrary>
+    </Architecture>
+  </ItemGroup>
+  <ItemGroup>
+    <NativeBinaries Include="@(Architecture->'$(MSBuildThisFileDirectory)../c2pa-rs/target/%(CargoTarget)/$(Configuration.ToLower())/%(C2paLibrary)')" />
+  </ItemGroup>
+  
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
     <PackageReference Include="libClangSharp.runtime.linux-x64" GeneratePathProperty="true" IncludeAssets="none "/>
     <PackageReference Include="libclang.runtime.linux-x64" GeneratePathProperty="true" IncludeAssets="none"/>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="$(CargoOutput)$(C2paLibrary)" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes/$(RuntimeIdentifier)/native/" />
+    <Content Include="@(Architecture->'$(MSBuildThisFileDirectory)../c2pa-rs/target/%(CargoTarget)/$(Configuration.ToLower())/%(C2paLibrary)')" CopyToOutputDirectory="PreserveNewest" Link="runtimes/%(RuntimeIdentifier)/native/%(C2paLibrary)" Pack="true" PackagePath="runtimes/%(RuntimeIdentifier)/native/" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md">
@@ -45,23 +64,29 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-  <Target Name="GenerateBindings" DependsOnTargets="Cargo" BeforeTargets="CoreCompile" Condition="!Exists('$(BindingsFolder)/C2paBindings.cs')" Inputs="$(CargoOutput)/c2pa.h;$(CargoOutput)/$(C2paLibrary)" Outputs="$(BindingsFolder)/C2paBindings.cs">
+  <Target Name="GenerateBindings" DependsOnTargets="Cargo" BeforeTargets="CoreCompile" Condition="!Exists('$(BindingsFolder)/C2paBindings.cs')">
+    <ItemGroup>
+      <FirstArch Include="@(Architecture)" Condition="'%(Identity)' != ''" />
+    </ItemGroup>
     <PropertyGroup>
+      <CargoOutputForBindings>$(MSBuildThisFileDirectory)../c2pa-rs/target/%(FirstArch.CargoTarget)/$(Configuration.ToLower())/</CargoOutputForBindings>
       <ConfigOptions>-c latest-codegen multi-file generate-file-scoped-namespaces generate-helper-types generate-tests-xunit -fh header</ConfigOptions>
       <InteropArgs>-n ContentAuthenticity.Bindings -m C2paBindings -l c2pa_c -p c2pa_ --test-output ../tests/$(BindingsFolder) -r C2paSigningAlg=SigningAlg -x c</InteropArgs>
       <PlatformArgs Condition="$([MSBuild]::IsOSPlatform('Linux'))">-I /usr/lib/gcc/x86_64-linux-gnu/14/include/ -Wno-ignored-attributes -Wno-attributes</PlatformArgs>
       <EnvironmentVariables Condition="$([MSBuild]::IsOSPlatform('Linux'))">LD_LIBRARY_PATH=$(PkglibClangSharp_runtime_linux-x64)/runtimes/linux-x64/native:$(Pkglibclang_runtime_linux-x64)/runtimes/linux-x64/native</EnvironmentVariables>
     </PropertyGroup>
-    <Exec Command="dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutput)c2pa.h -o $(BindingsFolder) $(InteropArgs) $(ConfigOptions) $(PlatformArgs)" EnvironmentVariables="$(EnvironmentVariables)" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" />
+    <Exec Command="dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutputForBindings)c2pa.h -o $(BindingsFolder) $(InteropArgs) $(ConfigOptions) $(PlatformArgs)" EnvironmentVariables="$(EnvironmentVariables)" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" />
     <CreateItem Include="$(BindingsFolder)/*.cs">
       <Output TaskParameter="Include" ItemName="Compile" />
     </CreateItem>
   </Target>
 
-  <Target Name="Cargo" Inputs="$(MSBuildThisFileDirectory)../c2pa-rs/Cargo.toml" Outputs="$(CargoOutput)c2pa.h;$(CargoOutput)/$(C2paLibrary)">
+  <Target Name="Cargo" Outputs="@(NativeBinaries)" Inputs="../c2pa-rs/c2pa_c_ffi/Cargo.toml">
     <PropertyGroup>
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
     </PropertyGroup>
-    <Exec Command="cargo build $(CargoArgs) --features rust_native_crypto --target $(CargoTarget)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/c2pa_c_ffi" />
+    <!-- Build all cargo targets in parallel -->
+    <Exec Command="cargo build $(CargoArgs) --features rust_native_crypto --target %(Architecture.CargoTarget)" 
+          WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/c2pa_c_ffi" />
   </Target>
 </Project>

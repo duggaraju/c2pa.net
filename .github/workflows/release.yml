@@ -67,28 +67,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest] 
-        arch: [x64, arm64]
         configuration: [Release]
-        exclude:
-          # macOS arm64 only; skip macOS x64 builds
-          - os: macos-latest
-        include:
-          - os: windows-latest
-            arch: x64
-            rust_target: x86_64-pc-windows-msvc
-            runtime: win-x64
-          - os: windows-latest
-            arch: arm64
-            rust_target: aarch64-pc-windows-msvc
-            runtime: win-arm64
-          - os: ubuntu-latest
-            arch: x64
-            rust_target: x86_64-unknown-linux-gnu
-            runtime: linux-x64
-          - os: ubuntu-latest
-            arch: arm64
-            rust_target: aarch64-unknown-linux-gnu
-            runtime: linux-arm64
     
     steps:
     - name: Checkout code
@@ -113,40 +92,33 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y llvm-18 clang-18 ${{ matrix.arch == 'arm64' && 'gcc-aarch64-linux-gnu' || '' }}
+        sudo apt-get install -y llvm-18 clang-18 gcc-aarch64-linux-gnu
 
     - name: Install system dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
         brew install llvm
 
-    # Build Rust c2pa-c-ffi library
-    - name: Build Rust FFI library (Release)
-      working-directory: c2pa-rs
-      env:
-        RUSTFLAGS: "-A warnings"
-      run: |
-        cargo build --release -p c2pa-c-ffi --no-default-features --features "rust_native_crypto" --target ${{ matrix.rust_target }}
     - name: Restore and build
       run: |
-        dotnet restore -r ${{ matrix.runtime }} && dotnet tool restore
-        dotnet build lib/ContentAuthenticity.csproj --configuration Release --no-restore -p CargoTarget=${{ matrix.rust_target }} -r ${{ matrix.runtime }}
+        dotnet restore && dotnet tool restore
+        dotnet build lib/ContentAuthenticity.csproj --configuration Release --no-restore /p:BuildArm64=true
 
-    - name: Pack NuGet (runtime-specific)
+    - name: Pack NuGet
       run: |
-        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --runtime ${{ matrix.runtime }} --no-build --output ./artifacts/packages/${{matrix.runtime}} --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }}
+        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }}
 
     # Upload NuGet packages as artifacts
     - name: Upload NuGet packages
       uses: actions/upload-artifact@v5
       with:
-        name: nuget-packages-${{ matrix.runtime }}
+        name: nuget-packages-${{ matrix.os }}
         path: |
-          artifacts/packages/${{ matrix.runtime }}/*.nupkg
-          artifacts/packages/${{ matrix.runtime }}/*.snupkg
+          artifacts/packages/*.nupkg
+          artifacts/packages/*.snupkg
 
-  merge:
-    name: Merge NuGet packages and publish
+  publish:
+    name: Publish NuGet packages
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -155,48 +127,19 @@ jobs:
         with:
           path: ./artifacts
           pattern: nuget-packages-*
+          merge-multiple: true
 
-      - name: Ensure zip/unzip exist
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y zip unzip
-
-      - name: Merge runtime nupkgs
-        run: |
-          set -euo pipefail
-          mkdir -p merged pkg2 ./artifacts/packages
-          pkgs=( $(find ./artifacts -name '*.nupkg' | sort) )
-          if [ ${#pkgs[@]} -lt 1 ]; then echo "no nupkg artifacts found"; exit 1; fi
-          base=${pkgs[0]}
-          echo "Base package: $base"
-          # If only one runtime package exists, just copy it through
-          if [ ${#pkgs[@]} -eq 1 ]; then
-            mkdir -p ./artifacts/packages
-            cp "$base" ./artifacts/packages/
-            echo "Single package copied"; exit 0
-          fi
-          other=${pkgs[1]}
-          echo "Other package: $other"
-
-          unzip -o "$base" -d merged
-          unzip -o "$other" -d pkg2
-
-          if [ -d pkg2/runtimes ]; then
-            mkdir -p merged/runtimes
-            cp -r pkg2/runtimes/* merged/runtimes/
-          fi
-
-          (cd merged && zip -r ../final.nupkg .)
-          mkdir -p ./artifacts/packages
-          mv final.nupkg ./artifacts/packages/
-          echo "Merged package created at ./artifacts/packages/"
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Publish to GitHub Packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          for pkg in $(find ./artifacts/packages -name '*.nupkg'); do
+          for pkg in $(find ./artifacts -name '*.nupkg' ! -name '*.symbols.nupkg'); do
             echo "Publishing $pkg to GitHub Packages"
             dotnet nuget push "$pkg" --api-key $GITHUB_TOKEN --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --skip-duplicate
           done
@@ -204,7 +147,7 @@ jobs:
       - name: Publish to NuGet.org
         run: |
           set -e
-          for pkg in $(find ./artifacts/packages -name '*.nupkg'); do
+          for pkg in $(find ./artifacts -name '*.nupkg' ! -name '*.symbols.nupkg'); do
             echo "Publishing $pkg to NuGet.org"
             dotnet nuget push "$pkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
           done

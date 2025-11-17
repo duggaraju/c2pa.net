@@ -70,42 +70,15 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest] 
-        arch: [x64, arm64]
         configuration: [Debug, Release]
         exclude:
-          # Only run Release builds on Ubuntu to save resources
+          # Only run Release builds on Ubuntu and macOS to save resources
           - os: ubuntu-latest
             configuration: Debug
           - os: macos-latest
             configuration: Debug
-          # macOS arm64 only; skip macOS x64 builds
           - os: macos-latest
-            arch: x64
-          - os: macos-latest
-            arch: arm64
-            #rust_target: aarch64-apple-darwin
-            #runtime: osx-arm64
-          # Windows arm64 Debug currently unsupported
-          - os: windows-latest
-            configuration: Debug
-            arch: arm64
-        include:
-          - os: windows-latest
-            arch: x64
-            rust_target: x86_64-pc-windows-msvc
-            runtime: win-x64
-          - os: windows-latest
-            arch: arm64
-            rust_target: aarch64-pc-windows-msvc
-            runtime: win-arm64
-          - os: ubuntu-latest
-            arch: x64
-            rust_target: x86_64-unknown-linux-gnu
-            runtime: linux-x64
-          - os: ubuntu-latest
-            arch: arm64
-            rust_target: aarch64-unknown-linux-gnu
-            runtime: linux-arm64
+            configuration: Release
     
     steps:
     - name: Checkout code
@@ -141,70 +114,59 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y llvm-18 clang-18 ${{ matrix.arch == 'arm64' && 'gcc-aarch64-linux-gnu' || '' }}
+        sudo apt-get install -y llvm-18 clang-18 gcc-aarch64-linux-gnu
 
     - name: Install system dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
         brew install llvm
 
-    # Build Rust c2pa-c-ffi library
-    - name: Build Rust FFI library (Release)
-      working-directory: c2pa-rs
-      env:
-        RUSTFLAGS: "-A warnings"
-      run: |
-        cargo build ${{ matrix.configuration == 'release' && '--release' || '' }} -p c2pa-c-ffi --no-default-features --features "rust_native_crypto" --target ${{ matrix.rust_target }}
-
-
     # Restore .NET dependencies
     - name: Restore dependencies
-      run: dotnet restore -r ${{ matrix.runtime }} && dotnet tool restore
+      run: dotnet restore && dotnet tool restore
 
-    # Build .NET solution
+    # Build .NET solution (builds both x64 and arm64 if Release)
     - name: Build solution
       run: |
-        dotnet build --configuration ${{ matrix.configuration }} -r ${{ matrix.runtime }} --no-restore --verbosity normal -p CargoTarget=${{ matrix.rust_target }}
+        dotnet build --configuration ${{ matrix.configuration }} --no-restore --verbosity normal ${{ matrix.configuration == 'Release' && '/p:BuildArm64=true' || '' }}
 
     # Run tests
     - name: Run tests
-      if: matrix.arch == 'x64'  # Run tests only on x64 since the nodes are x64.
       run: |
         dotnet test --configuration ${{ matrix.configuration }} --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage"
 
     # Upload test results
     - name: Upload test results
       uses: actions/upload-artifact@v5
-      if: matrix.arch == 'x64'
       with:
-        name: test-results-${{ matrix.os }}-${{ matrix.configuration }}-${{ matrix.arch }}
+        name: test-results-${{ matrix.os }}-${{ matrix.configuration }}
         path: |
           **/TestResults/**/*.trx
           **/TestResults/**/*.xml
 
     # Upload coverage reports
     - name: Upload coverage to Codecov
-      if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release' && matrix.arch == 'x64'
+      if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release'
       uses: codecov/codecov-action@v5
       with:
         files: "**/TestResults/**/coverage.cobertura.xml"
         fail_ci_if_error: false
 
-    # Create NuGet packages (only on Windows Release)
+    # Create NuGet packages (only on Release)
     - name: Create NuGet packages
       if: matrix.configuration == 'Release'
       run: |
-        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --runtime ${{ matrix.runtime }} --no-build --output ./artifacts/packages/${{matrix.runtime}} --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
+        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
 
     # Upload NuGet packages as artifacts
     - name: Upload NuGet packages
-      if: matrix.os == 'windows-latest' && matrix.configuration == 'Release'
+      if: matrix.configuration == 'Release'
       uses: actions/upload-artifact@v5
       with:
-        name: nuget-packages-${{ matrix.runtime }}
+        name: nuget-packages-${{ matrix.os }}
         path: |
-          artifacts/packages/${{ matrix.runtime }}/*.nupkg
-          artifacts/packages/${{ matrix.runtime }}/*.snupkg
+          artifacts/packages/*.nupkg
+          artifacts/packages/*.snupkg
 
   # Publish job that runs only on main branch pushes or releases
   publish:
