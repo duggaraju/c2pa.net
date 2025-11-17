@@ -105,7 +105,7 @@ dotnet pack -c Release -p RuntimeIdentitifer=linx-x64 # or win-x64 for Windows.
 
 ## Project Structure
 
-- `lib/` - Main .NET bindings library (Microsoft.ContentAuthenticity.Bindings)
+- `lib/` - Main .NET bindings library (ContentAuthenticity.Bindings)
 - `tests/` - Unit and integration tests
 - `example/` - Example CLI application demonstrating usage
 - `generator/` - Code generator for creating .NET bindings from Rust
