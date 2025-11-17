@@ -114,7 +114,7 @@ jobs:
 
     - name: Pack NuGet
       run: |
-        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }}
+        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }} -p:BuildArm64=true
 
     # Upload NuGet packages as artifacts
     - name: Upload NuGet packages
@@ -135,7 +135,6 @@ jobs:
         with:
           path: ./artifacts
           pattern: nuget-packages-*
-          merge-multiple: true
 
       - name: Ensure zip/unzip exist
         run: |
