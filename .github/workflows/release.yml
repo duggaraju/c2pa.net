@@ -137,6 +137,55 @@ jobs:
           pattern: nuget-packages-*
           merge-multiple: true
 
+      - name: Ensure zip/unzip exist
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y zip unzip
+
+      - name: Merge runtime nupkgs
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          mkdir -p ./artifacts/merged
+          
+          mapfile -t pkgs < <(find ./artifacts -name '*.nupkg' ! -name '*.symbols.nupkg' -print | sort)
+          
+          if [ ${#pkgs[@]} -eq 0 ]; then
+            echo "No NuGet packages found"
+            exit 1
+          fi
+          
+          base_pkg="${pkgs[0]}"
+          base_name="$(basename "$base_pkg")"
+          workdir="$(mktemp -d)"
+          
+          echo "Merging ${#pkgs[@]} package(s)..."
+          unzip -q "$base_pkg" -d "$workdir/base"
+          
+          # Merge all other packages' runtimes folders
+          for pkg in "${pkgs[@]:1}"; do
+            echo "Merging $(basename "$pkg")..."
+            tmp="$workdir/tmp"
+            rm -rf "$tmp"
+            mkdir -p "$tmp"
+            unzip -q "$pkg" -d "$tmp"
+            
+            if [ -d "$tmp/runtimes" ]; then
+              mkdir -p "$workdir/base/runtimes"
+              cp -a "$tmp/runtimes/." "$workdir/base/runtimes/"
+            fi
+          done
+          
+          # Create merged package
+          pushd "$workdir/base" >/dev/null
+          zip -qr "$workdir/$base_name" .
+          popd >/dev/null
+          
+          mv "$workdir/$base_name" "./artifacts/merged/$base_name"
+          rm -rf "$workdir"
+          
+          echo "Merged package created: ./artifacts/merged/$base_name"
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -147,7 +196,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          for pkg in $(find ./artifacts -name '*.nupkg' ! -name '*.symbols.nupkg'); do
+          for pkg in $(find ./artifacts/merged -name '*.nupkg' ! -name '*.symbols.nupkg'); do
             echo "Publishing $pkg to GitHub Packages"
             dotnet nuget push "$pkg" --api-key $GITHUB_TOKEN --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --skip-duplicate
           done
@@ -155,7 +204,7 @@ jobs:
       - name: Publish to NuGet.org
         run: |
           set -e
-          for pkg in $(find ./artifacts -name '*.nupkg' ! -name '*.symbols.nupkg'); do
+          for pkg in $(find ./artifacts/merged -name '*.nupkg' ! -name '*.symbols.nupkg'); do
             echo "Publishing $pkg to NuGet.org"
             dotnet nuget push "$pkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
           done
