@@ -110,7 +110,7 @@ jobs:
     - name: Restore and build
       run: |
         dotnet restore && dotnet tool restore
-        dotnet build lib/ContentAuthenticity.csproj --configuration Release --no-restore /p:BuildArm64=true
+        dotnet build -m lib/ContentAuthenticity.csproj --configuration Release --no-restore /p:BuildArm64=true
 
     - name: Pack NuGet
       run: |

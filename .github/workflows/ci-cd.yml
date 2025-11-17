@@ -135,7 +135,7 @@ jobs:
     # Build .NET solution (builds both x64 and arm64 if Release)
     - name: Build solution
       run: |
-        dotnet build --configuration ${{ matrix.configuration }} --no-restore --verbosity normal ${{ matrix.configuration == 'Release' && '/p:BuildArm64=true' || '' }}
+        dotnet build -m --configuration ${{ matrix.configuration }} --no-restore --verbosity normal ${{ matrix.configuration == 'Release' && '/p:BuildArm64=true' || '' }}
 
     # Run tests
     - name: Run tests
