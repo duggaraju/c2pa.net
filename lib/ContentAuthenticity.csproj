@@ -13,7 +13,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/duggaraju/c2pa.net</RepositoryUrl>
     <BindingsFolder>Bindings</BindingsFolder>
-    <IncludeArm64 Condition="'$(IncludeArm64)' == ''">false</IncludeArm64>
+    <BuildArm64 Condition="'$(BuildArm64)' == ''">false</BuildArm64>
   </PropertyGroup>  
   <!-- Define architecture targets as items -->
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
@@ -22,7 +22,7 @@
       <RuntimeIdentifier>win-x64</RuntimeIdentifier>
       <C2paLibrary>c2pa_c.dll</C2paLibrary>
     </Architecture>
-    <Architecture Include="arm64" Condition="'$(IncludeArm64)' == 'true'">
+    <Architecture Include="arm64" Condition="'$(BuildArm64)' == 'true'">
       <CargoTarget>aarch64-pc-windows-msvc</CargoTarget>
       <RuntimeIdentifier>win-arm64</RuntimeIdentifier>
       <C2paLibrary>c2pa_c.dll</C2paLibrary>
@@ -34,7 +34,7 @@
       <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
       <C2paLibrary>libc2pa_c.so</C2paLibrary>
     </Architecture>
-    <Architecture Include="arm64" Condition="'$(IncludeArm64)' == 'true'">
+    <Architecture Include="arm64" Condition="'$(BuildArm64)' == 'true'">
       <CargoTarget>aarch64-unknown-linux-gnu</CargoTarget>
       <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
       <C2paLibrary>libc2pa_c.so</C2paLibrary>
