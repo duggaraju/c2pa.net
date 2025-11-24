@@ -11,7 +11,7 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="NJsonSchema.CodeGeneration.CSharp" Version="11.5.0" />
-    <PackageVersion Include="System.CommandLine" Version="2.0.0-rc.2.25502.107" />
+    <PackageVersion Include="System.CommandLine" Version="2.0.0" />
     <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.25306.1" />
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.9" />
     <PackageVersion Include="xunit" Version="2.9.3" />
