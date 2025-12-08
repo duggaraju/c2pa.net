@@ -7,21 +7,19 @@
     <RootNamespace>C2paSample</RootNamespace>
   </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Azure.CodeSigning.Sdk" />
-		<PackageReference Include="Azure.Identity" />
-		<PackageReference Include="System.CommandLine.DragonFruit" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Azure.CodeSigning.Sdk" />
+    <PackageReference Include="Azure.Identity" />
+  </ItemGroup>
 
-	<ItemGroup>
-	  <ProjectReference Include="..\..\lib\ContentAuthenticity.csproj"  Condition="'$(NugetBuild)' == ''" />
-	  <PackageReference Include="ContentAuthenticity" Condition="'$(NugetBuild)' == ''" />
-	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\lib\ContentAuthenticity.csproj"  Condition="'$(NugetBuild)' == ''" />
+    <PackageReference Include="ContentAuthenticity" Condition="'$(NugetBuild)' == ''" />
+  </ItemGroup>
 
-	<ItemGroup>
-	  <None Update="settings.json">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
+  <ItemGroup>
+	<None Update="settings.json">
+	  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	</None>
 	</ItemGroup>
-
 </Project>

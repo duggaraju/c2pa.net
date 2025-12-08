@@ -8,10 +8,16 @@ namespace C2paSample;
 
 partial class Program
 {
-    public static void Main(string inputFile, string? outputFile = null)
+    public static void Main(string[] args)
     {
         Console.WriteLine("Version: {0}", C2pa.Version);
         Console.WriteLine("Supprted Extensions: {0}", string.Join(",", C2pa.SupportedMimeTypes));
+
+        if (args.Length != 2)
+            throw new ArgumentNullException(nameof(args), "No filename was provided.");
+
+        string inputFile = args[0];
+        string? outputFile = args.Length > 1 ? args[1] : null;
 
         if (string.IsNullOrEmpty(inputFile))
             throw new ArgumentNullException(nameof(inputFile), "No filename was provided.");
