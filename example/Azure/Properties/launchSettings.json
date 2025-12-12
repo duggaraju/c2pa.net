@@ -2,7 +2,7 @@
   "profiles": {
     "Azure": {
       "commandName": "Project",
-      "commandLineArgs": "--input-file sample_images\\sample1.jpg --output-file output.jpg",
+      "commandLineArgs": "sample_images\\sample1.jpg output.jpg",
       "workingDirectory": "$(ProjectDir)",
       "nativeDebugging": true
     },

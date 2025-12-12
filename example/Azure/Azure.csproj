@@ -10,10 +10,11 @@
   <ItemGroup>
     <PackageReference Include="Azure.CodeSigning.Sdk" />
     <PackageReference Include="Azure.Identity" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\lib\ContentAuthenticity.csproj"  Condition="'$(NugetBuild)' == ''" />
+    <ProjectReference Include="..\..\lib\ContentAuthenticity.csproj" Condition="'$(NugetBuild)' == ''" />
     <PackageReference Include="ContentAuthenticity" Condition="'$(NugetBuild)' == ''" />
   </ItemGroup>
 

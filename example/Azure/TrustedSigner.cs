@@ -7,6 +7,7 @@ using ContentAuthenticity;
 using ContentAuthenticity.Bindings;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.Pkcs;
 using System.Text;
 
 namespace C2paSample;
@@ -58,8 +59,9 @@ class TrustedSigner : ISigner
         using Stream stream = _client.GetSignCertificateChain(_config.AccountName, _config.CertificateProfile);
         var bytes = new byte[stream.Length];
         stream.ReadExactly(bytes, 0, bytes.Length);
-        var certCollection = X509CertificateLoader.LoadPkcs12Collection(bytes, password: null);
-
+        var cms = new SignedCms();
+        cms.Decode(bytes);
+        var certCollection = cms.Certificates;
         List<X509Certificate2> sortedCerts;
         if (certCollection.Count == 1)
         {

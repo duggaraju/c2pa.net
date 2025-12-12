@@ -2,7 +2,8 @@
   "profiles": {
     "Cli": {
       "commandName": "Project",
-      "commandLineArgs": "sign -i $(SolutionDir)/c2pa-rs/sdk/tests/fixtures/C.jpg -o output.jpg -m $(SolutionDir)/example/Cli/manifest.json -c $(SolutionDir)/c2pa-rs/sdk/tests/fixtures/certs/rs256.pub -k $(SolutionDir)/c2pa-rs/sdk/tests/fixtures/certs/rs256.pem"
+      "commandLineArgs": "sign -i ../../c2pa-rs/sdk/tests/fixtures/C.jpg -o output.jpg -m manifest.json -c ../../c2pa-rs/sdk/tests/fixtures/certs/rs256.pub -k ../../c2pa-rs/sdk/tests/fixtures/certs/rs256.pem",
+      "workingDirectory": "$(ProjectDir)"
     }
   }
 }
