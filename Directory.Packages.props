@@ -18,7 +18,7 @@
     <PackageVersion Include="ContentAuthenticity" Version="$(NugetPackageVersion)" />
   </ItemGroup>
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-    <PackageVersion Include="libclang.runtime.linux-x64" Version="21.1.8" />
-    <PackageVersion Include="libClangSharp.runtime.linux-x64" Version="21.1.8" />
+    <PackageVersion Include="libclang.runtime.linux-x64" Version="20.1.2" />
+    <PackageVersion Include="libClangSharp.runtime.linux-x64" Version="20.1.2" />
   </ItemGroup>
 </Project>
