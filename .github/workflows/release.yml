@@ -66,10 +66,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest] 
+        os: [windows-latest, ubuntu-latest, macos-latest]
         exclude:
           - os: macos-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -90,11 +90,11 @@ jobs:
 
     - name: Install Rust toolchain for
       if: matrix.os == 'ubuntu-latest'
-      run: rustup target add aarch64-unknown-linux-gnu 
+      run: rustup target add aarch64-unknown-linux-gnu
 
     - name: Install Rust toolchain for
       if: matrix.os == 'windows-latest'
-      run: rustup target add aarch64-pc-windows-msvc 
+      run: rustup target add aarch64-pc-windows-msvc
 
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
@@ -110,11 +110,11 @@ jobs:
     - name: Restore and build
       run: |
         dotnet restore && dotnet tool restore
-        dotnet build -m lib/ContentAuthenticity.csproj --configuration Release --no-restore /p:BuildArm64=true
+        dotnet build -m lib/ContentAuthenticity.csproj --configuration Release --no-restore /p:BuildArm64=true /p:EnableCargoReleaseOptimizations=true
 
     - name: Pack NuGet
       run: |
-        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }} -p:BuildArm64=true
+        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }} -p:BuildArm64=true /p:EnableCargoReleaseOptimizations=true
 
     # Upload NuGet packages as artifacts
     - name: Upload NuGet packages
@@ -146,21 +146,21 @@ jobs:
           set -euo pipefail
           shopt -s nullglob
           mkdir -p ./artifacts/merged
-          
+
           mapfile -t pkgs < <(find ./artifacts -name '*.nupkg' ! -name '*.symbols.nupkg' -print | sort)
-          
+
           if [ ${#pkgs[@]} -eq 0 ]; then
             echo "No NuGet packages found"
             exit 1
           fi
-          
+
           base_pkg="${pkgs[0]}"
           base_name="$(basename "$base_pkg")"
           workdir="$(mktemp -d)"
-          
+
           echo "Merging ${#pkgs[@]} package(s)..."
           unzip -q "$base_pkg" -d "$workdir/base"
-          
+
           # Merge all other packages' runtimes folders
           for pkg in "${pkgs[@]:1}"; do
             echo "Merging $(basename "$pkg")..."
@@ -168,21 +168,21 @@ jobs:
             rm -rf "$tmp"
             mkdir -p "$tmp"
             unzip -q "$pkg" -d "$tmp"
-            
+
             if [ -d "$tmp/runtimes" ]; then
               mkdir -p "$workdir/base/runtimes"
               cp -a "$tmp/runtimes/." "$workdir/base/runtimes/"
             fi
           done
-          
+
           # Create merged package
           pushd "$workdir/base" >/dev/null
           zip -qr "$workdir/$base_name" .
           popd >/dev/null
-          
+
           mv "$workdir/$base_name" "./artifacts/merged/$base_name"
           rm -rf "$workdir"
-          
+
           echo "Merged package created: ./artifacts/merged/$base_name"
 
       - name: Setup .NET

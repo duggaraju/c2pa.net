@@ -357,7 +357,7 @@ public static unsafe partial class C2paBindings
     }
 
     public static nint builder_sign(C2paBuilder* builder_ptr, sbyte* format, C2paStream* source, C2paStream* dest, C2paSigner* signer_ptr, byte** manifest_bytes_ptr)
-        => _impl switch
+        => (nint)(_impl switch
         {
             BindingImpl.WindowsX64 => C2paBindings_Windows_X64.builder_sign(builder_ptr, format, source, dest, signer_ptr, manifest_bytes_ptr),
             BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.builder_sign(builder_ptr, format, source, dest, signer_ptr, manifest_bytes_ptr),
@@ -366,7 +366,7 @@ public static unsafe partial class C2paBindings
             BindingImpl.OsxX64 => C2paBindings_OSX_X64.builder_sign(builder_ptr, format, source, dest, signer_ptr, manifest_bytes_ptr),
             BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.builder_sign(builder_ptr, format, source, dest, signer_ptr, manifest_bytes_ptr),
             _ => throw new PlatformNotSupportedException(),
-        };
+        });
 
     public static void manifest_bytes_free(byte* manifest_bytes_ptr)
     {

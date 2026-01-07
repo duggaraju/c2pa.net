@@ -13,6 +13,7 @@
     <RepositoryUrl>https://github.com/duggaraju/c2pa.net</RepositoryUrl>
     <BindingsFolder>Bindings</BindingsFolder>
     <BuildArm64 Condition="'$(BuildArm64)' == ''">false</BuildArm64>
+    <EnableCargoReleaseOptimizations Condition="'$(EnableCargoReleaseOptimizations)' == ''">false</EnableCargoReleaseOptimizations>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <!-- One binding class per OS + architecture combination (codegen only; does not imply cross-compiling native libs) -->
@@ -130,8 +131,8 @@
     <Message Text="Building native c2pa_c library for host architectures: @(HostArchitecture->'%(Identity) ')" Importance="high" />
     <PropertyGroup>
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
-      <!-- Keep this scoped to Release to avoid slowing down Debug builds. -->
-      <CargoEnvironmentVariables Condition="'$(Configuration)' == 'Release'">CARGO_PROFILE_RELEASE_OPT_LEVEL=z;CARGO_PROFILE_RELEASE_STRIP=symbols;CARGO_PROFILE_RELEASE_LTO=true;CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1</CargoEnvironmentVariables>
+      <!-- Opt-in: Release-only Cargo profile tuning. -->
+      <CargoEnvironmentVariables Condition="'$(Configuration)' == 'Release' and '$(EnableCargoReleaseOptimizations)' == 'true'">CARGO_PROFILE_RELEASE_OPT_LEVEL=z;CARGO_PROFILE_RELEASE_STRIP=symbols;CARGO_PROFILE_RELEASE_LTO=thin;CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1</CargoEnvironmentVariables>
     </PropertyGroup>
     <Exec Command="cargo build $(CargoArgs) --features rust_native_crypto --target %(HostArchitecture.CargoTarget)"
           EnvironmentVariables="$(CargoEnvironmentVariables)"
