@@ -20,7 +20,11 @@ public class PerformanceTests
     [Fact]
     public void C2paReader_MemoryLeak_Test()
     {
+#if DEBUG
+        const int iterations = 10; // 1/100 of Release
+#else
         const int iterations = 1000;
+#endif
         var format = "image/jpeg";
 
         var initialMemory = GC.GetTotalMemory(true);
@@ -69,7 +73,11 @@ public class PerformanceTests
     [Fact]
     public void C2paBuilder_MemoryLeak_Test()
     {
+#if DEBUG
+        const int iterations = 5; // 1/100 of Release
+#else
         const int iterations = 500; // Fewer iterations as Builder operations are more expensive
+#endif
         var manifestJson = GenerateTestManifest();
 
         var initialMemory = GC.GetTotalMemory(true);
@@ -118,7 +126,11 @@ public class PerformanceTests
     [Fact]
     public void C2paStream_MemoryLeak_Test()
     {
+#if DEBUG
+        const int iterations = 20; // 1/100 of Release
+#else
         const int iterations = 2000;
+#endif
         var initialMemory = GC.GetTotalMemory(true);
 
         for (int i = 0; i < iterations; i++)
@@ -199,7 +211,11 @@ public class PerformanceTests
     public async Task C2paReader_Concurrent_Access_Test()
     {
         const int concurrentTasks = 10;
+#if DEBUG
+        const int iterationsPerTask = 1; // 1/100 of Release
+#else
         const int iterationsPerTask = 100;
+#endif
         var format = "image/jpeg";
 
         var initialMemory = GC.GetTotalMemory(true);
@@ -244,7 +260,11 @@ public class PerformanceTests
     [Fact]
     public void NativeToManagedMapping_MemoryLeak_Test()
     {
+#if DEBUG
+        const int iterations = 10; // 1/100 of Release
+#else
         const int iterations = 1000;
+#endif
 
         var initialMemory = GC.GetTotalMemory(true);
 
@@ -279,7 +299,11 @@ public class PerformanceTests
     [Fact]
     public void Finalizer_Cleanup_Test()
     {
+#if DEBUG
+        const int iterations = 5; // 1/100 of Release
+#else
         const int iterations = 500;
+#endif
         var testData = GenerateTestData(1024);
         var format = "image/jpeg";
 
@@ -331,7 +355,11 @@ public class PerformanceTests
     [Fact]
     public void PerformanceBaseline_C2paReader_Test()
     {
+#if DEBUG
+        const int iterations = 1; // 1/100 of Release
+#else
         const int iterations = 100;
+#endif
         var format = "image/jpeg";
 
         var stopwatch = Stopwatch.StartNew();
@@ -363,7 +391,11 @@ public class PerformanceTests
     [Fact]
     public void PerformanceBaseline_C2paBuilder_Test()
     {
+#if DEBUG
+        const int iterations = 1; // 1/100 of Release
+#else
         const int iterations = 50;
+#endif
         var manifestJson = GenerateTestManifest();
 
         var stopwatch = Stopwatch.StartNew();
@@ -460,7 +492,11 @@ public class PerformanceTests
         }
     }
 
+#if DEBUG
+    private const int IterationCount = 10; // 1/100 of Release
+#else
     private const int IterationCount = 1000;
+#endif
 
     [Theory]
     [InlineData("Provenance Memleak test using file API with 1000 iterations", IterationCount, false)]
