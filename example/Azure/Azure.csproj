@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="libClangSharp.runtime.linux-x64" VersionOverride="21.1.8.1" />
 	<None Update="settings.json">
 	  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	</None>
