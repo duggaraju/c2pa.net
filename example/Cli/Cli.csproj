@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="libclang.runtime.linux-x64" VersionOverride="21.1.8" />
 	  <ProjectReference Include="..\..\lib\ContentAuthenticity.csproj"  Condition="'$(NugetBuild)' != 'True'" />
 	  <PackageReference Include="ContentAuthenticity" Condition="'$(NugetBuild)' == 'True'" />
   </ItemGroup>
