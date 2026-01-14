@@ -1,3 +1,5 @@
+using static ContentAuthenticity.Builder;
+
 namespace ContentAuthenticity.Tests;
 
 public class BuilderTests
@@ -32,8 +34,7 @@ public class BuilderTests
     public void Create_WithManifestDefinitionAndSigner_ShouldCreateBuilder()
     {
         // Arrange
-        var manifest = new ManifestDefinition("image/jpeg");
-
+        var manifest = new ManifestDefinition();
         // Act
         var exception = Record.Exception(() => Builder.Create(manifest));
 
@@ -46,8 +47,9 @@ public class BuilderTests
     public void FromJson_WithValidJson_ShouldCreateBuilder()
     {
         // Arrange
-        var manifest = new ManifestDefinition("image/jpeg")
+        var manifest = new ManifestDefinition
         {
+            Format = "jpeg",
             Title = "Test Image",
             Vendor = "Test Vendor"
         };

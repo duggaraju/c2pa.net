@@ -15,6 +15,7 @@
     <BuildArm64 Condition="'$(BuildArm64)' == ''">false</BuildArm64>
     <EnableCargoReleaseOptimizations Condition="'$(EnableCargoReleaseOptimizations)' == ''">false</EnableCargoReleaseOptimizations>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
   <!-- One binding class per OS + architecture combination (codegen only; does not imply cross-compiling native libs) -->
   <ItemGroup>
@@ -62,6 +63,11 @@
     </None>
     <Compile Include="*.cs" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\generator\SchemaGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
   <Target Name="ComputeHostArchitecture">
     <ItemGroup>
       <HostArchitecture Remove="@(HostArchitecture)" />
@@ -134,7 +140,7 @@
       <!-- Opt-in: Release-only Cargo profile tuning. -->
       <CargoEnvironmentVariables Condition="'$(Configuration)' == 'Release' and '$(EnableCargoReleaseOptimizations)' == 'true'">CARGO_PROFILE_RELEASE_OPT_LEVEL=z;CARGO_PROFILE_RELEASE_STRIP=symbols;CARGO_PROFILE_RELEASE_LTO=thin;CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1</CargoEnvironmentVariables>
     </PropertyGroup>
-    <Exec Command="cargo build $(CargoArgs) --features rust_native_crypto --target %(HostArchitecture.CargoTarget)"
+    <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto --target %(HostArchitecture.CargoTarget)"
           EnvironmentVariables="$(CargoEnvironmentVariables)"
           WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/c2pa_c_ffi" />
   </Target>

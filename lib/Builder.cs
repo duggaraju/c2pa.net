@@ -2,11 +2,12 @@
 
 namespace ContentAuthenticity;
 
-public sealed class Builder : IDisposable
+[JsonSchema("../generator/Builder.schema.json", "ManifestDefinition")]
+public partial class Builder : IDisposable
 {
     private readonly unsafe C2paBuilder* builder;
 
-    private unsafe Builder(C2paBuilder* instance)
+    internal unsafe Builder(C2paBuilder* instance)
     {
         builder = instance;
     }
@@ -91,35 +92,27 @@ public sealed class Builder : IDisposable
 
     public byte[] Sign(ISigner signer, Stream source, Stream dest, string format)
     {
-        var handle = GCHandle.Alloc(signer);
-        try
+        using var s = Signer.From(signer);
+        return Sign(s, source, dest, format);
+    }
+
+    public byte[] Sign(Signer signer, Stream source, Stream dest, string format)
+    {
+        using var inputStream = new StreamAdapter(source);
+        using var outputStream = new StreamAdapter(dest);
+        unsafe
         {
-            using var inputStream = new StreamAdapter(source);
-            using var outputStream = new StreamAdapter(dest);
-            unsafe
+            fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
             {
-                fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
-                fixed (byte* certs = Encoding.UTF8.GetBytes(signer.Certs))
-                fixed (byte* taUrl = signer.TimeAuthorityUrl == null ? null : Encoding.UTF8.GetBytes(signer.TimeAuthorityUrl))
-                {
-                    var c2paSigner = C2paBindings.signer_create((void*)(nint)handle, &Sign, signer.Alg, (sbyte*)certs, (sbyte*)taUrl);
-                    if (c2paSigner == null)
-                        C2pa.CheckError();
-                    byte* manifest = null;
-                    var ret = C2paBindings.builder_sign(builder, (sbyte*)formatBytes, inputStream, outputStream, c2paSigner, &manifest);
-                    C2paBindings.signer_free(c2paSigner);
-                    if (ret == -1)
-                        C2pa.CheckError();
-                    var bytes = new byte[ret];
-                    Marshal.Copy((nint)manifest, bytes, 0, bytes.Length);
-                    C2paBindings.manifest_bytes_free(manifest);
-                    return bytes;
-                }
+                byte* manifest = null;
+                var ret = C2paBindings.builder_sign(builder, (sbyte*)formatBytes, inputStream, outputStream, signer, &manifest);
+                if (ret == -1)
+                    C2pa.CheckError();
+                var bytes = new byte[ret];
+                Marshal.Copy((nint)manifest, bytes, 0, bytes.Length);
+                C2paBindings.manifest_bytes_free(manifest);
+                return bytes;
             }
-        }
-        finally
-        {
-            handle.Free();
         }
     }
 
@@ -167,6 +160,16 @@ public sealed class Builder : IDisposable
         }
     }
 
+    void SetIntent(C2paBuilderIntent intent, C2paDigitalSourceType sourceType)
+    {
+        unsafe
+        {
+            var ret = C2paBindings.builder_set_intent(builder, intent, sourceType);
+            if (ret == -1)
+                C2pa.CheckError();
+        }
+    }
+
     void SetBasePath(string path)
     {
         unsafe
@@ -187,6 +190,24 @@ public sealed class Builder : IDisposable
             fixed (byte* urlBytes = Encoding.UTF8.GetBytes(uri.ToString()))
             {
                 var ret = C2paBindings.builder_set_remote_url(builder, (sbyte*)urlBytes);
+                if (ret == -1)
+                    C2pa.CheckError();
+            }
+        }
+    }
+
+    /**
+    * Adds an action assertion to the manifest.
+    */
+    void AddAction(ActionV2 action)
+    {
+        var actionJson = action.ToJson();
+        var actionBytes = Encoding.UTF8.GetBytes(actionJson);
+        unsafe
+        {
+            fixed (byte* json = actionBytes)
+            {
+                var ret = C2paBindings.builder_add_action(builder, (sbyte*)json);
                 if (ret == -1)
                     C2pa.CheckError();
             }
@@ -217,18 +238,4 @@ public sealed class Builder : IDisposable
     }
 
     public static string GenerateInstanceID() => $"xmp:iid:{Guid.NewGuid()}";
-
-
-    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
-    private static unsafe nint Sign(void* context, byte* data, nuint len, byte* signature, nuint sig_max_size)
-    {
-        GCHandle handle = GCHandle.FromIntPtr((nint)context);
-        if (handle.Target is ISigner signer)
-        {
-            var span = new ReadOnlySpan<byte>(data, (int)len);
-            var hash = new Span<byte>(signature, (int)sig_max_size);
-            return signer.Sign(span, hash);
-        }
-        return -1;
-    }
 }

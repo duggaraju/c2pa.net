@@ -10,7 +10,6 @@
     "verify_timestamp_trust": true,
     "ocsp_fetch": false,
     "remote_manifest_fetch": true,
-    "check_ingredient_trust": true,
     "skip_ingredient_conflict_resolution": false,
     "strict_v1_validation": false
   },

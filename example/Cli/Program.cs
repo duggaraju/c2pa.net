@@ -4,6 +4,7 @@ using ContentAuthenticity;
 using ContentAuthenticity.Bindings;
 using System.CommandLine;
 using System.Text.Json;
+using static ContentAuthenticity.Builder;
 
 namespace Cli;
 
@@ -104,7 +105,7 @@ class Program
             Console.WriteLine(json);
 
             Console.WriteLine("Manifest Store:");
-            Console.WriteLine(reader.ManifestStore.ToJson());
+            Console.WriteLine(reader.Store.ToJson());
         });
 
         return readCommand;
@@ -185,20 +186,11 @@ class Program
             }
         });
 
-        var tsaUrlOption = new Option<string?>(
+        var tsaUrlOption = new Option<Uri?>(
             "--tsa-url"
             )
         {
             Description = "Time Authority URL for timestamping",
-        };
-
-        var algorithmOption = new Option<SigningAlg?>(
-            "Algorithm",
-            "-a", "--algorithm"
-            )
-        {
-            Description = "Signing algorithm (ES256, ES384, ES512, PS256, PS384, PS512, Ed25519). If not specified, will be determined from the certificate.",
-            DefaultValueFactory = (_) => SigningAlg.Es256
         };
 
         signCommand.Add(inputOption);
@@ -220,14 +212,14 @@ class Program
 
             // Create or load manifest definition
             var manifestJson = File.ReadAllText(manifestFile.FullName);
-            var manifest = ManifestDefinition.FromJson(manifestJson);
+            var manifest = manifestJson.Deserialize<ManifestDefinition>();
 
             Console.WriteLine("Using file-based signer with provided certificate and key");
             var certContent = File.ReadAllText(certFile.FullName);
             var keyContent = File.ReadAllText(keyFile.FullName);
-            using var signer = new FileSigner(certContent, keyContent, tsaUrl, manifest.Alg);
+            using var signer = new FileSigner(certContent, keyContent, tsaUrl);
 
-            Console.WriteLine($"Detected/Selected signing algorithm: {signer.Alg}");
+            Console.WriteLine($"Detected signing algorithm: {signer.Alg}");
 
             // Create builder and sign
             using var builder = Builder.Create(manifest);

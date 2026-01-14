@@ -8,10 +8,11 @@ public class ISignerTests
     public void ISigner_ShouldHaveRequiredProperties()
     {
         // Arrange
+        var tsa = new Uri("https://timestamp.example.com");
         var mockSigner = new Mock<ISigner>();
         mockSigner.Setup(s => s.Alg).Returns(SigningAlg.Es256);
         mockSigner.Setup(s => s.Certs).Returns("certificate-data");
-        mockSigner.Setup(s => s.TimeAuthorityUrl).Returns("https://timestamp.example.com");
+        mockSigner.Setup(s => s.TimeAuthorityUrl).Returns(tsa);
         mockSigner.Setup(s => s.UseOcsp).Returns(false);
 
         // Act
@@ -20,7 +21,7 @@ public class ISignerTests
         // Assert
         Assert.Equal(SigningAlg.Es256, signer.Alg);
         Assert.Equal("certificate-data", signer.Certs);
-        Assert.Equal("https://timestamp.example.com", signer.TimeAuthorityUrl);
+        Assert.Equal(tsa, signer.TimeAuthorityUrl);
         Assert.False(signer.UseOcsp);
     }
 
@@ -78,18 +79,19 @@ public class ISignerTests
     public void TestSigner_ShouldImplementAllRequiredProperties()
     {
         // Arrange & Act
+        var tsa = new Uri("https://custom.timestamp.com");
         var testSigner = new TestSigner
         {
             Alg = SigningAlg.Es384,
             Certs = "custom-cert",
-            TimeAuthorityUrl = "https://custom.timestamp.com",
+            TimeAuthorityUrl = tsa,
             UseOcsp = true
         };
 
         // Assert
         Assert.Equal(SigningAlg.Es384, testSigner.Alg);
         Assert.Equal("custom-cert", testSigner.Certs);
-        Assert.Equal("https://custom.timestamp.com", testSigner.TimeAuthorityUrl);
+        Assert.Equal(tsa, testSigner.TimeAuthorityUrl);
         Assert.True(testSigner.UseOcsp);
     }
 }
@@ -99,7 +101,7 @@ public class TestSigner : ISigner
 {
     public SigningAlg Alg { get; init; } = SigningAlg.Es256;
     public string Certs { get; init; } = "test-certificate";
-    public string? TimeAuthorityUrl { get; init; } = "https://timestamp.test.com";
+    public Uri? TimeAuthorityUrl { get; init; } = new("https://timestamp.test.com");
     public bool UseOcsp { get; init; } = false;
 
     public int Sign(ReadOnlySpan<byte> data, Span<byte> hash)

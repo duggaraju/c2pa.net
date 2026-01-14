@@ -15,14 +15,13 @@ namespace Cli;
 /// - ES256, ES384, ES512 (ECDSA with P-256, P-384, P-521 curves)
 /// - PS256, PS384, PS512 (RSA-PSS with SHA-256, SHA-384, SHA-512)
 /// - Ed25519 (Edwards-curve signing, not yet implemented)
-/// 
-/// The algorithm is automatically detected from the certificate type and key size,
-/// or can be explicitly specified during construction.
+///
+/// The algorithm is inferred from the certificate/public key (and key size where applicable).
 /// </remarks>
 internal sealed class FileSigner : ISigner, IDisposable
 {
     private readonly string _certs;
-    private readonly string? _tsaUrl;
+    private readonly Uri? _tsaUrl;
     private readonly SigningAlg _algorithm;
     private readonly AsymmetricAlgorithm _signingKey;
     private bool _disposed;
@@ -33,16 +32,15 @@ internal sealed class FileSigner : ISigner, IDisposable
     /// <param name="certs">Certificate chain in PEM format</param>
     /// <param name="privateKey">Private key in PEM format</param>
     /// <param name="tsaUrl">Optional timestamp authority URL for timestamping</param>
-    /// <param name="preferredAlgorithm">Optional preferred signing algorithm. If not specified, will be auto-detected from the certificate.</param>
     /// <exception cref="InvalidOperationException">Thrown when certificate parsing fails or algorithm is incompatible</exception>
     /// <exception cref="NotSupportedException">Thrown when certificate type is not supported</exception>
-    public FileSigner(string certs, string privateKey, string? tsaUrl = null, SigningAlg? preferredAlgorithm = null)
+    public FileSigner(string certs, string privateKey, Uri? tsaUrl = null)
     {
         _certs = certs;
         _tsaUrl = tsaUrl;
 
         // Parse the certificate to determine the algorithm and prepare the signing key
-        (_algorithm, _signingKey) = ParseCertificateAndKey(certs, privateKey, preferredAlgorithm);
+        (_algorithm, _signingKey) = ParseCertificateAndKey(certs, privateKey);
     }
 
     /// <inheritdoc/>
@@ -52,7 +50,7 @@ internal sealed class FileSigner : ISigner, IDisposable
     public string Certs => _certs;
 
     /// <inheritdoc/>
-    public string? TimeAuthorityUrl => _tsaUrl;
+    public Uri? TimeAuthorityUrl => _tsaUrl;
 
     /// <summary>
     /// Signs the provided data using the configured algorithm and private key.
@@ -135,7 +133,7 @@ internal sealed class FileSigner : ISigner, IDisposable
         throw new NotImplementedException("Ed25519 signing is not yet implemented. Use ECDSA or RSA algorithms instead.");
     }
 
-    private static (SigningAlg algorithm, AsymmetricAlgorithm signingKey) ParseCertificateAndKey(string certsPem, string privateKeyPem, SigningAlg? preferredAlgorithm = null)
+    private static (SigningAlg algorithm, AsymmetricAlgorithm signingKey) ParseCertificateAndKey(string certsPem, string privateKeyPem)
     {
         try
         {
@@ -147,27 +145,20 @@ internal sealed class FileSigner : ISigner, IDisposable
             AsymmetricAlgorithm privateKey;
             SigningAlg algorithm;
 
-            if (IsECCertificate(publicKey))
+            if (IsEd25519Certificate(publicKey))
+            {
+                // TODO: Support Ed25519 signing when available in .NET or via native APIs.
+                throw new NotSupportedException("Ed25519 certificates are not yet supported by this signer.");
+            }
+            else if (IsECCertificate(publicKey))
             {
                 privateKey = ParseECPrivateKeyFromPem(privateKeyPem);
-                algorithm = preferredAlgorithm ?? DetermineECAlgorithm((ECDsa)privateKey);
-
-                // Validate that the preferred algorithm is compatible with EC keys
-                if (preferredAlgorithm.HasValue && !IsECAlgorithm(preferredAlgorithm.Value))
-                {
-                    throw new InvalidOperationException($"Algorithm {preferredAlgorithm} is not compatible with EC certificates. Use ES256, ES384, ES512, or Ed25519.");
-                }
+                algorithm = DetermineECAlgorithm(cert, (ECDsa)privateKey);
             }
             else if (IsRSACertificate(publicKey))
             {
                 privateKey = ParseRSAPrivateKeyFromPem(privateKeyPem);
-                algorithm = preferredAlgorithm ?? DetermineRSAAlgorithm((RSA)privateKey);
-
-                // Validate that the preferred algorithm is compatible with RSA keys
-                if (preferredAlgorithm.HasValue && !IsRSAAlgorithm(preferredAlgorithm.Value))
-                {
-                    throw new InvalidOperationException($"Algorithm {preferredAlgorithm} is not compatible with RSA certificates. Use PS256, PS384, or PS512.");
-                }
+                algorithm = DetermineRSAAlgorithm(cert, (RSA)privateKey);
             }
             else
             {
@@ -250,32 +241,45 @@ internal sealed class FileSigner : ISigner, IDisposable
         return publicKey.Oid.Value == "1.2.840.113549.1.1.1"; // RSA public key OID
     }
 
-    private static SigningAlg DetermineECAlgorithm(ECDsa ecdsa)
+    private static bool IsEd25519Certificate(PublicKey publicKey)
+    {
+        return publicKey.Oid.Value == "1.3.101.112"; // Ed25519 public key OID
+    }
+
+    private static SigningAlg DetermineECAlgorithm(X509Certificate2 cert, ECDsa ecdsa)
     {
         var keySize = ecdsa.KeySize;
-        return keySize switch
+        var fromKeySize = keySize switch
         {
             256 => SigningAlg.Es256,
             384 => SigningAlg.Es384,
             521 => SigningAlg.Es512, // P-521 uses 521 bits, not 512
-            _ => SigningAlg.Es256 // Default to ES256
+            _ => (SigningAlg?)null
+        };
+
+        if (fromKeySize.HasValue)
+            return fromKeySize.Value;
+
+        // Fallback: infer from the certificate's signature algorithm hash.
+        return cert.SignatureAlgorithm?.Value switch
+        {
+            "1.2.840.10045.4.3.2" => SigningAlg.Es256, // ecdsa-with-SHA256
+            "1.2.840.10045.4.3.3" => SigningAlg.Es384, // ecdsa-with-SHA384
+            "1.2.840.10045.4.3.4" => SigningAlg.Es512, // ecdsa-with-SHA512
+            _ => SigningAlg.Es256
         };
     }
 
-    private static SigningAlg DetermineRSAAlgorithm(RSA _)
+    private static SigningAlg DetermineRSAAlgorithm(X509Certificate2 cert, RSA _)
     {
-        // For RSA, we default to PS256 (PSS padding with SHA-256)
-        // Could be made configurable based on requirements
-        return SigningAlg.Ps256;
-    }
-
-    private static bool IsECAlgorithm(SigningAlg algorithm)
-    {
-        return algorithm is SigningAlg.Es256 or SigningAlg.Es384 or SigningAlg.Es512 or SigningAlg.Ed25519;
-    }
-
-    private static bool IsRSAAlgorithm(SigningAlg algorithm)
-    {
-        return algorithm is SigningAlg.Ps256 or SigningAlg.Ps384 or SigningAlg.Ps512;
+        // Infer based on the hash used by the certificate signature when available.
+        // Default to PS256 (RSA-PSS + SHA-256).
+        return cert.SignatureAlgorithm?.Value switch
+        {
+            "1.2.840.113549.1.1.11" => SigningAlg.Ps256, // sha256WithRSAEncryption
+            "1.2.840.113549.1.1.12" => SigningAlg.Ps384, // sha384WithRSAEncryption
+            "1.2.840.113549.1.1.13" => SigningAlg.Ps512, // sha512WithRSAEncryption
+            _ => SigningAlg.Ps256
+        };
     }
 }

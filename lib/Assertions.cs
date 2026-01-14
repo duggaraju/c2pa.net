@@ -1,6 +1,7 @@
 // Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
 using System.Dynamic;
+using static ContentAuthenticity.Builder;
 
 namespace ContentAuthenticity;
 
@@ -9,6 +10,15 @@ public abstract record Assertion(string Label, object Data)
     public static T FromJson<T>(string json) where T : Assertion
     {
         return JsonExtensions.Deserialize<T>(json);
+    }
+
+    public static implicit operator AssertionDefinition(Assertion assertion)
+    {
+        return new()
+        {
+            Label = assertion.Label,
+            Data = JsonElement.Parse(assertion.Data.Serialize())
+        };
     }
 }
 
@@ -134,7 +144,7 @@ public record MetadataAssertion(MetadataAssertionData Data) : Assertion<Metadata
 
 public record SoftBindingTimespan(nuint Start, nuint End);
 
-public record SoftBindingScope(SoftBindingTimespan? Timespan = null, RegionOfInterestSetting? Region = null, string? Extent = null);
+public record SoftBindingScope(SoftBindingTimespan? Timespan = null, RegionOfInterest? Region = null, string? Extent = null);
 
 public record SoftBindingBlock(SoftBindingScope Scope, string Value);
 
