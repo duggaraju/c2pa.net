@@ -5,155 +5,22 @@ namespace ContentAuthenticity.Tests;
 public class SettingsTests
 {
     [Fact]
-    public void Constructor_ShouldCreateWithTrustAndVerifySettings()
+    public void Settings_CheckDefaults()
     {
-        // Arrange
-        var trust = new TrustSettings();
-        var verify = new VerifySettings();
-
         // Act
-        var settings = new Settings(trust, verify);
-
+        var settings = C2pa.Settings.Default;
         // Assert
-        Assert.Equal(trust, settings.Trust);
-        Assert.Equal(verify, settings.Verify);
-    }
-
-    [Fact]
-    public void Settings_ShouldHaveCorrectDefaults()
-    {
-        // Act
-        var settings = new Settings();
-
-        // Assert
-        Assert.Null(settings.Trust);
-        Assert.Null(settings.Verify);
-        Assert.Null(settings.Core);
-        Assert.Null(settings.Builder);
-        Assert.Equal(1, settings.MajorVersion);
-        Assert.Equal(0, settings.MinorVersion);
-    }
-
-    [Fact]
-    public void TrustSettings_ShouldHaveCorrectDefaults()
-    {
-        // Act
-        var trust = new TrustSettings();
-
-        // Assert
-        Assert.Null(trust.UserAnchors);
-        Assert.Null(trust.TrustAnchors);
-        Assert.Null(trust.TrustConfig);
-        Assert.Null(trust.AllowedList);
-    }
-
-    [Fact]
-    public void VerifySettings_ShouldHaveCorrectDefaults()
-    {
-        // Act
-        var verify = new VerifySettings();
-
-        // Assert
-        Assert.True(verify.VerifyAfterReading);
-        Assert.True(verify.VerifyAfterSign);
-        Assert.False(verify.VerifyTrust);
-        Assert.False(verify.VerifyTimestampTrust);
-        Assert.False(verify.OcspFetch);
-        Assert.True(verify.CheckIngredientTrust);
-        Assert.False(verify.SkipIngredientConflictResolution);
-        Assert.True(verify.RemoteManifestFetch);
-        Assert.False(verify.StrictV1Validation);
-    }
-
-    [Fact]
-    public void CoreSettings_ShouldHaveCorrectDefaults()
-    {
-        // Act
-        var core = new CoreSettings();
-
-        // Assert
-        Assert.False(core.Debug);
-        Assert.Equal("sha256", core.HashAlg);
-        Assert.True(core.SaltJumbfBoxes);
-        Assert.False(core.PreferBoxHash);
-        Assert.True(core.CompressManifest);
-        Assert.Null(core.MaxMemoryUsage);
-    }
-
-    [Fact]
-    public void ThumbnailSettings_ShouldHaveCorrectDefaults()
-    {
-        // Act
-        var thumbnail = new ThumbnailSettings();
-
-        // Assert
-        Assert.True(thumbnail.Enabled);
-        Assert.True(thumbnail.IgnoreErrors);
-        Assert.Equal(1024, thumbnail.LongEdge);
-        Assert.True(thumbnail.PreferSmallestFormat);
-        Assert.Equal("Medium", thumbnail.Quality);
-        Assert.Null(thumbnail.Format);
-    }
-
-    [Fact]
-    public void BuilderSettings_ShouldHaveCorrectDefaults()
-    {
-        // Act
-        var builder = new BuilderSettings(null, null, null);
-
-        // Assert
-        Assert.Null(builder.ClaimGeneratorInfo);
-        Assert.Null(builder.Thumbnail);
-        Assert.Null(builder.Actions);
-    }
-
-    [Fact]
-    public void ActionSettings_ShouldHaveCorrectDefaults()
-    {
-        // Act
-        var action = new ActionSettings("action", null, null, null, null, null);
-
-        // Assert - ActionSettings has no properties with defaults, just ensuring it can be constructed
-        Assert.NotNull(action.Action);
-        Assert.Null(action.When);
-        Assert.Null(action.SoftwareAgent);
-        Assert.Null(action.SoftwareAgentIndex);
-        Assert.Null(action.changes);
-        Assert.Null(action.Parameters);
-    }
-
-    [Fact]
-    public void ActionsSettings_ShouldHaveCorrectDefaults()
-    {
-        // Act
-        var actions = new ActionsSettings(null, null);
-
-        // Assert
-        Assert.Null(actions.Templates);
-        Assert.Null(actions.Actions);
-    }
-
-    [Fact]
-    public void ClaimGeneratorInfoSettings_ShouldHaveCorrectDefaults()
-    {
-        // Act
-        var info = new ClaimGeneratorInfoSettings(string.Empty, null, null, null, null);
-
-        // Assert
-        Assert.NotNull(info.Name);
-        Assert.Null(info.Version);
-        Assert.Null(info.OperatingSystem);
-        Assert.Null(info.Icon);
-        Assert.Null(info.Other);
+        Assert.NotNull(settings.Trust);
+        Assert.NotNull(settings.Verify);
+        Assert.NotNull(settings.Core);
+        Assert.NotNull(settings.Builder);
     }
 
     [Fact]
     public void ToJson_ShouldReturnValidJson()
     {
         // Arrange
-        var trust = new TrustSettings();
-        var verify = new VerifySettings();
-        var settings = new Settings(trust, verify);
+        var settings = C2pa.Settings.Default;
 
         // Act
         var json = settings.ToJson();
@@ -169,58 +36,29 @@ public class SettingsTests
     public void Load_ShouldLoadCorrectly()
     {
         // Arrange
-        var original = new Settings(new TrustSettings(), new VerifySettings());
+        var original = C2pa.Settings.Default;
+
         var json = original.ToJson();
 
         // Act
-        Settings.Load(json);
-    }
-
-    [Fact]
-    public void TrustSettings_ShouldBeRecord()
-    {
-        // Arrange & Act
-        var trust1 = new TrustSettings();
-        var trust2 = new TrustSettings();
-
-        // Assert
-        Assert.Equal(trust1, trust2);
-        Assert.True(trust1.Equals(trust2));
-    }
-
-    [Fact]
-    public void VerifySettings_ShouldBeRecord()
-    {
-        // Arrange & Act
-        var verify1 = new VerifySettings();
-        var verify2 = new VerifySettings();
-
-        // Assert
-        Assert.Equal(verify1, verify2);
-        Assert.True(verify1.Equals(verify2));
+        var act = C2pa.LoadSettings(json);
+        Assert.True(JsonDocument.Equals(json, act.ToJson()));
     }
 
     [Fact]
     public void VerifySettings_ShouldLoad()
     {
         const string json = """
-            {   
-                "version_major": 1,
-                "version_minor": 0,
+            {
                 "trust": {
                     "user_anchors": null,
                     "trust_anchors": null,
                     "trust_config": null,
                     "allowed_list": null
                 },
+                "cawg_trust": {
+                },
                 "core": {
-                    "debug": false,
-                    "hash_alg": "sha256",
-                    "salt_jumbf_boxes": true,
-                    "prefer_box_hash": false,
-                    "prefer_bmff_merkle_tree": false,
-                    "compress_manifests": true,
-                    "max_memory_usage": null
                 },
                 "verify": {
                     "verify_after_reading": true,
@@ -228,21 +66,24 @@ public class SettingsTests
                     "verify_trust": true,
                     "ocsp_fetch": false,
                     "remote_manifest_fetch": true,
-                    "check_ingredient_trust": true,
                     "skip_ingredient_conflict_resolution": false,
                     "strict_v1_validation": false
                 },
                 "builder": {
                     "thumbnail": {
                       "enabled": true
+                    },
+                    "actions": {
+                        "auto_created_action": {},
+                        "auto_opened_action": {},
+                        "auto_placed_action": {},
+                        "templates": []
                     }
                 }
             }
             """;
 
-        var settings = Settings.Load(json);
+        var settings = C2pa.LoadSettings(json);
         Assert.NotNull(settings);
-        Assert.Equal(1, settings.MajorVersion);
-        Assert.Equal(0, settings.MinorVersion);
     }
 }

@@ -480,9 +480,9 @@ public class PerformanceTests
 
         public string Certs { get; } = File.ReadAllText("certs/rs256.pub");
 
-        public string? TimeAuthorityUrl { get; } = null;
+        public Uri? TimeAuthorityUrl { get; }
 
-        public bool UseOcsp { get; } = false;
+        public bool UseOcsp { get; }
 
         public int Sign(ReadOnlySpan<byte> data, Span<byte> hash)
         {
@@ -509,6 +509,12 @@ public class PerformanceTests
         ISigner signer = new TestSigner();
         var inputFileBuffer = use_buffer_api ? File.ReadAllBytes(inputFile) : null;
         string mimeType = inputFile.GetMimeType();
+
+        // Ensure we don't attempt to generate an MP4 thumbnail for MP4 inputs.
+        // (Some native builds don't support `video/mp4` thumbnails.)
+        var settings = C2pa.Settings.Default;
+        settings.Builder.Thumbnail.Format = C2pa.ThumbnailFormat.Jpeg;
+        C2pa.LoadSettings(settings.ToJson(indented: false));
 
         var manifest = """
             {

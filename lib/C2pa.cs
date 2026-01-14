@@ -6,7 +6,7 @@ namespace ContentAuthenticity;
 /// <summary>
 /// Top  level SDK entry point.
 /// </summary>
-public static class C2pa
+public static partial class C2pa
 {
     /// <summary>
     /// The version of the Sdk.
@@ -18,18 +18,7 @@ public static class C2pa
         return Utils.FromCString(C2paBindings.version());
     }
 
-    public static string[] SupportedMimeTypes
-    {
-        get
-        {
-            nuint count = 0;
-            unsafe
-            {
-                var buffer = C2paBindings.reader_supported_mime_types(&count);
-                return Utils.FromCStringArray(buffer, count);
-            }
-        }
-    }
+    public static string[] SupportedMimeTypes => Reader.SupportedMimeTypes;
 
     public static void CheckError()
     {
@@ -46,4 +35,24 @@ public static class C2pa
 
         throw new C2paException(errType, errMsg);
     }
+
+    public static Settings? LoadSettings(string settings, string format = "json")
+    {
+        unsafe
+        {
+            fixed (byte* s = Encoding.UTF8.GetBytes(settings))
+            fixed (byte* f = Encoding.UTF8.GetBytes(format))
+            {
+                var ret = C2paBindings.load_settings((sbyte*)s, (sbyte*)f);
+                if (ret != 0)
+                {
+                    C2pa.CheckError();
+                }
+            }
+        }
+        if (format == "json")
+            return settings.Deserialize<Settings>();
+        return null;
+    }
+
 }

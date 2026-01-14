@@ -10,7 +10,7 @@ public interface ISigner
 
     public string Certs { get; }
 
-    public string? TimeAuthorityUrl { get; }
+    public Uri? TimeAuthorityUrl { get; }
 
     public bool UseOcsp => false;
 }

@@ -22,7 +22,7 @@ class TrustedSignerConfiguration
 
     public SigningAlg Algorithm { get; init; }
 
-    public string? TimeAuthorityUrl { get; init; }
+    public Uri? TimeAuthorityUrl { get; init; }
 }
 
 class TrustedSigner : ISigner
@@ -120,5 +120,5 @@ class TrustedSigner : ISigner
 
     public string Certs => GetCertificates();
 
-    public string? TimeAuthorityUrl => _config.TimeAuthorityUrl;
+    public Uri? TimeAuthorityUrl => _config.TimeAuthorityUrl;
 }

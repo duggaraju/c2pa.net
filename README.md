@@ -2,6 +2,13 @@
 
 .NET bindings for c2pa [Rust](https://github.com/contentauth/c2pa-rs) library.
 
+## Description
+
+This repository provides a .NET-friendly API surface over the native `c2pa_c` C ABI exposed by the upstream c2pa-rs project.
+
+- **Interop bindings are generated automatically**: the build runs the `clangsharppinvokegenerator` .NET tool (ClangSharp P/Invoke Generator) against the `c2pa.h` header and emits platform-specific binding files under `lib/Bindings/*`. The dispatcher in `lib/C2paBindings.cs` selects the correct platform/architecture implementation at runtime.
+- **Typed models are generated from JSON Schema for safety**: the `generator/` project is a Roslyn incremental source generator that reads the C2PA JSON schemas (e.g., Builder/Reader/Settings) and emits strongly-typed C# models during compilation. This keeps the high-level API strongly typed (compile-time checks + IntelliSense) instead of relying on loosely-typed JSON strings.
+
 ## Prerequisites
 
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later

@@ -2,6 +2,8 @@
 
 namespace ContentAuthenticity;
 
+using System.Security.Cryptography;
+using static ContentAuthenticity.Builder;
 
 public static class JsonExtensions
 {
@@ -125,4 +127,38 @@ public static class Utils
 
     public static string GetMimeType(this string Filename) => GetMimeTypeFromExtension(Path.GetExtension(Filename));
 
+    public static SigningAlg GetAlgorithm(this ECDsa ecdsa)
+    {
+        var keySize = ecdsa.KeySize;
+        return keySize switch
+        {
+            256 => SigningAlg.Es256,
+            384 => SigningAlg.Es384,
+            521 => SigningAlg.Es512,
+            _ => SigningAlg.Es256 // Default to ES256
+        };
+    }
+
+    public static SigningAlg GetAlgorithm(this RSA rsa)
+    {
+        var keySize = rsa.KeySize;
+        return keySize switch
+        {
+            256 => SigningAlg.Ps256,
+            384 => SigningAlg.Ps384,
+            521 => SigningAlg.Ps512,
+            _ => SigningAlg.Ps256 // Default to PS256
+        };
+    }
+
+    public static HashAlgorithmName GetHash(this AsymmetricAlgorithm rsa)
+    {
+        return rsa.KeySize switch
+        {
+            256 => HashAlgorithmName.SHA256,
+            384 => HashAlgorithmName.SHA384,
+            521 or 512 => HashAlgorithmName.SHA512,
+            _ => throw new NotSupportedException($"Unsupported algorithm {rsa} for hashing.")
+        };
+    }
 }

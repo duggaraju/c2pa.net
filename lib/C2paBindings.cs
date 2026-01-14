@@ -104,6 +104,18 @@ public static unsafe partial class C2paBindings
             _ => throw new PlatformNotSupportedException(),
         };
 
+    public static int error_set_last(sbyte* error_str)
+        => _impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.error_set_last(error_str),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.error_set_last(error_str),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.error_set_last(error_str),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.error_set_last(error_str),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.error_set_last(error_str),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.error_set_last(error_str),
+            _ => throw new PlatformNotSupportedException(),
+        };
+
     public static int load_settings(sbyte* settings, sbyte* format)
         => _impl switch
         {
@@ -113,6 +125,42 @@ public static unsafe partial class C2paBindings
             BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.load_settings(settings, format),
             BindingImpl.OsxX64 => C2paBindings_OSX_X64.load_settings(settings, format),
             BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.load_settings(settings, format),
+            _ => throw new PlatformNotSupportedException(),
+        };
+
+    public static sbyte* read_file(sbyte* path, sbyte* data_dir)
+        => _impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.read_file(path, data_dir),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.read_file(path, data_dir),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.read_file(path, data_dir),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.read_file(path, data_dir),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.read_file(path, data_dir),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.read_file(path, data_dir),
+            _ => throw new PlatformNotSupportedException(),
+        };
+
+    public static sbyte* read_ingredient_file(sbyte* path, sbyte* data_dir)
+        => _impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.read_ingredient_file(path, data_dir),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.read_ingredient_file(path, data_dir),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.read_ingredient_file(path, data_dir),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.read_ingredient_file(path, data_dir),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.read_ingredient_file(path, data_dir),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.read_ingredient_file(path, data_dir),
+            _ => throw new PlatformNotSupportedException(),
+        };
+
+    public static sbyte* sign_file(sbyte* source_path, sbyte* dest_path, sbyte* manifest, C2paSignerInfo* signer_info, sbyte* data_dir)
+        => _impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.sign_file(source_path, dest_path, manifest, signer_info, data_dir),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.sign_file(source_path, dest_path, manifest, signer_info, data_dir),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.sign_file(source_path, dest_path, manifest, signer_info, data_dir),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.sign_file(source_path, dest_path, manifest, signer_info, data_dir),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.sign_file(source_path, dest_path, manifest, signer_info, data_dir),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.sign_file(source_path, dest_path, manifest, signer_info, data_dir),
             _ => throw new PlatformNotSupportedException(),
         };
 
@@ -156,6 +204,18 @@ public static unsafe partial class C2paBindings
             _ => throw new PlatformNotSupportedException(),
         };
 
+    public static C2paReader* reader_from_manifest_data_and_stream(sbyte* format, C2paStream* stream, byte* manifest_data, nuint manifest_size)
+        => _impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.reader_from_manifest_data_and_stream(format, stream, manifest_data, manifest_size),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.reader_from_manifest_data_and_stream(format, stream, manifest_data, manifest_size),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.reader_from_manifest_data_and_stream(format, stream, manifest_data, manifest_size),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.reader_from_manifest_data_and_stream(format, stream, manifest_data, manifest_size),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.reader_from_manifest_data_and_stream(format, stream, manifest_data, manifest_size),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.reader_from_manifest_data_and_stream(format, stream, manifest_data, manifest_size),
+            _ => throw new PlatformNotSupportedException(),
+        };
+
     public static void reader_free(C2paReader* reader_ptr)
     {
         switch (_impl)
@@ -182,6 +242,30 @@ public static unsafe partial class C2paBindings
             _ => throw new PlatformNotSupportedException(),
         };
 
+    public static sbyte* reader_detailed_json(C2paReader* reader_ptr)
+        => _impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.reader_detailed_json(reader_ptr),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.reader_detailed_json(reader_ptr),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.reader_detailed_json(reader_ptr),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.reader_detailed_json(reader_ptr),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.reader_detailed_json(reader_ptr),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.reader_detailed_json(reader_ptr),
+            _ => throw new PlatformNotSupportedException(),
+        };
+
+    public static sbyte* reader_remote_url(C2paReader* reader_ptr)
+        => _impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.reader_remote_url(reader_ptr),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.reader_remote_url(reader_ptr),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.reader_remote_url(reader_ptr),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.reader_remote_url(reader_ptr),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.reader_remote_url(reader_ptr),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.reader_remote_url(reader_ptr),
+            _ => throw new PlatformNotSupportedException(),
+        };
+
     public static byte reader_is_embedded(C2paReader* reader_ptr)
         => _impl switch
         {
@@ -193,6 +277,18 @@ public static unsafe partial class C2paBindings
             BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.reader_is_embedded(reader_ptr),
             _ => throw new PlatformNotSupportedException(),
         };
+
+    public static nint reader_resource_to_stream(C2paReader* reader_ptr, sbyte* uri, C2paStream* stream)
+        => (nint)(_impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.reader_resource_to_stream(reader_ptr, uri, stream),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.reader_resource_to_stream(reader_ptr, uri, stream),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.reader_resource_to_stream(reader_ptr, uri, stream),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.reader_resource_to_stream(reader_ptr, uri, stream),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.reader_resource_to_stream(reader_ptr, uri, stream),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.reader_resource_to_stream(reader_ptr, uri, stream),
+            _ => throw new PlatformNotSupportedException(),
+        });
 
     public static sbyte** reader_supported_mime_types(nuint* count)
         => _impl switch
@@ -243,6 +339,18 @@ public static unsafe partial class C2paBindings
             default: throw new PlatformNotSupportedException();
         }
     }
+
+    public static int builder_set_intent(C2paBuilder* builder_ptr, C2paBuilderIntent intent, C2paDigitalSourceType digital_source_type)
+        => _impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.builder_set_intent(builder_ptr, intent, digital_source_type),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.builder_set_intent(builder_ptr, intent, digital_source_type),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.builder_set_intent(builder_ptr, intent, digital_source_type),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.builder_set_intent(builder_ptr, intent, digital_source_type),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.builder_set_intent(builder_ptr, intent, digital_source_type),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.builder_set_intent(builder_ptr, intent, digital_source_type),
+            _ => throw new PlatformNotSupportedException(),
+        };
 
     public static sbyte** builder_supported_mime_types(nuint* count)
         => _impl switch
@@ -330,6 +438,18 @@ public static unsafe partial class C2paBindings
             _ => throw new PlatformNotSupportedException(),
         };
 
+    public static int builder_add_action(C2paBuilder* builder_ptr, sbyte* action_json)
+        => _impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.builder_add_action(builder_ptr, action_json),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.builder_add_action(builder_ptr, action_json),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.builder_add_action(builder_ptr, action_json),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.builder_add_action(builder_ptr, action_json),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.builder_add_action(builder_ptr, action_json),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.builder_add_action(builder_ptr, action_json),
+            _ => throw new PlatformNotSupportedException(),
+        };
+
     public static C2paSigner* signer_create(void* context, delegate* unmanaged[Cdecl]<void*, byte*, nuint, byte*, nuint, nint> callback, SigningAlg alg, sbyte* certs, sbyte* tsa_url)
         => _impl switch
         {
@@ -341,6 +461,42 @@ public static unsafe partial class C2paBindings
             BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.signer_create(context, callback, alg, certs, tsa_url),
             _ => throw new PlatformNotSupportedException(),
         };
+
+    public static C2paSigner* signer_from_info(C2paSignerInfo* signer_info)
+        => _impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.signer_from_info(signer_info),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.signer_from_info(signer_info),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.signer_from_info(signer_info),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.signer_from_info(signer_info),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.signer_from_info(signer_info),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.signer_from_info(signer_info),
+            _ => throw new PlatformNotSupportedException(),
+        };
+
+    public static C2paSigner* signer_from_settings()
+        => _impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.signer_from_settings(),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.signer_from_settings(),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.signer_from_settings(),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.signer_from_settings(),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.signer_from_settings(),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.signer_from_settings(),
+            _ => throw new PlatformNotSupportedException(),
+        };
+
+    public static nint signer_reserve_size(C2paSigner* signer_ptr)
+        => (nint)(_impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.signer_reserve_size(signer_ptr),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.signer_reserve_size(signer_ptr),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.signer_reserve_size(signer_ptr),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.signer_reserve_size(signer_ptr),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.signer_reserve_size(signer_ptr),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.signer_reserve_size(signer_ptr),
+            _ => throw new PlatformNotSupportedException(),
+        });
 
     public static void signer_free(C2paSigner* signer_ptr)
     {
@@ -368,6 +524,42 @@ public static unsafe partial class C2paBindings
             _ => throw new PlatformNotSupportedException(),
         });
 
+    public static nint builder_data_hashed_placeholder(C2paBuilder* builder_ptr, nuint reserved_size, sbyte* format, byte** manifest_bytes_ptr)
+        => (nint)(_impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.builder_data_hashed_placeholder(builder_ptr, reserved_size, format, manifest_bytes_ptr),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.builder_data_hashed_placeholder(builder_ptr, reserved_size, format, manifest_bytes_ptr),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.builder_data_hashed_placeholder(builder_ptr, reserved_size, format, manifest_bytes_ptr),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.builder_data_hashed_placeholder(builder_ptr, reserved_size, format, manifest_bytes_ptr),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.builder_data_hashed_placeholder(builder_ptr, reserved_size, format, manifest_bytes_ptr),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.builder_data_hashed_placeholder(builder_ptr, reserved_size, format, manifest_bytes_ptr),
+            _ => throw new PlatformNotSupportedException(),
+        });
+
+    public static nint builder_sign_data_hashed_embeddable(C2paBuilder* builder_ptr, C2paSigner* signer_ptr, sbyte* data_hash, sbyte* format, C2paStream* asset, byte** manifest_bytes_ptr)
+        => (nint)(_impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.builder_sign_data_hashed_embeddable(builder_ptr, signer_ptr, data_hash, format, asset, manifest_bytes_ptr),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.builder_sign_data_hashed_embeddable(builder_ptr, signer_ptr, data_hash, format, asset, manifest_bytes_ptr),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.builder_sign_data_hashed_embeddable(builder_ptr, signer_ptr, data_hash, format, asset, manifest_bytes_ptr),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.builder_sign_data_hashed_embeddable(builder_ptr, signer_ptr, data_hash, format, asset, manifest_bytes_ptr),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.builder_sign_data_hashed_embeddable(builder_ptr, signer_ptr, data_hash, format, asset, manifest_bytes_ptr),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.builder_sign_data_hashed_embeddable(builder_ptr, signer_ptr, data_hash, format, asset, manifest_bytes_ptr),
+            _ => throw new PlatformNotSupportedException(),
+        });
+
+    public static nint format_embeddable(sbyte* format, byte* manifest_bytes_ptr, nuint manifest_bytes_size, byte** result_bytes_ptr)
+        => (nint)(_impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.format_embeddable(format, manifest_bytes_ptr, manifest_bytes_size, result_bytes_ptr),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.format_embeddable(format, manifest_bytes_ptr, manifest_bytes_size, result_bytes_ptr),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.format_embeddable(format, manifest_bytes_ptr, manifest_bytes_size, result_bytes_ptr),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.format_embeddable(format, manifest_bytes_ptr, manifest_bytes_size, result_bytes_ptr),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.format_embeddable(format, manifest_bytes_ptr, manifest_bytes_size, result_bytes_ptr),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.format_embeddable(format, manifest_bytes_ptr, manifest_bytes_size, result_bytes_ptr),
+            _ => throw new PlatformNotSupportedException(),
+        });
+
     public static void manifest_bytes_free(byte* manifest_bytes_ptr)
     {
         switch (_impl)
@@ -378,6 +570,32 @@ public static unsafe partial class C2paBindings
             case BindingImpl.LinuxArm64: C2paBindings_Linux_Arm64.manifest_bytes_free(manifest_bytes_ptr); break;
             case BindingImpl.OsxX64: C2paBindings_OSX_X64.manifest_bytes_free(manifest_bytes_ptr); break;
             case BindingImpl.OsxArm64: C2paBindings_OSX_Arm64.manifest_bytes_free(manifest_bytes_ptr); break;
+            default: throw new PlatformNotSupportedException();
+        }
+    }
+
+    public static byte* ed25519_sign(byte* bytes, nuint len, sbyte* private_key)
+        => _impl switch
+        {
+            BindingImpl.WindowsX64 => C2paBindings_Windows_X64.ed25519_sign(bytes, len, private_key),
+            BindingImpl.WindowsArm64 => C2paBindings_Windows_Arm64.ed25519_sign(bytes, len, private_key),
+            BindingImpl.LinuxX64 => C2paBindings_Linux_X64.ed25519_sign(bytes, len, private_key),
+            BindingImpl.LinuxArm64 => C2paBindings_Linux_Arm64.ed25519_sign(bytes, len, private_key),
+            BindingImpl.OsxX64 => C2paBindings_OSX_X64.ed25519_sign(bytes, len, private_key),
+            BindingImpl.OsxArm64 => C2paBindings_OSX_Arm64.ed25519_sign(bytes, len, private_key),
+            _ => throw new PlatformNotSupportedException(),
+        };
+
+    public static void signature_free(byte* signature_ptr)
+    {
+        switch (_impl)
+        {
+            case BindingImpl.WindowsX64: C2paBindings_Windows_X64.signature_free(signature_ptr); break;
+            case BindingImpl.WindowsArm64: C2paBindings_Windows_Arm64.signature_free(signature_ptr); break;
+            case BindingImpl.LinuxX64: C2paBindings_Linux_X64.signature_free(signature_ptr); break;
+            case BindingImpl.LinuxArm64: C2paBindings_Linux_Arm64.signature_free(signature_ptr); break;
+            case BindingImpl.OsxX64: C2paBindings_OSX_X64.signature_free(signature_ptr); break;
+            case BindingImpl.OsxArm64: C2paBindings_OSX_Arm64.signature_free(signature_ptr); break;
             default: throw new PlatformNotSupportedException();
         }
     }

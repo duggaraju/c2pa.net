@@ -1,4 +1,11 @@
 {
-  "alg": "Ps256",
-  "title":  "c2pa.net sample"
+  "title":  "c2pa.net sample",
+  "assertions": [
+    {
+      "label":  "com.example.assertion",
+      "data":  {
+        "exampleField":  "exampleValue"
+      }
+    }
+  ]
 }

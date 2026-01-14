@@ -60,7 +60,7 @@ public class ReaderTests(ITestOutputHelper output)
             {
                 var reader = Reader.FromFile(file);
                 var originalJson = reader.Json;
-                var store = reader.ManifestStore;
+                var store = reader.Store;
                 var roundTrippedJson = store.ToJson();
                 Assert.Equal(originalJson, roundTrippedJson);
             }

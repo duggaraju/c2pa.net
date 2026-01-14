@@ -3,6 +3,7 @@
 using Azure.Identity;
 using ContentAuthenticity;
 using ContentAuthenticity.Bindings;
+using static ContentAuthenticity.Builder;
 
 namespace C2paSample;
 
@@ -25,8 +26,7 @@ partial class Program
             throw new IOException($"No file exists with the filename of {inputFile}.");
 
         var json = File.ReadAllText("settings.json");
-        var settings = Settings.FromJson(json);
-        settings.Load();
+        var settings = C2pa.LoadSettings(json);
 
         if (outputFile == null)
             ValidateFile(inputFile);
@@ -39,7 +39,7 @@ partial class Program
         var reader = Reader.FromFile(inputFile);
         if (reader != null)
         {
-            Console.WriteLine(reader.ManifestStore.ToJson());
+            Console.WriteLine(reader.Store.ToJson());
         }
         else
         {
@@ -56,16 +56,24 @@ partial class Program
             AccountName = "rai-provenance-sign",
             CertificateProfile = "rai-poc-provenance-sign",
             Algorithm = SigningAlg.Ps384,
-            TimeAuthorityUrl = "http://timestamp.digicert.com",
+            TimeAuthorityUrl = new("http://timestamp.digicert.com"),
         };
         TrustedSigner signer = new(credential, config);
 
-        ManifestDefinition manifest = new(Utils.GetMimeType(inputFile))
+        ManifestDefinition manifest = new()
         {
-            ClaimGeneratorInfo = { new ClaimGeneratorInfo("C# Binding test", "1.0.0") },
-            Format = "jpg",
+            Format = Utils.GetMimeType(inputFile),
+            ClaimGeneratorInfo = new()
+            {
+                new ClaimGeneratorInfo
+                {
+                   Name = "C# Binding test",
+                   Version = "1.0.0"
+                }
+            },
             Title = "C# Test Image",
-            Assertions = [
+            Assertions = new()
+            {
                 new CreativeWorkAssertion(
                     new CreativeWorkAssertionData("http://schema.org/", "CreativeWork")
                     {
@@ -74,7 +82,7 @@ partial class Program
                             { "person", "Isaiah Carrington" }
                         }
                     })
-            ]
+            }
         };
 
         var builder = Builder.Create(manifest);
