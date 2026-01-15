@@ -114,7 +114,7 @@ jobs:
 
     - name: Pack NuGet
       run: |
-        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }} -p:BuildArm64=true /p:EnableCargoReleaseOptimizations=true
+        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-source -p:PackageVersion=${{ needs.generate-version.outputs.version }} -p:BuildArm64=true /p:EnableCargoReleaseOptimizations=true
 
     # Upload NuGet packages as artifacts
     - name: Upload NuGet packages
@@ -123,7 +123,6 @@ jobs:
         name: nuget-packages-${{ matrix.os }}
         path: |
           artifacts/packages/*.nupkg
-          artifacts/packages/*.snupkg
 
   publish:
     name: Publish NuGet packages
@@ -161,19 +160,26 @@ jobs:
           echo "Merging ${#pkgs[@]} package(s)..."
           unzip -q "$base_pkg" -d "$workdir/base"
 
-          # Merge all other packages' runtimes folders
+          # Merge all other packages' runtimes folders (runtimes/<rid>/native/*)
           for pkg in "${pkgs[@]:1}"; do
             echo "Merging $(basename "$pkg")..."
             tmp="$workdir/tmp"
             rm -rf "$tmp"
             mkdir -p "$tmp"
-            unzip -q "$pkg" -d "$tmp"
+            unzip "$pkg" -d "$tmp"
 
             if [ -d "$tmp/runtimes" ]; then
               mkdir -p "$workdir/base/runtimes"
               cp -a "$tmp/runtimes/." "$workdir/base/runtimes/"
             fi
           done
+
+          if [ ! -d "$workdir/base/runtimes" ]; then
+            echo "WARNING: merged package has no runtimes folder. Native binaries will be missing."
+          else
+            echo "Merged runtimes folder contains:"
+            find "$workdir/base/runtimes" -maxdepth 3 -type d -print | sort
+          fi
 
           # Create merged package
           pushd "$workdir/base" >/dev/null
@@ -184,6 +190,8 @@ jobs:
           rm -rf "$workdir"
 
           echo "Merged package created: ./artifacts/merged/$base_name"
+          echo "Final merged nupkg file list:"
+          unzip -Z1 "./artifacts/merged/$base_name" | sort
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5

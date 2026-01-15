@@ -73,8 +73,8 @@ jobs:
         configuration: [Debug, Release]
         exclude:
           # Only run Release builds on Ubuntu and macOS to save resources
-          - os: ubuntu-latest
-            configuration: Debug
+          - os: windows-latest
+            configuration: Release
           - os: macos-latest
             configuration: Debug
           - os: macos-latest
@@ -163,7 +163,8 @@ jobs:
     - name: Create NuGet packages
       if: matrix.configuration == 'Release'
       run: |
-        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-symbols --include-source -p:SymbolPackageFormat=snupkg -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
+        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-source -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
+        unzip -l ./artifacts/packages/*.nupkg
 
     # Upload NuGet packages as artifacts
     - name: Upload NuGet packages
@@ -173,13 +174,12 @@ jobs:
         name: nuget-packages-${{ matrix.os }}
         path: |
           artifacts/packages/*.nupkg
-          artifacts/packages/*.snupkg
 
   # Publish job that runs only on main branch pushes or releases
   publish:
     name: Publish NuGet Package
     needs: [build-and-test, generate-version]
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     if: |
       (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
       (github.event_name == 'release' && github.event.action == 'published')
@@ -197,32 +197,79 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
+    - name: Ensure zip/unzip exist
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y zip unzip
+
+    - name: Merge runtime nupkgs
+      shell: bash
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+        mkdir -p ./merged
+
+        mapfile -t pkgs < <(find ./packages -name '*.nupkg' ! -name '*.symbols.nupkg' -print | sort)
+
+        if [ ${#pkgs[@]} -eq 0 ]; then
+          echo "No NuGet packages found"
+          exit 1
+        fi
+
+        base_pkg="${pkgs[0]}"
+        base_name="$(basename "$base_pkg")"
+        workdir="$(mktemp -d)"
+
+        echo "Merging ${#pkgs[@]} package(s) into $base_name"
+        unzip "$base_pkg" -d "$workdir/base"
+
+        # Merge all other packages' runtimes folders (runtimes/<rid>/native/*)
+        for pkg in "${pkgs[@]:1}"; do
+          echo "Merging $(basename "$pkg")..."
+          tmp="$workdir/tmp"
+          rm -rf "$tmp"
+          mkdir -p "$tmp"
+          unzip -q "$pkg" -d "$tmp"
+
+          if [ -d "$tmp/runtimes" ]; then
+            mkdir -p "$workdir/base/runtimes"
+            cp -a "$tmp/runtimes/." "$workdir/base/runtimes/"
+          fi
+        done
+
+        if [ ! -d "$workdir/base/runtimes" ]; then
+          echo "WARNING: merged package has no runtimes folder. Native binaries will be missing."
+        else
+          echo "Merged runtimes folder contains:"
+          find "$workdir/base/runtimes" -maxdepth 3 -type d -print | sort
+        fi
+
+        # Create merged package
+        pushd "$workdir/base" >/dev/null
+        zip -qr "$workdir/$base_name" .
+        popd >/dev/null
+
+        mv "$workdir/$base_name" "./merged/$base_name"
+        rm -rf "$workdir"
+
+        echo "Merged package created: ./merged/$base_name"
+        echo "Final merged nupkg file list:"
+        unzip -Z1 "./merged/$base_name" | sort
+
+        echo "MERGED_NUPKG=$PWD/merged/$base_name" >> "$GITHUB_ENV"
+
     # Publish to GitHub Packages (on main branch pushes)
     - name: Publish to GitHub Packages
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      shell: bash
       run: |
-        # Only push actual NuGet packages to GitHub Packages.
-        # Exclude symbol packages ("*.symbols.nupkg") and snupkg files.
-        $packages = @(
-          Get-ChildItem -Path ./packages -Recurse -File |
-            Where-Object { $_.Extension -eq ".nupkg" -and $_.Name -notlike "*.symbols.nupkg" }
-        )
-        if ($packages.Length -eq 0) {
-          Write-Host "No .nupkg files found to publish"
+        if [ -z "${MERGED_NUPKG:-}" ]; then
+          echo "MERGED_NUPKG env var not set"
           exit 1
-        }
+        fi
 
-        Write-Host "Found $($packages.Length) package(s) to publish to GitHub Packages:"
-        foreach ($package in $packages) {
-          Write-Host "Publishing: $($package.Name)"
-          dotnet nuget push $package.FullName --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --skip-duplicate
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "Failed to publish $($package.Name)"
-            exit $LASTEXITCODE
-          }
-        }
-        Write-Host "All packages published successfully to GitHub Packages"
-      shell: pwsh
+        echo "Publishing merged package: $MERGED_NUPKG"
+        dotnet nuget push "$MERGED_NUPKG" --api-key "${{ secrets.GITHUB_TOKEN }}" --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --skip-duplicate
 
   # Security scanning
   security-scan:

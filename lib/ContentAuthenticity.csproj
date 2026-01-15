@@ -15,7 +15,9 @@
     <EnableCargoReleaseOptimizations Condition="'$(EnableCargoReleaseOptimizations)' == ''">false</EnableCargoReleaseOptimizations>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddNativeRuntimesToPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
+
   <!-- One binding class per OS + architecture combination (codegen only; does not imply cross-compiling native libs) -->
   <ItemGroup>
     <BindingsPlatform Include="win-x64">
@@ -67,7 +69,7 @@
     <ProjectReference Include="..\generator\SchemaGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
-  <Target Name="ComputeHostArchitecture">
+  <Target Name="ComputeHostArchitecture" BeforeTargets="GetFilesToPack;GenerateNuspec;Pack;PrepareForBuild">
     <ItemGroup>
       <HostArchitecture Remove="@(HostArchitecture)" />
     </ItemGroup>
@@ -99,7 +101,15 @@
     <ItemGroup>
       <Content Include="@(HostArchitecture-> '$(MSBuildThisFileDirectory)../c2pa-rs/target/%(CargoTarget)/$(Configuration.ToLower())/%(NativeLibrary)')"
         CopyToOutputDirectory="PreserveNewest" Link="runtimes/%(HostArchitecture.Identity)/native/%(NativeLibrary)"
-        Pack="true" PackagePath="runtimes/%(HostArchitecture.Identity)/native/" />
+        />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="AddNativeRuntimesToPackage" DependsOnTargets="ComputeHostArchitecture">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="@(HostArchitecture->'$(MSBuildThisFileDirectory)../c2pa-rs/target/%(CargoTarget)/$(Configuration.ToLower())/%(NativeLibrary)')">
+        <PackagePath>runtimes/%(HostArchitecture.Identity)/native/%(NativeLibrary)</PackagePath>
+      </TfmSpecificPackageFile>
     </ItemGroup>
   </Target>
 
@@ -132,7 +142,7 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="Cargo" DependsOnTargets="ComputeHostArchitecture" BeforeTargets="PrepareForBuild" Outputs="@(NativeLibrary)" Inputs="../c2pa-rs/c2pa_c_ffi/Cargo.toml">
+  <Target Name="Cargo" DependsOnTargets="ComputeHostArchitecture" Outputs="@(NativeLibrary)" Inputs="../c2pa-rs/c2pa_c_ffi/Cargo.toml">
     <Message Text="Building native c2pa_c library for host architectures: @(HostArchitecture->'%(Identity) ')" Importance="high" />
     <PropertyGroup>
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
