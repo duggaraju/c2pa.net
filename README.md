@@ -9,6 +9,94 @@ This repository provides a .NET-friendly API surface over the native `c2pa_c` C 
 - **Interop bindings are generated automatically**: the build runs the `clangsharppinvokegenerator` .NET tool (ClangSharp P/Invoke Generator) against the `c2pa.h` header and emits platform-specific binding files under `lib/Bindings/*`. The dispatcher in `lib/C2paBindings.cs` selects the correct platform/architecture implementation at runtime.
 - **Typed models are generated from JSON Schema for safety**: the `generator/` project is a Roslyn incremental source generator that reads the C2PA JSON schemas (e.g., Builder/Reader/Settings) and emits strongly-typed C# models during compilation. This keeps the high-level API strongly typed (compile-time checks + IntelliSense) instead of relying on loosely-typed JSON strings.
 
+## Usage
+
+The `Reader` and `Builder` classes have **strongly-typed models generated from JSON Schema**.
+
+### Read an asset and use the typed `ManifestStore`
+
+```csharp
+using ContentAuthenticity;
+using static ContentAUthenticty.Reader;
+var assetPath = "./my-image.jpg";
+
+using var reader = Reader.FromFile(assetPath);
+
+// Raw JSON (if you need it)
+string json = reader.Json;
+
+// Strongly-typed view of the manifest store
+ManifestStore store = reader.Store;
+
+Console.WriteLine($"Embedded: {reader.IsEmbedded}");
+Console.WriteLine($"Active manifest: {store.ActiveManifest}");
+
+store.Manifests.TryGetValue(store.ActiveManifest, out var manifest)
+Console.WriteLine($"Title: {manifest.Title}");
+Console.WriteLine($"Format: {manifest.Format}");
+
+// Example: if the manifest has a thumbnail resource reference, you can fetch it
+if (manifest.Thumbnail is not null)
+{
+   using var thumbOut = File.Create("./thumbnail.bin");
+   reader.ResourceToStream(new Uri(manifest.Thumbnail.Identifier), thumbOut);
+}
+
+// Round-trip back to JSON using the same schema-driven serializer options
+string roundTripped = store.ToJson();
+```
+
+### Create a typed manifest definition and sign an asset
+
+```csharp
+using ContentAuthenticity;
+using static ContentAuthenticity.Builder;
+
+// Build a minimal typed manifest definition.
+// The schema requires `NoEmbed` to be set.
+var definition = new ManifestDefinition
+{
+   NoEmbed = false,
+   Title = "my-image.jpg",
+   Format = "image/jpeg",
+   InstanceId = Builder.GenerateInstanceID(),
+   ClaimGeneratorInfo =
+   [
+      new Builder.ClaimGeneratorInfo { Name = "c2pa.net" }
+   ],
+   Assertions =
+   [
+      new ActionAssertion(
+      [
+         new ActionV1("c2pa.edited"),
+      ]),
+      new CreativeWorkAssertions(
+         new CreativeWorkAsertionData
+         {
+            Type = "MyType",
+            Context = new {
+               "SomeName" = "SomeValue"
+            }
+         }
+      )
+   ]
+};
+
+using var builder = Builder.Create(definition);
+// Optional: add extra resources that the manifest may reference (thumbnails, etc.)
+builder.AddResource("thumbnail", "./thumbnail.jpg");
+builder.AddIngredient(...)
+
+// Signing requires an `ISigner` implementation (see `example/` projects for working signers).
+Signer signer = Signer.FromSettings();/* Signer.From(someISigner) */
+
+var input = "./my-image.jpg";
+var output = "./my-image.signed.jpg";
+
+// Writes a signed asset to `output` and returns the embedded manifest bytes.
+byte[] manifestBytes = builder.Sign(signer, input, output);
+```
+
 ## Prerequisites
 
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
@@ -16,7 +104,7 @@ This repository provides a .NET-friendly API surface over the native `c2pa_c` C 
 - [Git](https://git-scm.com/) with submodule support
 - [ClangSharp](https://github.com/dotnet/ClangSharp)
 
-## Getting Started
+## Development
 
 ### 1. Clone the Repository
 
@@ -65,14 +153,11 @@ git commit -m "Update c2pa-rs submodule to v0.28.1"
 dotnet restore && dotnet tool restore
 dotnet build
 
-# Only need this workround if running on Linux :-(
-ln -sf  ~/.nuget/packages/libclang.runtime.linux-x64/18.1.3/runtimes/linux-x64/native/libclang.so ~/.nuget/packages/libclang.runtime.linux-x64/18.1.3/runtimes/linux-x64/native/libclang.so.18.1
-
-# Build in Release mode
+# Build
+dotnet build
+# or build in Release Mode.
 dotnet build --configuration Release
 
-# Build for specific platform (x64)
-dotnet build --configuration Release --arch x64
 ```
 
 #### Option 2: Using Visual Studio
@@ -100,15 +185,15 @@ cd example/Cli
 # Run the example
 dotnet run
 ```
-
-### Package
+### 6. Package
 
 Create a nuget package for publishing.
 
 ```bash
 cd lib
-dotnet pack -c Release -p RuntimeIdentitifer=linx-x64 # or win-x64 for Windows.
+dotnet pack
 ```
+
 
 ## Project Structure
 
@@ -129,10 +214,10 @@ dotnet pack -c Release -p RuntimeIdentitifer=linx-x64 # or win-x64 for Windows.
    cargo build --release -p c2pa-c-ffi --no-default-features --features "rust_native_crypto, file_io"
    ```
 
-2. **Platform target mismatch**: The project is configured for x64. Ensure your build environment matches:
+2. **Missing Rust Tooling**: Ensure that you have cargo installed and right  toolset present (e.g cross compiling for ARM64):
 
    ```bash
-   dotnet build --arch x64
+   rustup target add aarch64-unknown-linux-gnu
    ```
 
 3. **Submodule not initialized**: If you see build errors related to missing Rust code:
