@@ -18,7 +18,7 @@ env:
   RUST_VERSION: '1.88.0'
   BASE_VERSION: '0.4.0'
   NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-  
+
 jobs:
   generate-version:
     name: Generate Build Version
@@ -69,7 +69,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest] 
+        os: [windows-latest, ubuntu-latest, macos-latest]
         configuration: [Debug, Release]
         exclude:
           # Only run Release builds on Ubuntu and macOS to save resources
@@ -79,7 +79,7 @@ jobs:
             configuration: Debug
           - os: macos-latest
             configuration: Release
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -100,11 +100,11 @@ jobs:
 
     - name: Install Rust toolchain for
       if: matrix.os == 'ubuntu-latest'
-      run: rustup target add aarch64-unknown-linux-gnu 
+      run: rustup target add aarch64-unknown-linux-gnu
 
     - name: Install Rust toolchain for
       if: matrix.os == 'windows-latest'
-      run: rustup target add aarch64-pc-windows-msvc 
+      run: rustup target add aarch64-pc-windows-msvc
 
     # Cache .NET dependencies
     - name: Cache .NET dependencies
@@ -163,7 +163,7 @@ jobs:
     - name: Create NuGet packages
       if: matrix.configuration == 'Release'
       run: |
-        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-symbols --include-source -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
+        dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-symbols --include-source -p:SymbolPackageFormat=snupkg -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
 
     # Upload NuGet packages as artifacts
     - name: Upload NuGet packages
@@ -183,7 +183,7 @@ jobs:
     if: |
       (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
       (github.event_name == 'release' && github.event.action == 'published')
-    
+
     steps:
     - name: Download NuGet packages
       uses: actions/download-artifact@v7
@@ -197,39 +197,22 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    # Publish to NuGet.org (only on release)
-    - name: Publish to NuGet.org
-      if: github.event_name == 'release' && github.event.action == 'published'
-      run: |
-        $packages = Get-ChildItem -Path ./packages -Filter "*.nupkg" -Recurse
-        if ($packages.Count -eq 0) {
-          Write-Host "No .nupkg files found to publish"
-          exit 1
-        }
-        
-        Write-Host "Found $($packages.Count) package(s) to publish to NuGet.org:"
-        foreach ($package in $packages) {
-          Write-Host "Publishing: $($package.Name)"
-          dotnet nuget push $package.FullName --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "Failed to publish $($package.Name)"
-            exit $LASTEXITCODE
-          }
-        }
-        Write-Host "All packages published successfully to NuGet.org"
-      shell: pwsh
-
     # Publish to GitHub Packages (on main branch pushes)
     - name: Publish to GitHub Packages
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       run: |
-        $packages = Get-ChildItem -Path ./packages -Filter "*.nupkg" -Recurse
-        if ($packages.Count -eq 0) {
+        # Only push actual NuGet packages to GitHub Packages.
+        # Exclude symbol packages ("*.symbols.nupkg") and snupkg files.
+        $packages = @(
+          Get-ChildItem -Path ./packages -Recurse -File |
+            Where-Object { $_.Extension -eq ".nupkg" -and $_.Name -notlike "*.symbols.nupkg" }
+        )
+        if ($packages.Length -eq 0) {
           Write-Host "No .nupkg files found to publish"
           exit 1
         }
-        
-        Write-Host "Found $($packages.Count) package(s) to publish to GitHub Packages:"
+
+        Write-Host "Found $($packages.Length) package(s) to publish to GitHub Packages:"
         foreach ($package in $packages) {
           Write-Host "Publishing: $($package.Name)"
           dotnet nuget push $package.FullName --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --skip-duplicate
