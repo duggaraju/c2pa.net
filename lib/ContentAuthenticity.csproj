@@ -57,6 +57,10 @@
     <PackageReference Include="libClangSharp.runtime.linux-x64" GeneratePathProperty="true" IncludeAssets="none" />
     <PackageReference Include="libclang.runtime.linux-x64" GeneratePathProperty="true" IncludeAssets="none" />
   </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <PackageReference Include="libClangSharp.runtime.osx-arm64" GeneratePathProperty="true" IncludeAssets="none" />
+    <PackageReference Include="libclang.runtime.osx-arm64" GeneratePathProperty="true" IncludeAssets="none" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md">
       <Pack>True</Pack>
@@ -86,8 +90,6 @@
                         Condition="'%(BindingsPlatform.Identity)' == 'linux-arm64' and '$(BuildArm64)' == 'true'" />
     </ItemGroup>
     <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
-      <HostArchitecture Include="@(BindingsPlatform)"
-                        Condition="'%(BindingsPlatform.Identity)' == 'osx-x64'" />
       <HostArchitecture Include="@(BindingsPlatform)"
                         Condition="'%(BindingsPlatform.Identity)' == 'osx-arm64'" />
     </ItemGroup>
@@ -122,16 +124,23 @@
       <CargoOutputForBindings>$(MSBuildThisFileDirectory)../c2pa-rs/target/%(FirstArch.CargoTarget)/$(Configuration.ToLower())/</CargoOutputForBindings>
       <ConfigOptions>-c latest-codegen multi-file generate-file-scoped-namespaces generate-helper-types -hf header</ConfigOptions>
       <InteropArgsCommon>-n ContentAuthenticity.Bindings -l c2pa_c -p c2pa_ -r C2paSigningAlg=SigningAlg -x c</InteropArgsCommon>
-      <PlatformArgs Condition="$([MSBuild]::IsOSPlatform('Linux'))">-I /usr/lib/gcc/x86_64-linux-gnu/14/include/ -Wno-ignored-attributes -Wno-attributes</PlatformArgs>
-      <EnvironmentVariables Condition="$([MSBuild]::IsOSPlatform('Linux'))">LD_LIBRARY_PATH=$(PkglibClangSharp_runtime_linux-x64)/runtimes/linux-x64/native:$(Pkglibclang_runtime_linux-x64)/runtimes/linux-x64/native</EnvironmentVariables>
+    </PropertyGroup>
+    <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+      <PlatformArgs>-I /usr/lib/gcc/x86_64-linux-gnu/14/include/ -Wno-ignored-attributes -Wno-attributes</PlatformArgs>
+      <EnvironmentVariables>LD_LIBRARY_PATH=$(PkglibClangSharp_runtime_linux-x64)/runtimes/linux-x64/native:$(Pkglibclang_runtime_linux-x64)/runtimes/linux-x64/native</EnvironmentVariables>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+      <PlatformArgs>-I /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/ -I /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Kernel.framework/Versions/A/Headers/</PlatformArgs>
+      <EnvironmentVariables>DYLD_LIBRARY_PATH=$(PkglibClangSharp_runtime_osx-arm64)/runtimes/osx-arm64/native:$(Pkglibclang_runtime_osx-arm64)/runtimes/osx-arm64/native</EnvironmentVariables>
     </PropertyGroup>
 
     <!-- Generate shared helper types once (we do not compile the generated C2paBindings_Shared class) -->
-    <Exec Command="dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutputForBindings)c2pa.h -o $(BindingsFolder)/shared $(InteropArgsCommon) -m C2paBindings_Shared $(ConfigOptions) $(PlatformArgs)"
+    <Exec Command="$(EnvironmentVariables) dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutputForBindings)c2pa.h -o $(BindingsFolder)/shared $(InteropArgsCommon) -m C2paBindings_Shared $(ConfigOptions) $(PlatformArgs)"
       IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" EnvironmentVariables="$(EnvironmentVariables)" />
 
     <!-- Generate per-platform native bindings classes; only the class file is compiled to avoid duplicate helper types -->
-    <Exec Command="dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutputForBindings)c2pa.h -o $(BindingsFolder)/%(BindingsPlatform.Identity) $(InteropArgsCommon) -m C2paBindings_%(BindingsPlatform.BindingClassSuffix) $(ConfigOptions) $(PlatformArgs)"
+    <Exec Command="$(EnvironmentVariables) dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutputForBindings)c2pa.h -o $(BindingsFolder)/%(BindingsPlatform.Identity) $(InteropArgsCommon) -m C2paBindings_%(BindingsPlatform.BindingClassSuffix) $(ConfigOptions) $(PlatformArgs)"
       IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" EnvironmentVariables="$(EnvironmentVariables)" />
   </Target>
 
