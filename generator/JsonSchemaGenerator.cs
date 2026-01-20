@@ -7,12 +7,12 @@ using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "RoslynDiagnostics",
+    "RS1041:Do not use obsoleted APIs",
+    Justification = "Suppression is necessary for this project.")]
 [Generator(LanguageNames.CSharp)]
 public sealed class JsonSchemaClassGenerator : IIncrementalGenerator
 {
