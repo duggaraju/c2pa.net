@@ -271,7 +271,7 @@
           }
         },
         "generate_c2pa_archive": {
-          "description": "Whether to generate a C2PA archive (instead of zip) when writing the manifest builder.\nThis will eventually become the default behavior.",
+          "description": "Whether to generate a C2PA archive (instead of zip) when writing the manifest builder.\nNow always defaults to true - the ability to disable it will be removed in the future.",
           "type": [
             "boolean",
             "null"
