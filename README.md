@@ -1,5 +1,9 @@
 # c2pa.net
 
+[![NuGet](https://img.shields.io/nuget/v/ContentAuthenticity.svg)](https://www.nuget.org/packages/ContentAuthenticity/)
+[![Target Framework](https://img.shields.io/badge/TFM-net10.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/10.0)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+
 .NET bindings for c2pa [Rust](https://github.com/contentauth/c2pa-rs) library.
 
 ## Description
