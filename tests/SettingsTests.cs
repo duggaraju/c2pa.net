@@ -78,6 +78,9 @@ public class SettingsTests
                         "auto_opened_action": {},
                         "auto_placed_action": {},
                         "templates": []
+                    },
+                    "auto_timestamp_assertion": {
+                      "enabled": true
                     }
                 }
             }

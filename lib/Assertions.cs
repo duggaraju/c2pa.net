@@ -17,7 +17,7 @@ public abstract record Assertion(string Label, object Data)
         return new()
         {
             Label = assertion.Label,
-            Data = JsonElement.Parse(assertion.Data.Serialize())
+            Data = JsonSerializer.SerializeToElement(assertion.Data)
         };
     }
 }

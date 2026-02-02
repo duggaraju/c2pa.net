@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <NugetPackageVersion>0.75.4.1</NugetPackageVersion>
+    <NugetPackageVersion>0.75.10</NugetPackageVersion>
   </PropertyGroup>
 </Project>

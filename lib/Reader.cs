@@ -2,7 +2,7 @@
 
 namespace ContentAuthenticity;
 
-[JsonSchema("../generator/Reader.schema.json", "ManifestStore")]
+[JsonSchema("../c2pa-rs/target/schema/Reader.schema.json", "ManifestStore")]
 public sealed partial class Reader : IDisposable
 {
     private readonly unsafe C2paReader* reader;

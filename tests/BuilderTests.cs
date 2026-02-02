@@ -34,7 +34,10 @@ public class BuilderTests
     public void Create_WithManifestDefinitionAndSigner_ShouldCreateBuilder()
     {
         // Arrange
-        var manifest = new ManifestDefinition();
+        var manifest = new ManifestDefinition
+        {
+            TimestampManifestLabels = []
+        };
         // Act
         var exception = Record.Exception(() => Builder.Create(manifest));
 
@@ -51,7 +54,8 @@ public class BuilderTests
         {
             Format = "jpeg",
             Title = "Test Image",
-            Vendor = "Test Vendor"
+            Vendor = "Test Vendor",
+            TimestampManifestLabels = []
         };
         var json = manifest.ToJson();
 

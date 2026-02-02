@@ -50,6 +50,9 @@
       <CargoTarget>aarch64-apple-darwin</CargoTarget>
       <NativeLibrary>libc2pa_c.dylib</NativeLibrary>
     </BindingsPlatform>
+    <SchemaFile Include="../c2pa-rs/target/schema/Reader.schema.json" />
+    <SchemaFile Include="../c2pa-rs/target/schema/Builder.schema.json" />
+    <SchemaFile Include="../c2pa-rs/target/schema/Settings.schema.json" />
   </ItemGroup>
 
   <!-- libclang runtime only needed for generation on Linux -->
@@ -115,9 +118,9 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="GenerateBindings" DependsOnTargets="Cargo" Inputs="@(NativeLibrary)" Outputs="@(GeneratedFile)">
+  <Target Name="GenerateBindings" DependsOnTargets="GenerateSchema" Inputs="@(NativeLibrary)" Outputs="@(GeneratedFile)">
     <ItemGroup>
-      <FirstArch Include="@(HostArchitecture)" Condition="'%(Identity)' != ''" />
+      <FirstArch Include="@(HostArchitecture->Reverse())" />
     </ItemGroup>
 
     <PropertyGroup>
@@ -158,8 +161,19 @@
       <!-- Opt-in: Release-only Cargo profile tuning. -->
       <CargoEnvironmentVariables Condition="'$(Configuration)' == 'Release' and '$(EnableCargoReleaseOptimizations)' == 'true'">CARGO_PROFILE_RELEASE_OPT_LEVEL=z;CARGO_PROFILE_RELEASE_STRIP=symbols;CARGO_PROFILE_RELEASE_LTO=thin;CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1</CargoEnvironmentVariables>
     </PropertyGroup>
-    <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto --target %(HostArchitecture.CargoTarget)"
+    <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto --target %(HostArchitecture.CargoTarget) -p c2pa-c-ffi -p export_schema"
           EnvironmentVariables="$(CargoEnvironmentVariables)"
-          WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/c2pa_c_ffi" />
+          WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/" />
+  </Target>
+
+  <Target Name="GenerateSchema" DependsOnTargets="Cargo" Outputs="@(SchemaFile)" Inputs="../c2pa-rs/export_schema/Cargo.toml">
+    <ItemGroup>
+      <FirstArch Include="@(HostArchitecture->Reverse())" />
+    </ItemGroup>
+    <PropertyGroup>
+      <CargoTarget>%(FirstArch.CargoTarget)</CargoTarget>
+      <SchemaGenerator>$(MSBuildThisFileDirectory)../c2pa-rs/target/$(CargoTarget)/$(Configuration.ToLower())/export_schema</SchemaGenerator>
+    </PropertyGroup>
+    <Exec Command="$(SchemaGenerator)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs" />
   </Target>
 </Project>

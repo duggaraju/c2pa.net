@@ -2,7 +2,7 @@
 
 namespace ContentAuthenticity;
 
-[JsonSchema("../generator/Settings.schema.json")]
+[JsonSchema("../c2pa-rs/target/schema/Settings.schema.json")]
 public static partial class C2pa
 {
     public partial class Settings
@@ -22,7 +22,8 @@ public static partial class C2pa
                     AutoPlacedAction = new(),
                     Templates = new()
                 },
-                Thumbnail = new()
+                Thumbnail = new(),
+                AutoTimestampAssertion = new()
             }
         };
     }

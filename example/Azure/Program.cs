@@ -82,7 +82,8 @@ partial class Program
                             { "person", "Isaiah Carrington" }
                         }
                     })
-            }
+            },
+            TimestampManifestLabels = []
         };
 
         var builder = Builder.Create(manifest);
