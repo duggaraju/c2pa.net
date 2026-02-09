@@ -1,0 +1,19 @@
+<Project>
+  <Target Name="SetNugetPackageVersionFromC2paRsTag" BeforeTargets="PrepareForBuild;Pack">
+    <PropertyGroup>
+      <C2paRsRepo>$(MSBuildThisFileDirectory)..\c2pa-rs</C2paRsRepo>
+    </PropertyGroup>
+
+    <Exec Command="git -C &quot;$(C2paRsRepo)&quot; describe --tags --abbrev=0" ConsoleToMSBuild="true" IgnoreExitCode="false">
+      <Output TaskParameter="ConsoleOutput" PropertyName="C2paRsTag" />
+    </Exec>
+
+    <PropertyGroup>
+      <C2paRsTagTrimmed>$([System.String]::Copy($(C2paRsTag)).Trim())</C2paRsTagTrimmed>
+      <C2paRsVersion>$([System.Text.RegularExpressions.Regex]::Match($(C2paRsTagTrimmed), &quot;v(?&lt;ver&gt;\d+\.\d+\.\d+)&quot;).Groups[&quot;ver&quot;].Value)</C2paRsVersion>
+      <NugetPackageVersion Condition="'$(C2paRsVersion)' != ''">$(C2paRsVersion)</NugetPackageVersion>
+    </PropertyGroup>
+
+    <Error Condition="'$(C2paRsVersion)' == ''" Text="Unable to parse version from c2pa-rs tag '$(C2paRsTagTrimmed)'." />
+  </Target>
+</Project>

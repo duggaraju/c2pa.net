@@ -1,0 +1,6 @@
+<Project>
+  <Import Project="..\Directory.Packages.props" />
+  <ItemGroup>
+    <PackageVersion Include="ContentAuthenticity" Version="$(NugetPackageVersion)" />
+  </ItemGroup>
+</Project>
