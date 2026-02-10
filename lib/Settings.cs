@@ -18,9 +18,15 @@ public static partial class C2pa
                 Actions = new()
                 {
                     AutoCreatedAction = new(),
-                    AutoOpenedAction = new(),
-                    AutoPlacedAction = new(),
-                    Templates = new()
+                    AutoOpenedAction = new()
+                    {
+                        Enabled = false,
+                    },
+                    AutoPlacedAction = new()
+                    {
+                        Enabled = false,
+                    },
+                    Templates = []
                 },
                 Thumbnail = new(),
                 AutoTimestampAssertion = new()

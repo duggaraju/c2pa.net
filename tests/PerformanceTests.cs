@@ -513,13 +513,26 @@ public class PerformanceTests
         // Ensure we don't attempt to generate an MP4 thumbnail for MP4 inputs.
         // (Some native builds don't support `video/mp4` thumbnails.)
         var settings = C2pa.Settings.Default;
-        settings.Builder.Thumbnail.Format = C2pa.ThumbnailFormat.Jpeg;
+        Assert.NotNull(settings.Builder);
+        Assert.NotNull(settings.Builder.Thumbnail);
+        var thumbnailSettings = settings.Builder.Thumbnail!;
+        thumbnailSettings.Format = C2pa.ThumbnailFormat.Jpeg;
         C2pa.LoadSettings(settings.ToJson(indented: false));
 
         var manifest = """
-            {
-            }
-        """;
+                        {
+                            "assertions": [
+                                {
+                                    "label": "c2pa.actions",
+                                    "data": {
+                                        "actions": [
+                                            { "action": "c2pa.created" }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                """;
         var builder = Builder.FromJson(manifest);
 
         for (int iter = 0; iter < num_iterations; iter++)

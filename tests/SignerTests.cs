@@ -13,10 +13,26 @@ public sealed class SignerTests
     {
         // Arrange
         var settings = C2pa.Settings.Default;
+        Assert.NotNull(settings.Builder);
+        Assert.NotNull(settings.Builder.Thumbnail);
         settings.Builder.Thumbnail.Format = C2pa.ThumbnailFormat.Jpeg;
         C2pa.LoadSettings(settings.ToJson(indented: false));
 
-        using var builder = Builder.FromJson("{}");
+        var manifest = """
+                        {
+                            "assertions": [
+                                {
+                                    "label": "c2pa.actions",
+                                    "data": {
+                                        "actions": [
+                                            { "action": "c2pa.created" }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                        """;
+        using var builder = Builder.FromJson(manifest);
 
         var inputPath = Path.Combine(AppContext.BaseDirectory, "no_manifest.jpg");
         Assert.True(File.Exists(inputPath), $"Missing test fixture: {inputPath}");

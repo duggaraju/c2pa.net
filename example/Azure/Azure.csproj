@@ -14,8 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\lib\ContentAuthenticity.csproj" Condition="'$(NugetBuild)' == ''" />
-    <PackageReference Include="ContentAuthenticity" Condition="'$(NugetBuild)' == ''" />
+    <ProjectReference Include="..\..\lib\ContentAuthenticity.csproj" Condition="'$(NugetBuild)' != 'True'" />
+    <PackageReference Include="ContentAuthenticity" Condition="'$(NugetBuild)' == 'True'" />
   </ItemGroup>
 
   <ItemGroup>
