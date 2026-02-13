@@ -126,7 +126,24 @@ git submodule update --init --recursive
 
 ### 2. Update Submodule to Specific Release Tag
 
-To update the c2pa-rs submodule to a specific release tag:
+The c2pa-rs submodule is automatically updated by a GitHub Actions workflow that monitors the upstream repository for new C FFI release tags matching the pattern `c2pa-c-ffi-vx.x.x`. When a new tag is detected, the workflow:
+
+1. Updates the submodule to point to the new tag
+2. Creates a pull request with the update details
+3. Includes the tag information and release notes link in the PR description
+
+The workflow runs automatically every 6 hours, but can also be triggered manually:
+
+```bash
+# Go to Actions tab in GitHub UI
+# Select "Update c2pa-rs Submodule" workflow
+# Click "Run workflow"
+# Optionally specify a specific tag (e.g., c2pa-c-ffi-v0.62.0)
+```
+
+**Manual Update (if needed):**
+
+If you need to manually update the submodule to a specific release tag:
 
 ```bash
 # Navigate to the submodule directory
@@ -135,18 +152,18 @@ cd c2pa-rs
 # Fetch all tags from the remote repository
 git fetch --tags
 
-# List available tags (optional)
-git tag -l
+# List available c2pa-c-ffi tags
+git tag -l 'c2pa-c-ffi-v*'
 
-# Checkout to a specific release tag (replace v0.x.x with desired version)
-git checkout v0.28.1
+# Checkout to a specific release tag (replace with desired version)
+git checkout c2pa-c-ffi-v0.62.0
 
 # Return to the root directory
 cd ..
 
 # Commit the submodule update
 git add c2pa-rs
-git commit -m "Update c2pa-rs submodule to v0.28.1"
+git commit -m "Update c2pa-rs submodule to c2pa-c-ffi-v0.62.0"
 ```
 
 ### 3. Build the Project
