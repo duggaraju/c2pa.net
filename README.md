@@ -138,7 +138,7 @@ The workflow runs automatically every 6 hours, but can also be triggered manuall
 # Go to Actions tab in GitHub UI
 # Select "Update c2pa-rs Submodule" workflow
 # Click "Run workflow"
-# Optionally specify a specific tag (e.g., c2pa-c-ffi-v0.62.0)
+# Optionally specify a specific tag (e.g., c2pa-c-ffi-v0.75.21)
 ```
 
 **Manual Update (if needed):**
@@ -156,14 +156,14 @@ git fetch --tags
 git tag -l 'c2pa-c-ffi-v*'
 
 # Checkout to a specific release tag (replace with desired version)
-git checkout c2pa-c-ffi-v0.62.0
+git checkout c2pa-c-ffi-v0.75.21
 
 # Return to the root directory
 cd ..
 
 # Commit the submodule update
 git add c2pa-rs
-git commit -m "Update c2pa-rs submodule to c2pa-c-ffi-v0.62.0"
+git commit -m "Update c2pa-rs submodule to c2pa-c-ffi-v0.75.21"
 ```
 
 ### 3. Build the Project
