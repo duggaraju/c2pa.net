@@ -145,7 +145,8 @@ jobs:
           script: |
             const targetTag = '${{ steps.target.outputs.tag }}';
             const branchName = '${{ steps.update.outputs.branch }}';
-            const currentTag = '${{ steps.current.outputs.tag }}' || 'unknown';
+            const currentTagFromOutput = '${{ steps.current.outputs.tag }}';
+            const currentTag = currentTagFromOutput || 'unknown';
             
             const title = `Update c2pa-rs submodule to ${targetTag}`;
             const body = `## Submodule Update
@@ -191,7 +192,7 @@ jobs:
                 repo: context.repo.repo,
                 title: title,
                 head: branchName,
-                base: 'main',
+                base: context.payload.repository.default_branch || 'main',
                 body: body
               });
               
