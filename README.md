@@ -1,7 +1,7 @@
 # c2pa.net
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
-[![c2pa-rs](https://img.shields.io/badge/c2pa--rs-0.75.7-informational)](https://github.com/contentauth/c2pa-rs/releases/tag/v0.75.7)
+[![c2pa-rs](https://img.shields.io/badge/c2pa--rs-0.76.0-informational)](https://github.com/contentauth/c2pa-rs/releases/tag/c2pa-c-ffi-v0.76.0)
 [![NuGet](https://img.shields.io/nuget/v/ContentAuthenticity.svg)](https://www.nuget.org/packages/ContentAuthenticity/)
 [![Target Framework](https://img.shields.io/badge/TFM-net10.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/10.0)
 

@@ -122,8 +122,15 @@ jobs:
           git checkout "$TARGET_TAG"
           cd ..
           
-          # Stage the submodule change
-          git add c2pa-rs
+          # Extract version number from tag (e.g., c2pa-c-ffi-v0.76.0 -> 0.76.0)
+          VERSION=$(echo "$TARGET_TAG" | sed 's/^c2pa-c-ffi-v//')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+          # Update the c2pa-rs badge in README.md
+          sed -i "s|\[!\[c2pa-rs\](https://img.shields.io/badge/c2pa--rs-[^-]*-informational)\](https://github.com/contentauth/c2pa-rs/releases/tag/[^)]*)|[![c2pa-rs](https://img.shields.io/badge/c2pa--rs-${VERSION}-informational)](https://github.com/contentauth/c2pa-rs/releases/tag/${TARGET_TAG})|" README.md
+          
+          # Stage the submodule change and README update
+          git add c2pa-rs README.md
           
           # Check if there are changes to commit
           if git diff --cached --quiet; then
