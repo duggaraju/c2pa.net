@@ -142,7 +142,7 @@ jobs:
 
     # Upload test results
     - name: Upload test results
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: test-results-${{ matrix.os }}-${{ matrix.configuration }}
         path: |
@@ -166,7 +166,7 @@ jobs:
     # Upload NuGet packages as artifacts
     - name: Upload NuGet packages
       if: matrix.configuration == 'Release'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: nuget-packages-${{ matrix.os }}
         path: |
