@@ -38,7 +38,7 @@ jobs:
           cd c2pa-rs
           CURRENT_COMMIT=$(git rev-parse HEAD)
           echo "commit=$CURRENT_COMMIT" >> $GITHUB_OUTPUT
-          
+
           # Try to find if current commit has a c2pa-c-ffi tag
           CURRENT_TAG=$(git tag --points-at HEAD | grep '^c2pa-c-ffi-v' | sort -V | tail -1 || echo "")
           echo "tag=$CURRENT_TAG" >> $GITHUB_OUTPUT
@@ -50,18 +50,18 @@ jobs:
         run: |
           cd c2pa-rs
           git fetch --tags origin
-          
+
           # Get the latest c2pa-c-ffi tag
           LATEST_TAG=$(git tag -l 'c2pa-c-ffi-v*' | sort -V | tail -1)
-          
+
           if [ -z "$LATEST_TAG" ]; then
             echo "No c2pa-c-ffi tags found"
             exit 1
           fi
-          
+
           echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
           echo "Latest c2pa-c-ffi tag: $LATEST_TAG"
-          
+
           # Get the commit for this tag
           LATEST_COMMIT=$(git rev-list -n 1 "$LATEST_TAG")
           echo "commit=$LATEST_COMMIT" >> $GITHUB_OUTPUT
@@ -77,16 +77,16 @@ jobs:
             TARGET_TAG="${{ steps.latest.outputs.tag }}"
             echo "Using latest discovered tag: $TARGET_TAG"
           fi
-          
+
           echo "tag=$TARGET_TAG" >> $GITHUB_OUTPUT
-          
+
           # Verify the tag exists
           cd c2pa-rs
           if ! git rev-parse "$TARGET_TAG" >/dev/null 2>&1; then
             echo "Error: Tag $TARGET_TAG does not exist"
             exit 1
           fi
-          
+
           TARGET_COMMIT=$(git rev-list -n 1 "$TARGET_TAG")
           echo "commit=$TARGET_COMMIT" >> $GITHUB_OUTPUT
 
@@ -95,7 +95,7 @@ jobs:
         run: |
           CURRENT="${{ steps.current.outputs.commit }}"
           TARGET="${{ steps.target.outputs.commit }}"
-          
+
           if [ "$CURRENT" = "$TARGET" ]; then
             echo "Submodule is already at the target tag ${{ steps.target.outputs.tag }}"
             echo "needed=false" >> $GITHUB_OUTPUT
@@ -110,39 +110,44 @@ jobs:
         run: |
           TARGET_TAG="${{ steps.target.outputs.tag }}"
           BRANCH_NAME="update-c2pa-rs-${TARGET_TAG}"
-          
+          DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
+          if [ -z "$DEFAULT_BRANCH" ]; then
+            DEFAULT_BRANCH="main"
+          fi
+
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          
-          # Create a new branch
-          git checkout -b "$BRANCH_NAME"
-          
+
+          # Create or reset the branch from the default branch to avoid non-fast-forward push issues
+          git fetch origin "$DEFAULT_BRANCH"
+          git checkout -B "$BRANCH_NAME" "origin/$DEFAULT_BRANCH"
+
           # Update the submodule to the target tag
           cd c2pa-rs
           git fetch --tags origin
           git checkout "$TARGET_TAG"
           cd ..
-          
+
           # Extract version number from tag (e.g., c2pa-c-ffi-v0.76.0 -> 0.76.0)
           VERSION=$(echo "$TARGET_TAG" | sed 's/^c2pa-c-ffi-v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          
+
           # Update the c2pa-rs badge in README.md
           sed -i "s|\[!\[c2pa-rs\](https://img.shields.io/badge/c2pa--rs-[^-]*-informational)\](https://github.com/contentauth/c2pa-rs/releases/tag/[^)]*)|[![c2pa-rs](https://img.shields.io/badge/c2pa--rs-${VERSION}-informational)](https://github.com/contentauth/c2pa-rs/releases/tag/${TARGET_TAG})|" README.md
-          
+
           # Stage the submodule change and README update
           git add c2pa-rs README.md
-          
+
           # Check if there are changes to commit
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
-          
+
           # Commit the change
           git commit -m "Update c2pa-rs submodule to $TARGET_TAG"
-          
-          # Push the branch
-          git push origin "$BRANCH_NAME"
+
+          # Push the branch (force-with-lease to update existing branch safely)
+          git push --force-with-lease origin "$BRANCH_NAME"
 
       - name: Create Pull Request
         if: steps.check.outputs.needed == 'true'
@@ -154,31 +159,31 @@ jobs:
             const branchName = '${{ steps.update.outputs.branch }}';
             const currentTagFromOutput = '${{ steps.current.outputs.tag }}';
             const currentTag = currentTagFromOutput || 'unknown';
-            
+
             const title = `Update c2pa-rs submodule to ${targetTag}`;
             const body = `## Submodule Update
-            
+
             This PR updates the \`c2pa-rs\` submodule to the latest C FFI release.
-            
+
             **Target Tag:** \`${targetTag}\`
             **Previous Tag:** \`${currentTag}\`
             **Previous Commit:** \`${{ steps.current.outputs.commit }}\`
             **New Commit:** \`${{ steps.target.outputs.commit }}\`
-            
+
             ### Changes
-            
+
             This automated update tracks the upstream c2pa-rs C FFI releases to keep the native bindings up-to-date.
-            
+
             ### Checklist
-            
+
             - [ ] Review the [c2pa-rs release notes](https://github.com/contentauth/c2pa-rs/releases/tag/${targetTag})
             - [ ] Build and test the changes
             - [ ] Verify native bindings compatibility
             - [ ] Update any related documentation if needed
-            
+
             ---
             *This PR was automatically created by the [Update c2pa-rs Submodule workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).*`;
-            
+
             try {
               // Check if a PR already exists for this branch
               const { data: existingPRs } = await github.rest.pulls.list({
@@ -187,12 +192,12 @@ jobs:
                 head: `${context.repo.owner}:${branchName}`,
                 state: 'open'
               });
-              
+
               if (existingPRs.length > 0) {
                 console.log(`PR already exists: #${existingPRs[0].number}`);
                 return;
               }
-              
+
               // Create the PR
               const { data: pr } = await github.rest.pulls.create({
                 owner: context.repo.owner,
@@ -202,9 +207,9 @@ jobs:
                 base: context.payload.repository.default_branch || 'main',
                 body: body
               });
-              
+
               console.log(`Created PR #${pr.number}: ${pr.html_url}`);
-              
+
               // Add labels to the PR
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
@@ -212,7 +217,7 @@ jobs:
                 issue_number: pr.number,
                 labels: ['dependencies', 'submodule-update', 'automated']
               });
-              
+
             } catch (error) {
               console.error('Error creating PR:', error);
               throw error;
