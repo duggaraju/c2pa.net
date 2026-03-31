@@ -2,8 +2,8 @@ name: Update c2pa-rs Submodule
 
 on:
   schedule:
-    # Run every 6 hours
-    - cron: '0 */6 * * *'
+    # Run once every day
+    - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
       tag:
