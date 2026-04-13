@@ -1,3 +1,4 @@
 [submodule "c2pa-rs"]
 	path = c2pa-rs
 	url = https://github.com/contentauth/c2pa-rs
+	ignore = all
