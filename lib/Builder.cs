@@ -5,18 +5,23 @@ namespace ContentAuthenticity;
 [JsonSchema("../c2pa-rs/target/schema/Builder.schema.json", "ManifestDefinition")]
 public partial class Builder : IDisposable
 {
-    private readonly unsafe C2paBuilder* builder;
+    private unsafe C2paBuilder* builder;
 
     internal unsafe Builder(C2paBuilder* instance)
     {
         builder = instance;
     }
 
+    public static unsafe implicit operator C2paBuilder*(Builder builder)
+    {
+        return builder.builder;
+    }
+
     public void Dispose()
     {
         unsafe
         {
-            C2paBindings.builder_free(builder);
+            C2paBindings.free(builder);
         }
     }
 
@@ -37,6 +42,38 @@ public partial class Builder : IDisposable
     public static Builder Create(ManifestDefinition definition)
     {
         return FromJson(definition.ToJson());
+    }
+
+    public static Builder FromContext(Context context)
+    {
+        unsafe
+        {
+            var builder = C2paBindings.builder_from_context(context);
+            if (builder == null)
+                C2pa.CheckError();
+            return new Builder(builder);
+        }
+    }
+
+    public Builder WithDefinition(ManifestDefinition manifest)
+    {
+        return WithDefinition(manifest.ToJson());
+    }
+
+    public Builder WithDefinition(string manifest)
+    {
+        var bytes = Encoding.UTF8.GetBytes(manifest);
+        unsafe
+        {
+            fixed (byte* p = bytes)
+            {
+                var builder = C2paBindings.builder_with_definition(this, (sbyte*)p);
+                if (builder == null)
+                    C2pa.CheckError();
+                this.builder = builder;
+                return this;
+            }
+        }
     }
 
     public static Builder FromJson(string manifestDefintion)
@@ -116,6 +153,26 @@ public partial class Builder : IDisposable
         }
     }
 
+    public byte[] Sign(Stream source, Stream dest, string format)
+    {
+        using var inputStream = new StreamAdapter(source);
+        using var outputStream = new StreamAdapter(dest);
+        unsafe
+        {
+            fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
+            {
+                byte* manifest = null;
+                var ret = C2paBindings.builder_sign_context(builder, (sbyte*)formatBytes, inputStream, outputStream, &manifest);
+                if (ret == -1)
+                    C2pa.CheckError();
+                var bytes = new byte[ret];
+                Marshal.Copy((nint)manifest, bytes, 0, bytes.Length);
+                C2paBindings.manifest_bytes_free(manifest);
+                return bytes;
+            }
+        }
+    }
+
     /// <summary>
     /// Sign the input file using the provided signer and write the C2PA manifest to the output file.
     /// </summary>
@@ -124,6 +181,13 @@ public partial class Builder : IDisposable
         using var inputStream = new FileStream(input, FileMode.Open);
         using var outputStream = new FileStream(output, FileMode.Create);
         return Sign(signer, inputStream, outputStream, input.GetMimeType());
+    }
+
+    public byte[] SignFromContext(string input, string output)
+    {
+        using var inputStream = new FileStream(input, FileMode.Open);
+        using var outputStream = new FileStream(output, FileMode.Create);
+        return Sign(inputStream, outputStream, input.GetMimeType());
     }
 
     /// <summary>

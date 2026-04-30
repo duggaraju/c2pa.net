@@ -5,11 +5,16 @@ namespace ContentAuthenticity;
 [JsonSchema("../c2pa-rs/target/schema/Reader.schema.json", "ManifestStore")]
 public sealed partial class Reader : IDisposable
 {
-    private readonly unsafe C2paReader* reader;
+    private unsafe C2paReader* reader;
 
     private unsafe Reader(C2paReader* reader)
     {
         this.reader = reader;
+    }
+
+    public static unsafe implicit operator C2paReader*(Reader reader)
+    {
+        return reader.reader;
     }
 
     public static string[] SupportedMimeTypes
@@ -29,11 +34,45 @@ public sealed partial class Reader : IDisposable
     {
         unsafe
         {
-            C2paBindings.reader_free(reader);
+            C2paBindings.free(reader);
         }
     }
 
-    public static Reader FromStream(Stream stream, string format)
+    public static Reader FromContext(Context context)
+    {
+        unsafe
+        {
+            var reader = C2paBindings.reader_from_context(context);
+            if (reader == null)
+                C2pa.CheckError();
+            return new Reader(reader);
+        }
+    }
+
+    public Reader WithStream(Stream stream, string format)
+    {
+        unsafe
+        {
+            using var c2paStream = new StreamAdapter(stream);
+            fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
+            {
+                var reader = C2paBindings.reader_with_stream(this, (sbyte*)formatBytes, c2paStream);
+                if (reader == null)
+                    C2pa.CheckError();
+                this.reader = reader;
+            }
+        }
+        return this;
+    }
+
+    public Reader WithFile(string path)
+    {
+        using var stream = File.OpenRead(path);
+        return WithStream(stream, path.GetMimeType());
+    }
+
+
+    public static Reader FromStream(Stream stream, string format, Context? context = null)
     {
         unsafe
         {

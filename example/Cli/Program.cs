@@ -1,7 +1,6 @@
 // Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
 using ContentAuthenticity;
-using ContentAuthenticity.Bindings;
 using System.CommandLine;
 using System.Text.Json;
 using static ContentAuthenticity.Builder;
@@ -85,8 +84,9 @@ class Program
             var input = result.GetRequiredValue(inputOption);
             var pretty = result.GetRequiredValue(prettyOption);
             Console.WriteLine($"Reading C2PA data from: {input.FullName}");
-
-            using var reader = Reader.FromFile(input.FullName);
+            using var contextBuilder = ContextBuilder.Create();
+            using var builder = contextBuilder.Build();
+            using var reader = Reader.FromContext(builder).WithFile(input.FullName);
             var json = reader.Json;
 
             if (pretty)
@@ -191,6 +191,20 @@ class Program
             )
         {
             Description = "Time Authority URL for timestamping",
+            CustomParser = result =>
+            {
+                var value = result.Tokens.Count > 0 ? result.Tokens[0].Value : null;
+                if (string.IsNullOrEmpty(value))
+                {
+                    return null;
+                }
+                if (Uri.TryCreate(value, UriKind.Absolute, out var uri))
+                {
+                    return uri;
+                }
+                result.AddError($"Invalid URI: {value}");
+                return null;
+            }
         };
 
         signCommand.Add(inputOption);
@@ -222,9 +236,12 @@ class Program
             Console.WriteLine($"Detected signing algorithm: {signer.Alg}");
 
             // Create builder and sign
-            using var builder = Builder.Create(manifest);
-
-            builder.Sign(signer, input.FullName, output.FullName);
+            using var contextBuilder = ContextBuilder.Create();
+            contextBuilder.SetSigner(signer);
+            contextBuilder.SetHttpResolver(new HttpResolver());
+            using var context = contextBuilder.Build();
+            using var builder = Builder.FromContext(context).WithDefinition(manifest);
+            builder.SignFromContext(input.FullName, output.FullName);
 
             Console.WriteLine($"Successfully signed file: {output.FullName}");
         });

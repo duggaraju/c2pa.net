@@ -87,7 +87,7 @@ public static class Utils
         }
         var value = Marshal.PtrToStringUTF8((nint)ptr)!;
         if (freeResource)
-            C2paBindings.string_free(ptr);
+            C2paBindings.free(ptr);
 
         return value;
     }
