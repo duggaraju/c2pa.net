@@ -17,36 +17,37 @@
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddNativeRuntimesToPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
-
-  <!-- One binding class per OS + architecture combination (codegen only; does not imply cross-compiling native libs) -->
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <DefineConstants>LINUX</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <DefineConstants>WINDOWS</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <DefineConstants>OSX</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <BindingsPlatform Include="win-x64">
-      <BindingClassSuffix>Windows_X64</BindingClassSuffix>
       <CargoTarget>x86_64-pc-windows-msvc</CargoTarget>
       <NativeLibrary>c2pa_c.dll</NativeLibrary>
     </BindingsPlatform>
     <BindingsPlatform Include="win-arm64">
-      <BindingClassSuffix>Windows_Arm64</BindingClassSuffix>
       <CargoTarget>aarch64-pc-windows-msvc</CargoTarget>
       <NativeLibrary>c2pa_c.dll</NativeLibrary>
     </BindingsPlatform>
     <BindingsPlatform Include="linux-x64">
-      <BindingClassSuffix>Linux_X64</BindingClassSuffix>
       <CargoTarget>x86_64-unknown-linux-gnu</CargoTarget>
       <NativeLibrary>libc2pa_c.so</NativeLibrary>
     </BindingsPlatform>
     <BindingsPlatform Include="linux-arm64">
-      <BindingClassSuffix>Linux_Arm64</BindingClassSuffix>
       <CargoTarget>aarch64-unknown-linux-gnu</CargoTarget>
       <NativeLibrary>libc2pa_c.so</NativeLibrary>
     </BindingsPlatform>
     <BindingsPlatform Include="osx-x64">
-      <BindingClassSuffix>OSX_X64</BindingClassSuffix>
       <CargoTarget>x86_64-apple-darwin</CargoTarget>
       <NativeLibrary>libc2pa_c.dylib</NativeLibrary>
     </BindingsPlatform>
     <BindingsPlatform Include="osx-arm64">
-      <BindingClassSuffix>OSX_Arm64</BindingClassSuffix>
       <CargoTarget>aarch64-apple-darwin</CargoTarget>
       <NativeLibrary>libc2pa_c.dylib</NativeLibrary>
     </BindingsPlatform>
@@ -98,7 +99,7 @@
     </ItemGroup>
     <ItemGroup>
       <NativeLibrary Include="@(HostArchitecture->'$(MSBuildThisFileDirectory)../c2pa-rs/target/%(CargoTarget)/$(Configuration.ToLower())/%(NativeLibrary)')" />
-      <GeneratedFile Include="@(BindingsPlatform->'$(BindingsFolder)/%(Identity)/C2paBindings_%(BindingClassSuffix).cs')" />
+      <GeneratedFile Include="$(BindingsFolder)/C2paBindings.cs" />
     </ItemGroup>
     <Message Text="Host architectures for build: @(HostArchitecture->'%(Identity) ')" Importance="high" />
     <Message Text="Native Libraries @(NativeLibrary) GeneratedFiles:@(GeneratedFile)" Importance="high" />
@@ -138,19 +139,13 @@
       <EnvironmentVariables>DYLD_LIBRARY_PATH=$(PkglibClangSharp_runtime_osx-arm64)/runtimes/osx-arm64/native:$(Pkglibclang_runtime_osx-arm64)/runtimes/osx-arm64/native</EnvironmentVariables>
     </PropertyGroup>
 
-    <!-- Generate shared helper types once (we do not compile the generated C2paBindings_Shared class) -->
-    <Exec Command="$(EnvironmentVariables) dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutputForBindings)c2pa.h -o $(BindingsFolder)/shared $(InteropArgsCommon) -m C2paBindings_Shared $(ConfigOptions) $(PlatformArgs)"
-      IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" EnvironmentVariables="$(EnvironmentVariables)" />
-
-    <!-- Generate per-platform native bindings classes; only the class file is compiled to avoid duplicate helper types -->
-    <Exec Command="$(EnvironmentVariables) dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutputForBindings)c2pa.h -o $(BindingsFolder)/%(BindingsPlatform.Identity) $(InteropArgsCommon) -m C2paBindings_%(BindingsPlatform.BindingClassSuffix) $(ConfigOptions) $(PlatformArgs)"
+    <Exec Command="$(EnvironmentVariables) dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutputForBindings)c2pa.h -o $(BindingsFolder) $(InteropArgsCommon) -m C2paBindings $(ConfigOptions) $(PlatformArgs)"
       IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" EnvironmentVariables="$(EnvironmentVariables)" />
   </Target>
 
   <Target Name="IncludeGeneratedBindings" DependsOnTargets="GenerateBindings" BeforeTargets="CoreCompile">
     <ItemGroup>
-      <Compile Include="$(BindingsFolder)/shared/*.cs" Exclude="$(BindingsFolder)/shared/C2paBindings_*.cs" />
-      <Compile Include="$(BindingsFolder)/**/C2paBindings_*.cs" Exclude="$(BindingsFolder)/shared/*" />
+      <Compile Include="$(BindingsFolder)/*.cs" />
     </ItemGroup>
   </Target>
 
@@ -161,7 +156,7 @@
       <!-- Opt-in: Release-only Cargo profile tuning. -->
       <CargoEnvironmentVariables Condition="'$(Configuration)' == 'Release' and '$(EnableCargoReleaseOptimizations)' == 'true'">CARGO_PROFILE_RELEASE_OPT_LEVEL=z;CARGO_PROFILE_RELEASE_STRIP=symbols;CARGO_PROFILE_RELEASE_LTO=thin;CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1</CargoEnvironmentVariables>
     </PropertyGroup>
-    <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto --target %(HostArchitecture.CargoTarget) -p c2pa-c-ffi -p export_schema"
+    <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto,http --target %(HostArchitecture.CargoTarget) -p c2pa-c-ffi -p export_schema"
           EnvironmentVariables="$(CargoEnvironmentVariables)"
           WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/" />
   </Target>

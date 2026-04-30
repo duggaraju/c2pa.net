@@ -26,29 +26,10 @@ partial class Program
             throw new IOException($"No file exists with the filename of {inputFile}.");
 
         var json = File.ReadAllText("settings.json");
-        var settings = C2pa.LoadSettings(json);
+        using var contextBuilder = ContextBuilder.Create();
+        contextBuilder.SetHttpResolver(new HttpResolver());
+        contextBuilder.SetSettings(json);
 
-        if (outputFile == null)
-            ValidateFile(inputFile);
-        else
-            SignFile(inputFile, outputFile);
-    }
-
-    private static void ValidateFile(string inputFile)
-    {
-        var reader = Reader.FromFile(inputFile);
-        if (reader != null)
-        {
-            Console.WriteLine(reader.Store.ToJson());
-        }
-        else
-        {
-            Console.WriteLine("No manifest found in file.");
-        }
-    }
-
-    private static void SignFile(string inputFile, string outputFile)
-    {
         var credential = new DefaultAzureCredential(true);
         var config = new TrustedSignerConfiguration
         {
@@ -59,6 +40,30 @@ partial class Program
             TimeAuthorityUrl = new("http://timestamp.digicert.com"),
         };
         TrustedSigner signer = new(credential, config);
+        contextBuilder.SetSigner(signer);
+
+        using var context = contextBuilder.Build();
+        if (outputFile == null)
+            ValidateFile(context, inputFile);
+        else
+            SignFile(context, inputFile, outputFile);
+    }
+
+    private static void ValidateFile(Context context, string inputFile)
+    {
+        using var reader = Reader.FromContext(context).WithFile(inputFile);
+        if (reader != null)
+        {
+            Console.WriteLine(reader.Store.ToJson());
+        }
+        else
+        {
+            Console.WriteLine("No manifest found in file.");
+        }
+    }
+
+    private static void SignFile(Context context, string inputFile, string outputFile)
+    {
 
         ManifestDefinition manifest = new()
         {
@@ -86,9 +91,9 @@ partial class Program
             TimestampManifestLabels = []
         };
 
-        var builder = Builder.Create(manifest);
-        builder.Sign(signer, inputFile, outputFile);
+        using var builder = Builder.FromContext(context).WithDefinition(manifest);
+        builder.Sign(inputFile, outputFile);
 
-        ValidateFile(outputFile);
+        ValidateFile(context, outputFile);
     }
 }

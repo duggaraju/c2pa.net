@@ -24,7 +24,7 @@ public sealed class Signer : IDisposable
     {
         unsafe
         {
-            C2paBindings.signer_free(signer);
+            C2paBindings.free(signer);
         }
         if (handle.IsAllocated)
             handle.Free();
@@ -60,14 +60,58 @@ public sealed class Signer : IDisposable
         }
     }
 
-    public static Signer FromSettings()
+    /// <summary>
+    /// Creates a <see cref="Signer"/> from inline signing material (algorithm,
+    /// certificate chain in PEM, private key in PEM and an optional timestamp
+    /// authority URL). The private key is sent to the native library which
+    /// performs signing internally.
+    /// </summary>
+    public static Signer FromInfo(SigningAlg alg, string signCertPem, string privateKeyPem, Uri? timeAuthorityUrl = null)
     {
         unsafe
         {
-            var c2paSigner = C2paBindings.signer_from_settings();
-            if (c2paSigner == null)
-                C2pa.CheckError();
-            return new Signer(c2paSigner);
+            var algName = alg.ToString().ToLowerInvariant();
+            fixed (byte* algBytes = Encoding.UTF8.GetBytes(algName))
+            fixed (byte* certBytes = Encoding.UTF8.GetBytes(signCertPem))
+            fixed (byte* keyBytes = Encoding.UTF8.GetBytes(privateKeyPem))
+            fixed (byte* taBytes = timeAuthorityUrl == null ? null : Encoding.UTF8.GetBytes(timeAuthorityUrl.OriginalString))
+            {
+                var info = new C2paSignerInfo
+                {
+                    alg = (sbyte*)algBytes,
+                    sign_cert = (sbyte*)certBytes,
+                    private_key = (sbyte*)keyBytes,
+                    ta_url = (sbyte*)taBytes,
+                };
+                var c2paSigner = C2paBindings.signer_from_info(&info);
+                if (c2paSigner == null)
+                    C2pa.CheckError();
+                return new Signer(c2paSigner);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Signs <paramref name="data"/> with the Ed25519 algorithm using the
+    /// supplied PEM-encoded private key. Returns the raw signature bytes.
+    /// </summary>
+    public static byte[] Ed25519Sign(ReadOnlySpan<byte> data, string privateKeyPem)
+    {
+        // Ed25519 signatures are always 64 bytes.
+        const int Ed25519SignatureSize = 64;
+        unsafe
+        {
+            fixed (byte* dataPtr = data)
+            fixed (byte* keyPtr = Encoding.UTF8.GetBytes(privateKeyPem))
+            {
+                var sigPtr = C2paBindings.ed25519_sign(dataPtr, (nuint)data.Length, (sbyte*)keyPtr);
+                if (sigPtr == null)
+                    C2pa.CheckError();
+                var bytes = new byte[Ed25519SignatureSize];
+                Marshal.Copy((nint)sigPtr, bytes, 0, bytes.Length);
+                C2paBindings.free(sigPtr);
+                return bytes;
+            }
         }
     }
 

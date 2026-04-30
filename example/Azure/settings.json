@@ -14,6 +14,9 @@
     "strict_v1_validation": false
   },
   "builder": {
+    "auto_timestamp_assertion": {
+      "enabled": true
+    },
     "thumbnail": {
       "enabled": true,
       "ignore_errors": true,

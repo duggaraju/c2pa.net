@@ -36,23 +36,32 @@ public static partial class C2pa
         throw new C2paException(errType, errMsg);
     }
 
-    public static Settings? LoadSettings(string settings, string format = "json")
+    /// <summary>
+    /// Converts a raw binary C2PA manifest (in <c>application/c2pa</c> format)
+    /// into an embeddable representation suitable for the given asset format.
+    /// </summary>
+    /// <param name="format">MIME type or extension of the target asset (e.g. <c>image/jpeg</c>).</param>
+    /// <param name="manifest">The raw manifest bytes.</param>
+    /// <returns>The embeddable manifest bytes for the requested format.</returns>
+    public static byte[] FormatEmbeddable(string format, ReadOnlySpan<byte> manifest)
     {
         unsafe
         {
-            fixed (byte* s = Encoding.UTF8.GetBytes(settings))
-            fixed (byte* f = Encoding.UTF8.GetBytes(format))
+            fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
+            fixed (byte* manifestBytes = manifest)
             {
-                var ret = C2paBindings.load_settings((sbyte*)s, (sbyte*)f);
-                if (ret != 0)
+                byte* result = null;
+                var ret = C2paBindings.format_embeddable((sbyte*)formatBytes, manifestBytes, (nuint)manifest.Length, &result);
+                if (ret == -1)
+                    CheckError();
+                var bytes = new byte[ret];
+                if (ret > 0 && result != null)
                 {
-                    C2pa.CheckError();
+                    Marshal.Copy((nint)result, bytes, 0, bytes.Length);
+                    C2paBindings.free(result);
                 }
+                return bytes;
             }
         }
-        if (format == "json")
-            return settings.Deserialize<Settings>();
-        return null;
     }
-
 }

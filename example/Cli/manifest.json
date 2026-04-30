@@ -1,5 +1,6 @@
 {
   "title":  "c2pa.net sample",
+  "timestamp_manifest_labels": [],
   "assertions": [
     {
       "label":  "com.example.assertion",

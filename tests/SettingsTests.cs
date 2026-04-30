@@ -41,7 +41,7 @@ public class SettingsTests
         var json = original.ToJson();
 
         // Act
-        var act = C2pa.LoadSettings(json);
+        var act = json.Deserialize<C2pa.Settings>();
         Assert.True(JsonDocument.Equals(json, act.ToJson()));
     }
 
@@ -86,7 +86,7 @@ public class SettingsTests
             }
             """;
 
-        var settings = C2pa.LoadSettings(json);
+        var settings = json.Deserialize<C2pa.Settings>();
         Assert.NotNull(settings);
     }
 }

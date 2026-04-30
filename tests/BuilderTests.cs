@@ -31,15 +31,21 @@ public class BuilderTests
     }
 
     [Fact]
-    public void Create_WithManifestDefinitionAndSigner_ShouldCreateBuilder()
+    public void FromContext_WithManifestDefinition_ShouldCreateBuilder()
     {
         // Arrange
         var manifest = new ManifestDefinition
         {
             TimestampManifestLabels = []
         };
+
         // Act
-        var exception = Record.Exception(() => Builder.Create(manifest));
+        var exception = Record.Exception(() =>
+        {
+            using var contextBuilder = ContextBuilder.Create();
+            using var context = contextBuilder.Build();
+            using var builder = Builder.FromContext(context).WithDefinition(manifest);
+        });
 
         // Assert - Should not throw during creation, actual functionality depends on native library
         // We can't test the full functionality without the native C2PA library being properly set up
@@ -47,7 +53,7 @@ public class BuilderTests
     }
 
     [Fact]
-    public void FromJson_WithValidJson_ShouldCreateBuilder()
+    public void WithDefinition_WithValidJson_ShouldCreateBuilder()
     {
         // Arrange
         var manifest = new ManifestDefinition
@@ -60,7 +66,12 @@ public class BuilderTests
         var json = manifest.ToJson();
 
         // Act
-        var exception = Record.Exception(() => Builder.FromJson(json));
+        var exception = Record.Exception(() =>
+        {
+            using var contextBuilder = ContextBuilder.Create();
+            using var context = contextBuilder.Build();
+            using var builder = Builder.FromContext(context).WithDefinition(json);
+        });
 
         // Assert - Should not throw during creation, actual functionality depends on native library
         Assert.True(exception == null || exception is C2paException);

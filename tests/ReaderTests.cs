@@ -12,7 +12,11 @@ public class ReaderTests(ITestOutputHelper output)
         var format = "image/jpeg";
 
         // Act
-        var exception = Record.Exception(() => Reader.FromStream(stream, format));
+        var exception = Record.Exception(() =>
+        {
+            using var ctx = Context.Create();
+            using var reader = Reader.FromContext(ctx).WithStream(stream, format);
+        });
 
         // Assert - Should not throw during creation, actual functionality depends on native library
         Assert.True(exception == null || exception is C2paException);
@@ -28,7 +32,11 @@ public class ReaderTests(ITestOutputHelper output)
             File.WriteAllBytes(tempFile, [1, 2, 3, 4, 5]);
 
             // Act
-            var exception = Record.Exception(() => Reader.FromFile(tempFile));
+            var exception = Record.Exception(() =>
+            {
+                using var ctx = Context.Create();
+                using var reader = Reader.FromContext(ctx).WithFile(tempFile);
+            });
 
             // Assert - Should not throw during creation, actual functionality depends on native library
             Assert.True(exception == null || exception is C2paException);
@@ -47,7 +55,11 @@ public class ReaderTests(ITestOutputHelper output)
         var nonExistentFile = Path.Combine(Path.GetTempPath(), "non-existent-file.jpg");
 
         // Act & Assert
-        Assert.Throws<FileNotFoundException>(() => Reader.FromFile(nonExistentFile));
+        Assert.Throws<FileNotFoundException>(() =>
+        {
+            using var ctx = Context.Create();
+            using var reader = Reader.FromContext(ctx).WithFile(nonExistentFile);
+        });
     }
 
     [Fact]
@@ -58,7 +70,8 @@ public class ReaderTests(ITestOutputHelper output)
         {
             try
             {
-                var reader = Reader.FromFile(file);
+                using var ctx = Context.Create();
+                using var reader = Reader.FromContext(ctx).WithFile(file);
                 var originalJson = reader.Json;
                 var store = reader.Store;
                 var roundTrippedJson = store.ToJson();

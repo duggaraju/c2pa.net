@@ -18,14 +18,27 @@ This repository provides a .NET-friendly API surface over the native `c2pa_c` C 
 
 The `Reader` and `Builder` classes have **strongly-typed models generated from JSON Schema**.
 
+Reading and signing are now driven by an immutable `Context`, produced from a
+`ContextBuilder`. The context owns shared configuration (settings, signer, HTTP
+resolver, progress callback, etc.) and is then handed to a `Reader` or
+`Builder`. This keeps per-operation classes thin and lets you reuse one
+configured context across many reads/signs.
+
 ### Read an asset and use the typed `ManifestStore`
 
 ```csharp
 using ContentAuthenticity;
-using static ContentAUthenticty.Reader;
+
 var assetPath = "./my-image.jpg";
 
-using var reader = Reader.FromFile(assetPath);
+// Build a context. Settings/HTTP resolver are optional; defaults are fine for
+// most reads.
+using var contextBuilder = ContextBuilder.Create();
+// contextBuilder.SetHttpResolver(new HttpResolver()); // optional, for remote manifests
+using var context = contextBuilder.Build();
+
+// Attach the context to a Reader and feed it the asset.
+using var reader = Reader.FromContext(context).WithFile(assetPath);
 
 // Raw JSON (if you need it)
 string json = reader.Json;
@@ -36,18 +49,20 @@ ManifestStore store = reader.Store;
 Console.WriteLine($"Embedded: {reader.IsEmbedded}");
 Console.WriteLine($"Active manifest: {store.ActiveManifest}");
 
-store.Manifests.TryGetValue(store.ActiveManifest, out var manifest)
-Console.WriteLine($"Title: {manifest.Title}");
-Console.WriteLine($"Format: {manifest.Format}");
-
-// Example: if the manifest has a thumbnail resource reference, you can fetch it
-if (manifest.Thumbnail is not null)
+if (store.Manifests.TryGetValue(store.ActiveManifest, out var manifest))
 {
-   using var thumbOut = File.Create("./thumbnail.bin");
-   reader.ResourceToStream(new Uri(manifest.Thumbnail.Identifier), thumbOut);
+    Console.WriteLine($"Title: {manifest.Title}");
+    Console.WriteLine($"Format: {manifest.Format}");
+
+    // Example: if the manifest has a thumbnail resource reference, fetch it.
+    if (manifest.Thumbnail is not null)
+    {
+        using var thumbOut = File.Create("./thumbnail.bin");
+        reader.ResourceToStream(new Uri(manifest.Thumbnail.Identifier), thumbOut);
+    }
 }
 
-// Round-trip back to JSON using the same schema-driven serializer options
+// Round-trip back to JSON using the same schema-driven serializer options.
 string roundTripped = store.ToJson();
 ```
 
@@ -55,51 +70,49 @@ string roundTripped = store.ToJson();
 
 ```csharp
 using ContentAuthenticity;
-using static ContentAuthenticity.Builder;
 
 // Build a minimal typed manifest definition.
 // The schema requires `NoEmbed` to be set.
 var definition = new ManifestDefinition
 {
-   NoEmbed = false,
-   Title = "my-image.jpg",
-   Format = "image/jpeg",
-   InstanceId = Builder.GenerateInstanceID(),
-   ClaimGeneratorInfo =
-   [
-      new Builder.ClaimGeneratorInfo { Name = "c2pa.net" }
-   ],
-   Assertions =
-   [
-      new ActionAssertion(
-      [
-         new ActionV1("c2pa.edited"),
-      ]),
-      new CreativeWorkAssertions(
-         new CreativeWorkAsertionData
-         {
-            Type = "MyType",
-            Context = new {
-               "SomeName" = "SomeValue"
-            }
-         }
-      )
-   ]
+    NoEmbed = false,
+    Title = "my-image.jpg",
+    Format = "image/jpeg",
+    InstanceId = Builder.GenerateInstanceID(),
+    ClaimGeneratorInfo =
+    [
+        new ClaimGeneratorInfo { Name = "c2pa.net" }
+    ],
+    Assertions =
+    [
+        new ActionAssertion(
+        [
+            new ActionV1("c2pa.edited"),
+        ]),
+    ],
 };
 
-using var builder = Builder.Create(definition);
+// Provide an ISigner implementation (see `example/` projects for working signers,
+// including local PEM/key signers and Azure Key Vault).
+ISigner signer = /* new FileSigner(certPem, keyPem, tsaUrl) */ ...;
+
+// Configure a context with the signer (and any other shared options).
+using var contextBuilder = ContextBuilder.Create();
+contextBuilder.SetSigner(signer);
+contextBuilder.SetHttpResolver(new HttpResolver()); // optional
+using var context = contextBuilder.Build();
+
+// Attach the context to a Builder and apply the typed manifest definition.
+using var builder = Builder.FromContext(context).WithDefinition(definition);
+
 // Optional: add extra resources that the manifest may reference (thumbnails, etc.)
 builder.AddResource("thumbnail", "./thumbnail.jpg");
-builder.AddIngredient(...)
-
-// Signing requires an `ISigner` implementation (see `example/` projects for working signers).
-Signer signer = Signer.FromSettings();/* Signer.From(someISigner) */
 
 var input = "./my-image.jpg";
 var output = "./my-image.signed.jpg";
 
-// Writes a signed asset to `output` and returns the embedded manifest bytes.
-byte[] manifestBytes = builder.Sign(signer, input, output);
+// Sign using the signer configured on the context.
+builder.Sign(input, output);
 ```
 
 ## Prerequisites

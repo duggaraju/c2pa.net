@@ -34,7 +34,8 @@ public class PerformanceTests
             try
             {
                 using var stream = File.OpenRead("CACAE-uri-CA.jpg");
-                using var reader = Reader.FromStream(stream, format);
+                using var ctx = Context.Create();
+                using var reader = Reader.FromContext(ctx).WithStream(stream, format);
                 // Access properties to ensure full initialization
                 _ = reader?.Json;
             }
@@ -86,7 +87,9 @@ public class PerformanceTests
         {
             try
             {
-                using var builder = Builder.FromJson(manifestJson);
+                using var contextBuilder = ContextBuilder.Create();
+                using var context = contextBuilder.Build();
+                using var builder = Builder.FromContext(context).WithDefinition(manifestJson);
                 // Test archive operations
                 using var archiveStream = new MemoryStream();
                 builder?.ToArchive(archiveStream);
@@ -175,7 +178,8 @@ public class PerformanceTests
         try
         {
             using var stream = File.OpenRead("CACAE-uri-CA.jpg");
-            using var reader = Reader.FromStream(stream, format);
+            using var ctx = Context.Create();
+            using var reader = Reader.FromContext(ctx).WithStream(stream, format);
             _ = reader?.Json;
 
             var peakMemory = GC.GetTotalMemory(false);
@@ -230,7 +234,8 @@ public class PerformanceTests
                     try
                     {
                         using var stream = File.OpenRead("C.jpg");
-                        using var reader = Reader.FromStream(stream, format);
+                        using var ctx = Context.Create();
+                        using var reader = Reader.FromContext(ctx).WithStream(stream, format);
                         _ = reader?.Json;
                     }
                     catch (C2paException)
@@ -315,7 +320,8 @@ public class PerformanceTests
             try
             {
                 var stream = new MemoryStream(testData);
-                var reader = Reader.FromStream(stream, format);
+                var ctx = Context.Create();
+                var reader = Reader.FromContext(ctx).WithStream(stream, format);
                 _ = reader?.Json;
                 // Intentionally not disposing to test finalizer
             }
@@ -369,7 +375,8 @@ public class PerformanceTests
             try
             {
                 using var stream = File.OpenRead("C.jpg");
-                using var reader = Reader.FromStream(stream, format);
+                using var ctx = Context.Create();
+                using var reader = Reader.FromContext(ctx).WithStream(stream, format);
                 _ = reader?.Json;
             }
             catch (C2paException)
@@ -404,7 +411,9 @@ public class PerformanceTests
         {
             try
             {
-                using var builder = Builder.FromJson(manifestJson);
+                using var contextBuilder = ContextBuilder.Create();
+                using var context = contextBuilder.Build();
+                using var builder = Builder.FromContext(context).WithDefinition(manifestJson);
                 using var archiveStream = new MemoryStream();
                 builder?.ToArchive(archiveStream);
             }
@@ -517,7 +526,6 @@ public class PerformanceTests
         Assert.NotNull(settings.Builder.Thumbnail);
         var thumbnailSettings = settings.Builder.Thumbnail!;
         thumbnailSettings.Format = C2pa.ThumbnailFormat.Jpeg;
-        C2pa.LoadSettings(settings.ToJson(indented: false));
 
         var manifest = """
                         {
@@ -533,7 +541,10 @@ public class PerformanceTests
                             ]
                         }
                 """;
-        var builder = Builder.FromJson(manifest);
+        using var contextBuilder = ContextBuilder.Create();
+        contextBuilder.SetSettings(settings);
+        using var context = contextBuilder.Build();
+        var builder = Builder.FromContext(context).WithDefinition(manifest);
 
         for (int iter = 0; iter < num_iterations; iter++)
         {
@@ -543,7 +554,8 @@ public class PerformanceTests
                 var outputStream = new MemoryStream();
                 builder.Sign(signer, inputStream, outputStream, mimeType);
                 outputStream.Position = 0;
-                var reader = Reader.FromStream(outputStream, mimeType);
+                using var readerCtx = Context.Create();
+                var reader = Reader.FromContext(readerCtx).WithStream(outputStream, mimeType);
                 Assert.NotNull(reader.Json);
             }
             else
@@ -554,7 +566,8 @@ public class PerformanceTests
                 }
 
                 builder.Sign(signer, inputFile, outputFile);
-                var reader = Reader.FromFile(outputFile);
+                using var readerCtx = Context.Create();
+                var reader = Reader.FromContext(readerCtx).WithFile(outputFile);
                 Assert.NotNull(reader.Json);
             }
         }

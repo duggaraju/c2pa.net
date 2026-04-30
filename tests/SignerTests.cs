@@ -16,7 +16,6 @@ public sealed class SignerTests
         Assert.NotNull(settings.Builder);
         Assert.NotNull(settings.Builder.Thumbnail);
         settings.Builder.Thumbnail.Format = C2pa.ThumbnailFormat.Jpeg;
-        C2pa.LoadSettings(settings.ToJson(indented: false));
 
         var manifest = """
                         {
@@ -32,7 +31,10 @@ public sealed class SignerTests
                             ]
                         }
                         """;
-        using var builder = Builder.FromJson(manifest);
+        using var contextBuilder = ContextBuilder.Create();
+        contextBuilder.SetSettings(settings);
+        using var context = contextBuilder.Build();
+        using var builder = Builder.FromContext(context).WithDefinition(manifest);
 
         var inputPath = Path.Combine(AppContext.BaseDirectory, "no_manifest.jpg");
         Assert.True(File.Exists(inputPath), $"Missing test fixture: {inputPath}");
