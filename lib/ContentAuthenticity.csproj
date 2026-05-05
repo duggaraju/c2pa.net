@@ -127,7 +127,7 @@
     <PropertyGroup>
       <CargoOutputForBindings>$(MSBuildThisFileDirectory)../c2pa-rs/target/%(FirstArch.CargoTarget)/$(Configuration.ToLower())/</CargoOutputForBindings>
       <ConfigOptions>-c latest-codegen multi-file generate-file-scoped-namespaces generate-helper-types -hf header</ConfigOptions>
-      <InteropArgsCommon>-n ContentAuthenticity.Bindings -l c2pa_c -p c2pa_ -r C2paSigningAlg=SigningAlg -x c</InteropArgsCommon>
+      <InteropArgsCommon>-n ContentAuthenticity.Bindings -l c2pa_c -p c2pa_ -r C2paSigningAlg=SigningAlg uint64_t=ulong -x c</InteropArgsCommon>
     </PropertyGroup>
     <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
       <PlatformArgs>-I /usr/lib/gcc/x86_64-linux-gnu/14/include/ -Wno-ignored-attributes -Wno-attributes</PlatformArgs>

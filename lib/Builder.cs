@@ -489,11 +489,7 @@ public partial class Builder : IDisposable
         {
             fixed (ulong* p = flat)
             {
-#if LINUX
-                var ret = C2paBindings.builder_set_data_hash_exclusions(handle, (nuint*)p, (nuint)exclusions.Count);
-#else
                 var ret = C2paBindings.builder_set_data_hash_exclusions(handle, p, (nuint)exclusions.Count);
-#endif
                 if (ret != 0)
                     C2pa.CheckError();
             }
