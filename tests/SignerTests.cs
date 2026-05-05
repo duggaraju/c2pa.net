@@ -31,7 +31,7 @@ public sealed class SignerTests
                             ]
                         }
                         """;
-        using var contextBuilder = ContextBuilder.Create();
+        using var contextBuilder = ContextBuilder.New();
         contextBuilder.SetSettings(settings);
         using var context = contextBuilder.Build();
         using var builder = Builder.FromContext(context).WithDefinition(manifest);

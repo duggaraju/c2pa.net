@@ -42,7 +42,7 @@ public class BuilderTests
         // Act
         var exception = Record.Exception(() =>
         {
-            using var contextBuilder = ContextBuilder.Create();
+            using var contextBuilder = ContextBuilder.New();
             using var context = contextBuilder.Build();
             using var builder = Builder.FromContext(context).WithDefinition(manifest);
         });
@@ -68,7 +68,7 @@ public class BuilderTests
         // Act
         var exception = Record.Exception(() =>
         {
-            using var contextBuilder = ContextBuilder.Create();
+            using var contextBuilder = ContextBuilder.New();
             using var context = contextBuilder.Build();
             using var builder = Builder.FromContext(context).WithDefinition(json);
         });

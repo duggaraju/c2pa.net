@@ -22,7 +22,7 @@ public sealed class Context : IDisposable
     /// <summary>
     /// Creates a new context with default settings.
     /// </summary>
-    public static Context Create()
+    public static Context New()
     {
         unsafe
         {

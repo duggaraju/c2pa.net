@@ -34,7 +34,7 @@ public class PerformanceTests
             try
             {
                 using var stream = File.OpenRead("CACAE-uri-CA.jpg");
-                using var ctx = Context.Create();
+                using var ctx = Context.New();
                 using var reader = Reader.FromContext(ctx).WithStream(stream, format);
                 // Access properties to ensure full initialization
                 _ = reader?.Json;
@@ -87,7 +87,7 @@ public class PerformanceTests
         {
             try
             {
-                using var contextBuilder = ContextBuilder.Create();
+                using var contextBuilder = ContextBuilder.New();
                 using var context = contextBuilder.Build();
                 using var builder = Builder.FromContext(context).WithDefinition(manifestJson);
                 // Test archive operations
@@ -178,7 +178,7 @@ public class PerformanceTests
         try
         {
             using var stream = File.OpenRead("CACAE-uri-CA.jpg");
-            using var ctx = Context.Create();
+            using var ctx = Context.New();
             using var reader = Reader.FromContext(ctx).WithStream(stream, format);
             _ = reader?.Json;
 
@@ -234,7 +234,7 @@ public class PerformanceTests
                     try
                     {
                         using var stream = File.OpenRead("C.jpg");
-                        using var ctx = Context.Create();
+                        using var ctx = Context.New();
                         using var reader = Reader.FromContext(ctx).WithStream(stream, format);
                         _ = reader?.Json;
                     }
@@ -320,7 +320,7 @@ public class PerformanceTests
             try
             {
                 var stream = new MemoryStream(testData);
-                var ctx = Context.Create();
+                var ctx = Context.New();
                 var reader = Reader.FromContext(ctx).WithStream(stream, format);
                 _ = reader?.Json;
                 // Intentionally not disposing to test finalizer
@@ -375,7 +375,7 @@ public class PerformanceTests
             try
             {
                 using var stream = File.OpenRead("C.jpg");
-                using var ctx = Context.Create();
+                using var ctx = Context.New();
                 using var reader = Reader.FromContext(ctx).WithStream(stream, format);
                 _ = reader?.Json;
             }
@@ -411,7 +411,7 @@ public class PerformanceTests
         {
             try
             {
-                using var contextBuilder = ContextBuilder.Create();
+                using var contextBuilder = ContextBuilder.New();
                 using var context = contextBuilder.Build();
                 using var builder = Builder.FromContext(context).WithDefinition(manifestJson);
                 using var archiveStream = new MemoryStream();
@@ -541,7 +541,7 @@ public class PerformanceTests
                             ]
                         }
                 """;
-        using var contextBuilder = ContextBuilder.Create();
+        using var contextBuilder = ContextBuilder.New();
         contextBuilder.SetSettings(settings);
         using var context = contextBuilder.Build();
         var builder = Builder.FromContext(context).WithDefinition(manifest);
@@ -554,7 +554,7 @@ public class PerformanceTests
                 var outputStream = new MemoryStream();
                 builder.Sign(signer, inputStream, outputStream, mimeType);
                 outputStream.Position = 0;
-                using var readerCtx = Context.Create();
+                using var readerCtx = Context.New();
                 var reader = Reader.FromContext(readerCtx).WithStream(outputStream, mimeType);
                 Assert.NotNull(reader.Json);
             }
@@ -566,7 +566,7 @@ public class PerformanceTests
                 }
 
                 builder.Sign(signer, inputFile, outputFile);
-                using var readerCtx = Context.Create();
+                using var readerCtx = Context.New();
                 var reader = Reader.FromContext(readerCtx).WithFile(outputFile);
                 Assert.NotNull(reader.Json);
             }

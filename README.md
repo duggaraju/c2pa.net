@@ -33,7 +33,7 @@ var assetPath = "./my-image.jpg";
 
 // Build a context. Settings/HTTP resolver are optional; defaults are fine for
 // most reads.
-using var contextBuilder = ContextBuilder.Create();
+using var contextBuilder = ContextBuilder.New();
 // contextBuilder.SetHttpResolver(new HttpResolver()); // optional, for remote manifests
 using var context = contextBuilder.Build();
 
@@ -97,7 +97,7 @@ var definition = new ManifestDefinition
 ISigner signer = /* new FileSigner(certPem, keyPem, tsaUrl) */ ...;
 
 // Configure a context with the signer (and any other shared options).
-using var contextBuilder = ContextBuilder.Create();
+using var contextBuilder = ContextBuilder.New();
 contextBuilder.SetSigner(signer);
 contextBuilder.SetHttpResolver(new HttpResolver()); // optional
 using var context = contextBuilder.Build();

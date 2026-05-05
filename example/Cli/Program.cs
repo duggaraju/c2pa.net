@@ -84,7 +84,7 @@ class Program
             var input = result.GetRequiredValue(inputOption);
             var pretty = result.GetRequiredValue(prettyOption);
             Console.WriteLine($"Reading C2PA data from: {input.FullName}");
-            using var contextBuilder = ContextBuilder.Create();
+            using var contextBuilder = ContextBuilder.New();
             using var builder = contextBuilder.Build();
             using var reader = Reader.FromContext(builder).WithFile(input.FullName);
             var json = reader.Json;
@@ -236,7 +236,7 @@ class Program
             Console.WriteLine($"Detected signing algorithm: {signer.Alg}");
 
             // Create builder and sign
-            using var contextBuilder = ContextBuilder.Create();
+            using var contextBuilder = ContextBuilder.New();
             contextBuilder.SetSigner(signer);
             contextBuilder.SetHttpResolver(new HttpResolver());
             using var context = contextBuilder.Build();

@@ -24,7 +24,7 @@ public sealed class ContextBuilder : IDisposable
     /// <summary>
     /// Creates a new context builder with default settings.
     /// </summary>
-    public static ContextBuilder Create()
+    public static ContextBuilder New()
     {
         unsafe
         {

@@ -26,7 +26,7 @@ partial class Program
             throw new IOException($"No file exists with the filename of {inputFile}.");
 
         var json = File.ReadAllText("settings.json");
-        using var contextBuilder = ContextBuilder.Create();
+        using var contextBuilder = ContextBuilder.New();
         contextBuilder.SetHttpResolver(new HttpResolver());
         contextBuilder.SetSettings(json);
 

@@ -19,7 +19,7 @@ public class C2paPerformanceBenchmarks
         try
         {
             using var stream = File.OpenRead("C.jpg");
-            using var ctx = Context.Create();
+            using var ctx = Context.New();
             using var reader = Reader.FromContext(ctx).WithStream(stream, _format);
             _ = reader?.Json;
         }
@@ -34,7 +34,7 @@ public class C2paPerformanceBenchmarks
     {
         try
         {
-            using var contextBuilder = ContextBuilder.Create();
+            using var contextBuilder = ContextBuilder.New();
             using var context = contextBuilder.Build();
             using var builder = Builder.FromContext(context).WithDefinition(_manifestJson);
             using var archiveStream = new MemoryStream();

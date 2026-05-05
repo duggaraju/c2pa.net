@@ -14,7 +14,7 @@ public class ReaderTests(ITestOutputHelper output)
         // Act
         var exception = Record.Exception(() =>
         {
-            using var ctx = Context.Create();
+            using var ctx = Context.New();
             using var reader = Reader.FromContext(ctx).WithStream(stream, format);
         });
 
@@ -34,7 +34,7 @@ public class ReaderTests(ITestOutputHelper output)
             // Act
             var exception = Record.Exception(() =>
             {
-                using var ctx = Context.Create();
+                using var ctx = Context.New();
                 using var reader = Reader.FromContext(ctx).WithFile(tempFile);
             });
 
@@ -57,7 +57,7 @@ public class ReaderTests(ITestOutputHelper output)
         // Act & Assert
         Assert.Throws<FileNotFoundException>(() =>
         {
-            using var ctx = Context.Create();
+            using var ctx = Context.New();
             using var reader = Reader.FromContext(ctx).WithFile(nonExistentFile);
         });
     }
@@ -70,7 +70,7 @@ public class ReaderTests(ITestOutputHelper output)
         {
             try
             {
-                using var ctx = Context.Create();
+                using var ctx = Context.New();
                 using var reader = Reader.FromContext(ctx).WithFile(file);
                 var originalJson = reader.Json;
                 var store = reader.Store;
