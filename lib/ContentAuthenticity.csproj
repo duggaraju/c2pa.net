@@ -156,7 +156,7 @@
       <!-- Opt-in: Release-only Cargo profile tuning. -->
       <CargoEnvironmentVariables Condition="'$(Configuration)' == 'Release' and '$(EnableCargoReleaseOptimizations)' == 'true'">CARGO_PROFILE_RELEASE_OPT_LEVEL=z;CARGO_PROFILE_RELEASE_STRIP=symbols;CARGO_PROFILE_RELEASE_LTO=thin;CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1</CargoEnvironmentVariables>
     </PropertyGroup>
-    <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto,http --target %(HostArchitecture.CargoTarget) -p c2pa-c-ffi -p export_schema"
+    <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto,http,add_thumbnails --target %(HostArchitecture.CargoTarget) -p c2pa-c-ffi -p export_schema"
           EnvironmentVariables="$(CargoEnvironmentVariables)"
           WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/" />
   </Target>

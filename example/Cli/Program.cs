@@ -13,6 +13,26 @@ class Program
     {
         var rootCommand = new RootCommand("C2PA .NET CLI - Content Provenance and Authenticity tool");
 
+        using var contextBuilder = ContextBuilder.New();
+        contextBuilder.SetHttpResolver(new HttpResolver());
+
+        // Global option: path to a settings file (.json or .toml) applied to
+        // the shared context builder before any subcommand runs.
+        var settingsOption = new Option<FileInfo?>("--settings", "-s")
+        {
+            Description = "Path to a settings file (.json or .toml) to apply to the context",
+            Recursive = true
+        };
+        settingsOption.Validators.Add(result =>
+        {
+            var file = result.GetValue(settingsOption);
+            if (file != null && !file.Exists)
+            {
+                result.AddError($"Settings file does not exist: {file.FullName}");
+            }
+        });
+        rootCommand.Options.Add(settingsOption);
+
         // Add version command
         var versionCommand = new Command("version", "Display the C2PA SDK version");
         versionCommand.SetAction((_) =>
@@ -26,16 +46,31 @@ class Program
         rootCommand.Subcommands.Add(versionCommand);
 
         // Add read command
-        var readCommand = CreateReadCommand();
+        var readCommand = CreateReadCommand(contextBuilder);
         rootCommand.Subcommands.Add(readCommand);
 
         // Add sign command
-        var signCommand = CreateSignCommand();
+        var signCommand = CreateSignCommand(contextBuilder);
         rootCommand.Subcommands.Add(signCommand);
 
         try
         {
             var result = rootCommand.Parse(args);
+
+            // Apply the optional global settings file before invoking the
+            // selected subcommand so all commands see the same configuration.
+            var settingsFile = result.GetValue(settingsOption);
+            if (settingsFile is not null)
+            {
+                var contents = File.ReadAllText(settingsFile.FullName);
+                var format = settingsFile.Extension.TrimStart('.').ToLowerInvariant();
+                if (string.IsNullOrEmpty(format))
+                {
+                    format = "json";
+                }
+                contextBuilder.SetSettings(contents, format);
+            }
+
             return await result.InvokeAsync();
         }
         catch (C2paException ex)
@@ -50,7 +85,7 @@ class Program
         }
     }
 
-    private static Command CreateReadCommand()
+    private static Command CreateReadCommand(ContextBuilder contextBuilder)
     {
         var readCommand = new Command("read", "Read and display C2PA manifest data from a file");
 
@@ -84,9 +119,8 @@ class Program
             var input = result.GetRequiredValue(inputOption);
             var pretty = result.GetRequiredValue(prettyOption);
             Console.WriteLine($"Reading C2PA data from: {input.FullName}");
-            using var contextBuilder = ContextBuilder.New();
-            using var builder = contextBuilder.Build();
-            using var reader = Reader.FromContext(builder).WithFile(input.FullName);
+            using var context = contextBuilder.Build();
+            using var reader = Reader.FromContext(context).WithFile(input.FullName);
             var json = reader.Json;
 
             if (pretty)
@@ -111,7 +145,7 @@ class Program
         return readCommand;
     }
 
-    private static Command CreateSignCommand()
+    private static Command CreateSignCommand(ContextBuilder contextBuilder)
     {
         var signCommand = new Command("sign", "Sign a file with C2PA manifest");
 
@@ -236,9 +270,7 @@ class Program
             Console.WriteLine($"Detected signing algorithm: {signer.Alg}");
 
             // Create builder and sign
-            using var contextBuilder = ContextBuilder.New();
             contextBuilder.SetSigner(signer);
-            contextBuilder.SetHttpResolver(new HttpResolver());
             using var context = contextBuilder.Build();
             using var builder = Builder.FromContext(context).WithDefinition(manifest);
             builder.Sign(input.FullName, output.FullName);
