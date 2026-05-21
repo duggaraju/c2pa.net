@@ -1,6 +1,7 @@
 // Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
 using System.ComponentModel;
+using static ContentAuthenticity.C2pa;
 
 namespace ContentAuthenticity;
 
@@ -48,47 +49,26 @@ public static partial class C2pa
 
 public sealed class C2paSettings : IDisposable
 {
-    private readonly unsafe Bindings.C2paSettings* handle;
-
-    internal unsafe C2paSettings(Bindings.C2paSettings* instance)
-    {
-        handle = instance;
-    }
-
-    public static unsafe implicit operator Bindings.C2paSettings*(C2paSettings settings)
-    {
-        return settings.handle;
-    }
+    internal readonly unsafe Bindings.C2paSettings* handle;
 
     /// <summary>
     /// Allocates a new, empty native settings object.
     /// </summary>
-    public static C2paSettings Create()
+    public C2paSettings()
     {
         unsafe
         {
             var ptr = C2paBindings.settings_new();
             if (ptr == null)
                 C2pa.CheckError();
-            return new C2paSettings(ptr);
+            handle = ptr;
         }
-    }
-
-    /// <summary>
-    /// Allocates a new native settings object from the supplied
-    /// <see cref="Settings"/> DTO.
-    /// </summary>
-    public static C2paSettings From(C2pa.Settings settings)
-    {
-        var nativeSettings = Create();
-        nativeSettings.UpdateFromString(settings.ToJson(indented: false));
-        return nativeSettings;
     }
 
     /// <summary>
     /// Updates this settings object from a serialized representation.
     /// </summary>
-    public void UpdateFromString(string contents, string format = "json")
+    public void Update(string contents, string format = "json")
     {
         unsafe
         {
@@ -100,6 +80,11 @@ public sealed class C2paSettings : IDisposable
                     C2pa.CheckError();
             }
         }
+    }
+
+    public void Update(Settings settings)
+    {
+        Update(settings.ToJson());
     }
 
     /// <summary>

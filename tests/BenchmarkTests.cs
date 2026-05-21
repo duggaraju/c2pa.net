@@ -19,8 +19,8 @@ public class C2paPerformanceBenchmarks
         try
         {
             using var stream = File.OpenRead("C.jpg");
-            using var ctx = Context.New();
-            using var reader = Reader.FromContext(ctx).WithStream(stream, _format);
+            using var ctx = new Context();
+            using var reader = new Reader(ctx).WithStream(stream, _format);
             _ = reader?.Json;
         }
         catch (C2paException)
@@ -34,9 +34,9 @@ public class C2paPerformanceBenchmarks
     {
         try
         {
-            using var contextBuilder = ContextBuilder.New();
+            using var contextBuilder = new ContextBuilder();
             using var context = contextBuilder.Build();
-            using var builder = Builder.FromContext(context).WithDefinition(_manifestJson);
+            using var builder = new Builder(context).WithDefinition(_manifestJson);
             using var archiveStream = new MemoryStream();
             builder?.ToArchive(archiveStream);
         }
@@ -80,7 +80,11 @@ public class C2paPerformanceBenchmarks
 [Collection("PerformanceTests")]
 public class BenchmarkTests
 {
+#if DEBUG
+    [Fact(Skip = "Benchmarks are skipped in debug mode.")]
+#else
     [Fact]
+#endif
     public void RunBenchmarks()
     {
         // This test can be run separately to execute BenchmarkDotNet benchmarks

@@ -73,15 +73,15 @@ public class NativeResourceStressTests(ITestOutputHelper output)
                 if (i % 3 == 0)
                 {
                     // Test early disposal
-                    using var ctx = Context.New();
-                    var reader = Reader.FromContext(ctx).WithStream(stream, format);
+                    using var ctx = new Context();
+                    var reader = new Reader(ctx).WithStream(stream, format);
                     reader.Dispose(); // Explicit disposal
                 }
                 else if (i % 3 == 1)
                 {
                     // Test disposal after property access
-                    using var ctx = Context.New();
-                    using var reader = Reader.FromContext(ctx).WithStream(stream, format);
+                    using var ctx = new Context();
+                    using var reader = new Reader(ctx).WithStream(stream, format);
                     try
                     {
                         _ = reader?.Json;
@@ -94,8 +94,8 @@ public class NativeResourceStressTests(ITestOutputHelper output)
                 else
                 {
                     // Test double disposal
-                    using var ctx = Context.New();
-                    var reader = Reader.FromContext(ctx).WithStream(stream, format);
+                    using var ctx = new Context();
+                    var reader = new Reader(ctx).WithStream(stream, format);
                     reader?.Dispose();
                     reader?.Dispose(); // Should not throw
                 }
@@ -182,8 +182,8 @@ public class NativeResourceStressTests(ITestOutputHelper output)
                         try
                         {
                             using var stream = new MemoryStream(testData);
-                            using var ctx = Context.New();
-                            using var reader = Reader.FromContext(ctx).WithStream(stream, format);
+                            using var ctx = new Context();
+                            using var reader = new Reader(ctx).WithStream(stream, format);
                             _ = reader?.Json;
                         }
                         catch (C2paException)
@@ -234,8 +234,8 @@ public class NativeResourceStressTests(ITestOutputHelper output)
                 try
                 {
                     using var stream = new MemoryStream(testData);
-                    using var ctx = Context.New();
-                    using var reader = Reader.FromContext(ctx).WithStream(stream, format);
+                    using var ctx = new Context();
+                    using var reader = new Reader(ctx).WithStream(stream, format);
                     _ = reader?.Json;
                 }
                 catch (C2paException)

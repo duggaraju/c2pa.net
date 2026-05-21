@@ -7,14 +7,34 @@ public sealed partial class Reader : IDisposable
 {
     private unsafe C2paReader* handle;
 
-    private unsafe Reader(C2paReader* reader)
+    /// <summary>
+    /// Creates a new <see cref="Reader"/> bound to the given <see cref="Context"/>.
+    /// </summary>
+    public Reader(Context context)
     {
-        this.handle = reader;
+        unsafe
+        {
+            var reader = C2paBindings.reader_from_context(context);
+            if (reader == null)
+                C2pa.CheckError();
+            handle = reader;
+        }
     }
 
-    public static unsafe implicit operator C2paReader*(Reader reader)
+    /// <summary>
+    /// Creates a new bare <see cref="Reader"/> with default settings.
+    /// Use <see cref="Reader(Context)"/> to construct a reader bound to an
+    /// explicit <see cref="Context"/>.
+    /// </summary>
+    public Reader()
     {
-        return reader.handle;
+        unsafe
+        {
+            var reader = C2paBindings.reader_new();
+            if (reader == null)
+                C2pa.CheckError();
+            handle = reader;
+        }
     }
 
     public static string[] SupportedMimeTypes
@@ -35,33 +55,6 @@ public sealed partial class Reader : IDisposable
         unsafe
         {
             C2paBindings.free(handle);
-        }
-    }
-
-    public static Reader FromContext(Context context)
-    {
-        unsafe
-        {
-            var reader = C2paBindings.reader_from_context(context);
-            if (reader == null)
-                C2pa.CheckError();
-            return new Reader(reader);
-        }
-    }
-
-    /// <summary>
-    /// Creates a new bare <see cref="Reader"/> with default settings.
-    /// Use <see cref="FromContext(Context)"/> to construct a reader bound to an
-    /// explicit <see cref="Context"/>.
-    /// </summary>
-    public static Reader New()
-    {
-        unsafe
-        {
-            var reader = C2paBindings.reader_new();
-            if (reader == null)
-                C2pa.CheckError();
-            return new Reader(reader);
         }
     }
 
@@ -94,7 +87,7 @@ public sealed partial class Reader : IDisposable
             using var c2paStream = new StreamAdapter(stream);
             fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
             {
-                var reader = C2paBindings.reader_with_stream(this, (sbyte*)formatBytes, c2paStream);
+                var reader = C2paBindings.reader_with_stream(handle, (sbyte*)formatBytes, c2paStream);
                 if (reader == null)
                     C2pa.CheckError();
                 this.handle = reader;

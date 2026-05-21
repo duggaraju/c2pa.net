@@ -26,7 +26,7 @@ partial class Program
             throw new IOException($"No file exists with the filename of {inputFile}.");
 
         var json = File.ReadAllText("settings.json");
-        using var contextBuilder = ContextBuilder.New();
+        using var contextBuilder = new ContextBuilder();
         contextBuilder.SetHttpResolver(new HttpResolver());
         contextBuilder.SetSettings(json);
 
@@ -51,7 +51,7 @@ partial class Program
 
     private static void ValidateFile(Context context, string inputFile)
     {
-        using var reader = Reader.FromContext(context).WithFile(inputFile);
+        using var reader = new Reader(context).WithFile(inputFile);
         if (reader != null)
         {
             Console.WriteLine(reader.Store.ToJson());
@@ -91,7 +91,7 @@ partial class Program
             TimestampManifestLabels = []
         };
 
-        using var builder = Builder.FromContext(context).WithDefinition(manifest);
+        using var builder = new Builder(context).WithDefinition(manifest);
         builder.Sign(inputFile, outputFile);
 
         ValidateFile(context, outputFile);

@@ -14,23 +14,23 @@ public sealed class Context : IDisposable
         context = instance;
     }
 
-    public static unsafe implicit operator C2paContext*(Context context)
-    {
-        return context.context;
-    }
-
     /// <summary>
     /// Creates a new context with default settings.
     /// </summary>
-    public static Context New()
+    public Context()
     {
         unsafe
         {
             var ctx = C2paBindings.context_new();
             if (ctx == null)
                 C2pa.CheckError();
-            return new Context(ctx);
+            context = ctx;
         }
+    }
+
+    public static unsafe implicit operator C2paContext*(Context context)
+    {
+        return context.context;
     }
 
     /// <summary>

@@ -33,12 +33,12 @@ var assetPath = "./my-image.jpg";
 
 // Build a context. Settings/HTTP resolver are optional; defaults are fine for
 // most reads.
-using var contextBuilder = ContextBuilder.New();
+using var contextBuilder = new ContextBuilder();
 // contextBuilder.SetHttpResolver(new HttpResolver()); // optional, for remote manifests
 using var context = contextBuilder.Build();
 
 // Attach the context to a Reader and feed it the asset.
-using var reader = Reader.FromContext(context).WithFile(assetPath);
+using var reader = new Reader(context).WithFile(assetPath);
 
 // Raw JSON (if you need it)
 string json = reader.Json;
@@ -97,13 +97,13 @@ var definition = new ManifestDefinition
 ISigner signer = /* new FileSigner(certPem, keyPem, tsaUrl) */ ...;
 
 // Configure a context with the signer (and any other shared options).
-using var contextBuilder = ContextBuilder.New();
+using var contextBuilder = new ContextBuilder();
 contextBuilder.SetSigner(signer);
 contextBuilder.SetHttpResolver(new HttpResolver()); // optional
 using var context = contextBuilder.Build();
 
 // Attach the context to a Builder and apply the typed manifest definition.
-using var builder = Builder.FromContext(context).WithDefinition(definition);
+using var builder = new Builder(context).WithDefinition(definition);
 
 // Optional: add extra resources that the manifest may reference (thumbnails, etc.)
 builder.AddResource("thumbnail", "./thumbnail.jpg");

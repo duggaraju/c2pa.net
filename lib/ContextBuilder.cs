@@ -1,5 +1,7 @@
 // Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
+using static ContentAuthenticity.C2pa;
+
 namespace ContentAuthenticity;
 
 /// <summary>
@@ -16,22 +18,17 @@ public sealed class ContextBuilder : IDisposable
         builder = instance;
     }
 
-    public static unsafe implicit operator C2paContextBuilder*(ContextBuilder builder)
-    {
-        return builder.builder;
-    }
-
     /// <summary>
     /// Creates a new context builder with default settings.
     /// </summary>
-    public static ContextBuilder New()
+    public ContextBuilder()
     {
         unsafe
         {
             var b = C2paBindings.context_builder_new();
             if (b == null)
                 C2pa.CheckError();
-            return new ContextBuilder(b);
+            builder = b;
         }
     }
 
@@ -51,8 +48,8 @@ public sealed class ContextBuilder : IDisposable
 
     public void SetSettings(string settings, string format = "json")
     {
-        using var handle = C2paSettings.Create();
-        handle.UpdateFromString(settings, format);
+        using var handle = new C2paSettings();
+        handle.Update(settings, format);
         SetSettings(handle);
     }
 
@@ -64,7 +61,7 @@ public sealed class ContextBuilder : IDisposable
         EnsureNotBuilt();
         unsafe
         {
-            var ret = C2paBindings.context_builder_set_settings(builder, settings);
+            var ret = C2paBindings.context_builder_set_settings(builder, settings.handle);
             if (ret == -1)
                 C2pa.CheckError();
         }

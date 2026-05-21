@@ -7,9 +7,18 @@ public partial class Builder : IDisposable
 {
     private unsafe C2paBuilder* handle;
 
-    internal unsafe Builder(C2paBuilder* instance)
+    /// <summary>
+    /// Creates a new <see cref="Builder"/> bound to the given <see cref="Context"/>.
+    /// </summary>
+    public Builder(Context context)
     {
-        handle = instance;
+        unsafe
+        {
+            var builder = C2paBindings.builder_from_context(context);
+            if (builder == null)
+                C2pa.CheckError();
+            handle = builder;
+        }
     }
 
     public static unsafe implicit operator C2paBuilder*(Builder builder)
@@ -38,17 +47,6 @@ public partial class Builder : IDisposable
         }
     }
 
-
-    public static Builder FromContext(Context context)
-    {
-        unsafe
-        {
-            var builder = C2paBindings.builder_from_context(context);
-            if (builder == null)
-                C2pa.CheckError();
-            return new Builder(builder);
-        }
-    }
 
     public Builder WithDefinition(ManifestDefinition manifest)
     {

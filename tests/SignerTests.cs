@@ -31,10 +31,10 @@ public sealed class SignerTests
                             ]
                         }
                         """;
-        using var contextBuilder = ContextBuilder.New();
+        using var contextBuilder = new ContextBuilder();
         contextBuilder.SetSettings(settings);
         using var context = contextBuilder.Build();
-        using var builder = Builder.FromContext(context).WithDefinition(manifest);
+        using var builder = new Builder(context).WithDefinition(manifest);
 
         var inputPath = Path.Combine(AppContext.BaseDirectory, "no_manifest.jpg");
         Assert.True(File.Exists(inputPath), $"Missing test fixture: {inputPath}");

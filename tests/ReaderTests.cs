@@ -14,8 +14,8 @@ public class ReaderTests(ITestOutputHelper output)
         // Act
         var exception = Record.Exception(() =>
         {
-            using var ctx = Context.New();
-            using var reader = Reader.FromContext(ctx).WithStream(stream, format);
+            using var ctx = new Context();
+            using var reader = new Reader(ctx).WithStream(stream, format);
         });
 
         // Assert - Should not throw during creation, actual functionality depends on native library
@@ -34,8 +34,8 @@ public class ReaderTests(ITestOutputHelper output)
             // Act
             var exception = Record.Exception(() =>
             {
-                using var ctx = Context.New();
-                using var reader = Reader.FromContext(ctx).WithFile(tempFile);
+                using var ctx = new Context();
+                using var reader = new Reader(ctx).WithFile(tempFile);
             });
 
             // Assert - Should not throw during creation, actual functionality depends on native library
@@ -57,8 +57,8 @@ public class ReaderTests(ITestOutputHelper output)
         // Act & Assert
         Assert.Throws<FileNotFoundException>(() =>
         {
-            using var ctx = Context.New();
-            using var reader = Reader.FromContext(ctx).WithFile(nonExistentFile);
+            using var ctx = new Context();
+            using var reader = new Reader(ctx).WithFile(nonExistentFile);
         });
     }
 
@@ -70,8 +70,8 @@ public class ReaderTests(ITestOutputHelper output)
         {
             try
             {
-                using var ctx = Context.New();
-                using var reader = Reader.FromContext(ctx).WithFile(file);
+                using var ctx = new Context();
+                using var reader = new Reader(ctx).WithFile(file);
                 var originalJson = reader.Json;
                 var store = reader.Store;
                 var roundTrippedJson = store.ToJson();

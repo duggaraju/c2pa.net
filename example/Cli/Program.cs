@@ -13,7 +13,7 @@ class Program
     {
         var rootCommand = new RootCommand("C2PA .NET CLI - Content Provenance and Authenticity tool");
 
-        using var contextBuilder = ContextBuilder.New();
+        using var contextBuilder = new ContextBuilder();
         contextBuilder.SetHttpResolver(new HttpResolver());
 
         // Global option: path to a settings file (.json or .toml) applied to
@@ -120,7 +120,7 @@ class Program
             var pretty = result.GetRequiredValue(prettyOption);
             Console.WriteLine($"Reading C2PA data from: {input.FullName}");
             using var context = contextBuilder.Build();
-            using var reader = Reader.FromContext(context).WithFile(input.FullName);
+            using var reader = new Reader(context).WithFile(input.FullName);
             var json = reader.Json;
 
             if (pretty)
@@ -265,14 +265,15 @@ class Program
             Console.WriteLine("Using file-based signer with provided certificate and key");
             var certContent = File.ReadAllText(certFile.FullName);
             var keyContent = File.ReadAllText(keyFile.FullName);
+            // using var signer = Signer.FromInfo(alg, certContent, keyContent, tsaUrl);
             using var signer = new FileSigner(certContent, keyContent, tsaUrl);
-
-            Console.WriteLine($"Detected signing algorithm: {signer.Alg}");
+            var alg = signer.Alg;
+            Console.WriteLine($"Detected signing algorithm: {alg}");
 
             // Create builder and sign
             contextBuilder.SetSigner(signer);
             using var context = contextBuilder.Build();
-            using var builder = Builder.FromContext(context).WithDefinition(manifest);
+            using var builder = new Builder(context).WithDefinition(manifest);
             builder.Sign(input.FullName, output.FullName);
 
             Console.WriteLine($"Successfully signed file: {output.FullName}");
