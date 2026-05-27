@@ -2,7 +2,7 @@
 
 namespace ContentAuthenticity;
 
-[JsonSchema("../c2pa-rs/target/schema/Builder.schema.json", "ManifestDefinition")]
+[JsonSchema("../c2pa-rs/target/schema/ManifestDefinition.schema.json")]
 public partial class Builder : IDisposable
 {
     private unsafe C2paBuilder* handle;

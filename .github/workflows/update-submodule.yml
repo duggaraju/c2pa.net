@@ -135,10 +135,11 @@ jobs:
           sed -i "s|\[!\[c2pa-rs\](https://img.shields.io/badge/c2pa--rs-[^-]*-informational)\](https://github.com/contentauth/c2pa-rs/releases/tag/[^)]*)|[![c2pa-rs](https://img.shields.io/badge/c2pa--rs-${VERSION}-informational)](https://github.com/contentauth/c2pa-rs/releases/tag/${TARGET_TAG})|" README.md
 
           # Stage the submodule change and README update
-          git add c2pa-rs README.md
+          git add README.md
+          git add -f c2pa-rs
 
           # Check if there are changes to commit
-          if git diff --cached --quiet; then
+          if git diff --cached --ignore-submodules=none --quiet -- README.md c2pa-rs; then
             echo "No changes to commit"
             exit 0
           fi

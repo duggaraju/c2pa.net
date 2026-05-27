@@ -34,10 +34,7 @@ public class BuilderTests
     public void FromContext_WithManifestDefinition_ShouldCreateBuilder()
     {
         // Arrange
-        var manifest = new ManifestDefinition
-        {
-            TimestampManifestLabels = []
-        };
+        var manifest = new ManifestDefinition();
 
         // Act
         var exception = Record.Exception(() =>
@@ -61,7 +58,6 @@ public class BuilderTests
             Format = "jpeg",
             Title = "Test Image",
             Vendor = "Test Vendor",
-            TimestampManifestLabels = []
         };
         var json = manifest.ToJson();
 
