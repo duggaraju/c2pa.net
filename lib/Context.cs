@@ -8,10 +8,12 @@ namespace ContentAuthenticity;
 public sealed class Context : IDisposable
 {
     private readonly unsafe C2paContext* context;
+    private readonly GCHandle progressHandle;
 
-    internal unsafe Context(C2paContext* instance)
+    internal unsafe Context(C2paContext* instance, GCHandle progressHandle = default)
     {
         context = instance;
+        this.progressHandle = progressHandle;
     }
 
     /// <summary>
@@ -51,6 +53,11 @@ public sealed class Context : IDisposable
         unsafe
         {
             C2paBindings.free(context);
+        }
+
+        if (progressHandle.IsAllocated)
+        {
+            progressHandle.Free();
         }
     }
 }

@@ -85,7 +85,7 @@ public sealed class ContextBuilder : IDisposable
     /// <summary>
     /// Attaches a progress callback to the context builder.
     /// The callback receives the current phase along with the current and total
-    /// progress values, and should return 0 to continue or non-zero to cancel.
+    /// progress values, and should return non-zero to continue or 0 to cancel.
     /// </summary>
     public ContextBuilder SetProgressCallback(Func<C2paProgressPhase, uint, uint, int> callback)
     {
@@ -155,8 +155,18 @@ public sealed class ContextBuilder : IDisposable
             // The native call consumes the builder regardless of success.
             builder = null;
             if (ctx == null)
+            {
+                if (progressHandle.IsAllocated)
+                {
+                    progressHandle.Free();
+                    progressHandle = default;
+                }
                 C2pa.CheckError();
-            return new Context(ctx);
+            }
+
+            var handle = progressHandle;
+            progressHandle = default;
+            return new Context(ctx, handle);
         }
     }
 

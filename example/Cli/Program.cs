@@ -1,6 +1,7 @@
 // Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
 using ContentAuthenticity;
+using ContentAuthenticity.Bindings;
 using System.CommandLine;
 using System.Text.Json;
 using static ContentAuthenticity.Builder;
@@ -9,12 +10,15 @@ namespace Cli;
 
 class Program
 {
+    private static readonly object ProgressLock = new();
+
     static async Task<int> Main(string[] args)
     {
         var rootCommand = new RootCommand("C2PA .NET CLI - Content Provenance and Authenticity tool");
 
         using var contextBuilder = new ContextBuilder();
         contextBuilder.SetHttpResolver(new HttpResolver());
+        contextBuilder.SetProgressCallback(PrintProgress);
 
         // Global option: path to a settings file (.json or .toml) applied to
         // the shared context builder before any subcommand runs.
@@ -122,6 +126,7 @@ class Program
             using var context = contextBuilder.Build();
             using var reader = new Reader(context).WithFile(input.FullName);
             var json = reader.Json;
+            FinishProgressLine();
 
             if (pretty)
             {
@@ -275,11 +280,37 @@ class Program
             using var context = contextBuilder.Build();
             using var builder = new Builder(context).WithDefinition(manifest);
             builder.Sign(input.FullName, output.FullName);
+            FinishProgressLine();
 
             Console.WriteLine($"Successfully signed file: {output.FullName}");
         });
 
         return signCommand;
+    }
+
+    private static int PrintProgress(C2paProgressPhase phase, uint current, uint total)
+    {
+        lock (ProgressLock)
+        {
+            var progress = total switch
+            {
+                0 => $"step {current}",
+                1 => "complete",
+                _ => $"{current}/{total} ({current * 100 / total}%)"
+            };
+
+            Console.Write($"\rProgress: {phase} - {progress}   ");
+        }
+
+        return 1;
+    }
+
+    private static void FinishProgressLine()
+    {
+        lock (ProgressLock)
+        {
+            Console.WriteLine();
+        }
     }
 
 }
