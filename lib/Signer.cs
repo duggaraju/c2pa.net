@@ -6,13 +6,15 @@ namespace ContentAuthenticity;
 
 public sealed class Signer : IDisposable
 {
-    private readonly unsafe C2paSigner* signer;
+    private unsafe C2paSigner* signer;
     private readonly GCHandle handle;
+    private Signer? identitySigner;
 
-    internal unsafe Signer(C2paSigner* c2paSigner, GCHandle handle = default)
+    internal unsafe Signer(C2paSigner* c2paSigner, GCHandle handle = default, Signer? identitySigner = null)
     {
         this.signer = c2paSigner;
         this.handle = handle;
+        this.identitySigner = identitySigner;
     }
 
     public static unsafe implicit operator C2paSigner*(Signer signer)
@@ -24,8 +26,13 @@ public sealed class Signer : IDisposable
     {
         unsafe
         {
-            C2paBindings.free(signer);
+            if (signer != null)
+            {
+                C2paBindings.free(signer);
+                signer = null;
+            }
         }
+        identitySigner?.Dispose();
         if (handle.IsAllocated)
             handle.Free();
     }
@@ -56,6 +63,77 @@ public sealed class Signer : IDisposable
                     C2pa.CheckError();
                 }
                 return new Signer(c2paSigner, handle);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates a combined signer that signs the C2PA claim with
+    /// <paramref name="c2paSigner"/> and emits a CAWG X.509 identity
+    /// assertion signed by <paramref name="identitySigner"/>.
+    /// </summary>
+    public static Signer FromIdentity(
+        ISigner c2paSigner,
+        ISigner identitySigner,
+        IReadOnlyList<string>? referencedAssertions = null,
+        IReadOnlyList<string>? roles = null)
+    {
+        var c2pa = From(c2paSigner);
+        var identity = From(identitySigner);
+
+        try
+        {
+            return FromIdentity(c2pa, identity, referencedAssertions, roles);
+        }
+        catch
+        {
+            c2pa.Dispose();
+            identity.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Creates a combined signer that signs the C2PA claim with
+    /// <paramref name="c2paSigner"/> and emits a CAWG X.509 identity
+    /// assertion signed by <paramref name="identitySigner"/>.
+    /// The supplied signers are consumed by this call.
+    /// </summary>
+    public static Signer FromIdentity(
+        Signer c2paSigner,
+        Signer identitySigner,
+        IReadOnlyList<string>? referencedAssertions = null,
+        IReadOnlyList<string>? roles = null)
+    {
+        unsafe
+        {
+            var referencedAssertionPointers = Array.Empty<nint>();
+            var rolePointers = Array.Empty<nint>();
+            nint referencedAssertionsArray = 0;
+            nint rolesArray = 0;
+
+            try
+            {
+                referencedAssertionsArray = CreateNullTerminatedUtf8Array(referencedAssertions, out referencedAssertionPointers);
+                rolesArray = CreateNullTerminatedUtf8Array(roles, out rolePointers);
+
+                var combinedSigner = C2paBindings.identity_signer_create(
+                    c2paSigner.Detach(),
+                    identitySigner.Detach(),
+                    (sbyte**)referencedAssertionsArray,
+                    (sbyte**)rolesArray);
+
+                if (combinedSigner == null)
+                    C2pa.CheckError();
+
+                c2paSigner.identitySigner = identitySigner;
+                var signer = new Signer(combinedSigner, default, c2paSigner);
+                return signer;
+            }
+            finally
+            {
+                FreeUtf8Array(referencedAssertionsArray, referencedAssertionPointers);
+                FreeUtf8Array(rolesArray, rolePointers);
             }
         }
     }
@@ -140,6 +218,7 @@ public sealed class Signer : IDisposable
         var certs = builder.ToString();
         var alg = algorithm.GetAlgorithm();
         var handle = GCHandle.Alloc(algorithm);
+        var created = false;
         try
         {
             unsafe
@@ -150,13 +229,15 @@ public sealed class Signer : IDisposable
                     var c2paSigner = C2paBindings.signer_create((void*)GCHandle.ToIntPtr(handle), &RSASign, alg, (sbyte*)certsBytes, (sbyte*)taUrlBytes);
                     if (c2paSigner == null)
                         C2pa.CheckError();
-                    return new Signer(c2paSigner);
+                    created = true;
+                    return new Signer(c2paSigner, handle);
                 }
             }
         }
         finally
         {
-            handle.Free();
+            if (!created)
+                handle.Free();
         }
     }
 
@@ -174,6 +255,50 @@ public sealed class Signer : IDisposable
             }
         }
         return -1;
+    }
+
+    private unsafe C2paSigner* Detach()
+    {
+        var detached = signer;
+        signer = null;
+        return detached;
+    }
+
+    private static nint CreateNullTerminatedUtf8Array(IReadOnlyList<string>? values, out nint[] stringPointers)
+    {
+        if (values == null || values.Count == 0)
+        {
+            stringPointers = [];
+            return 0;
+        }
+
+        stringPointers = new nint[values.Count];
+        var arrayPointer = Marshal.AllocHGlobal((values.Count + 1) * IntPtr.Size);
+
+        for (int i = 0; i < values.Count; i++)
+        {
+            var bytes = Encoding.UTF8.GetBytes(values[i]);
+            var stringPointer = Marshal.AllocHGlobal(bytes.Length + 1);
+            Marshal.Copy(bytes, 0, stringPointer, bytes.Length);
+            Marshal.WriteByte(stringPointer, bytes.Length, 0);
+            stringPointers[i] = stringPointer;
+            Marshal.WriteIntPtr(arrayPointer, i * IntPtr.Size, stringPointer);
+        }
+
+        Marshal.WriteIntPtr(arrayPointer, values.Count * IntPtr.Size, IntPtr.Zero);
+        return arrayPointer;
+    }
+
+    private static void FreeUtf8Array(nint arrayPointer, IReadOnlyList<nint> stringPointers)
+    {
+        foreach (var stringPointer in stringPointers)
+        {
+            if (stringPointer != 0)
+                Marshal.FreeHGlobal(stringPointer);
+        }
+
+        if (arrayPointer != 0)
+            Marshal.FreeHGlobal(arrayPointer);
     }
 
 }

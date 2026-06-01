@@ -194,7 +194,7 @@ public partial class Builder : IDisposable
     /// <summary>
     /// Sets the C2PA builder to not embed the manifest in the output file.
     /// </summary>
-    void SetNoEmbed()
+    public void SetNoEmbed()
     {
         unsafe
         {
@@ -202,7 +202,7 @@ public partial class Builder : IDisposable
         }
     }
 
-    void SetIntent(C2paBuilderIntent intent, C2paDigitalSourceType sourceType)
+    public void SetIntent(C2paBuilderIntent intent, C2paDigitalSourceType sourceType)
     {
         unsafe
         {
@@ -212,7 +212,7 @@ public partial class Builder : IDisposable
         }
     }
 
-    void SetBasePath(string path)
+    public void SetBasePath(string path)
     {
         unsafe
         {
@@ -225,7 +225,7 @@ public partial class Builder : IDisposable
         }
     }
 
-    void SetRemoteUrl(Uri uri)
+    public void SetRemoteUrl(Uri uri)
     {
         unsafe
         {
@@ -241,9 +241,16 @@ public partial class Builder : IDisposable
     /**
     * Adds an action assertion to the manifest.
     */
-    void AddAction(ActionV2 action)
+    public void AddAction(ActionV2 action)
     {
-        var actionJson = action.ToJson();
+        AddAction(action.ToJson());
+    }
+
+    /// <summary>
+    /// Adds an action assertion to the manifest.
+    /// </summary>
+    public void AddAction(string actionJson)
+    {
         var actionBytes = Encoding.UTF8.GetBytes(actionJson);
         unsafe
         {

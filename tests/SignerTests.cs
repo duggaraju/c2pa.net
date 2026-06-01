@@ -73,7 +73,55 @@ public sealed class SignerTests
         Assert.Same(signerImpl, handleValue.Target);
     }
 
-    private sealed class CountingRsaSigner : ISigner
+    [Fact]
+    public void FromIdentity_WithManagedSigners_CreatesCombinedSignerOrThrowsNativeException()
+    {
+        var c2paSigner = new CountingRsaSigner();
+        var identitySigner = new CountingRsaSigner();
+
+        var exception = Record.Exception(() =>
+        {
+            using var signer = Signer.FromIdentity(
+                c2paSigner,
+                identitySigner,
+                ["c2pa.actions"],
+                ["creator"]);
+
+            Assert.True(signer.ReserveSize >= 0);
+        });
+
+        Assert.True(exception == null || exception is C2paException);
+    }
+
+    [Fact]
+    public void FromIdentity_WithManagedSigners_KeepsChildSignerOwned()
+    {
+        using var c2paSigner = new CountingRsaSigner();
+        using var identitySigner = new CountingRsaSigner();
+
+        using var signer = Signer.FromIdentity(
+            c2paSigner,
+            identitySigner,
+            ["c2pa.actions"],
+            ["creator"]);
+
+        var identitySignerField = typeof(Signer).GetField("identitySigner", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(identitySignerField);
+
+        var childSigner = Assert.IsType<Signer>(identitySignerField!.GetValue(signer));
+
+        var handleField = typeof(Signer).GetField("handle", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(handleField);
+
+        var childHandle = (GCHandle)handleField!.GetValue(childSigner)!;
+        Assert.True(childHandle.IsAllocated);
+
+        var nestedChildSigner = Assert.IsType<Signer>(identitySignerField.GetValue(childSigner));
+        var nestedHandle = (GCHandle)handleField.GetValue(nestedChildSigner)!;
+        Assert.True(nestedHandle.IsAllocated);
+    }
+
+    private sealed class CountingRsaSigner : ISigner, IDisposable
     {
         private readonly RSA _key;
 
@@ -102,6 +150,11 @@ public sealed class SignerTests
             var sig = _key.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
             sig.CopyTo(hash);
             return sig.Length;
+        }
+
+        public void Dispose()
+        {
+            _key.Dispose();
         }
     }
 }

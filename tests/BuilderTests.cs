@@ -72,4 +72,29 @@ public class BuilderTests
         // Assert - Should not throw during creation, actual functionality depends on native library
         Assert.True(exception == null || exception is C2paException);
     }
+
+    [Fact]
+    public void BuilderControlApis_ShouldBeCallable()
+    {
+        var manifest = new ManifestDefinition
+        {
+            Format = "jpeg",
+            Title = "Test Image",
+            Vendor = "Test Vendor",
+        };
+
+        var exception = Record.Exception(() =>
+        {
+            using var contextBuilder = new ContextBuilder();
+            using var context = contextBuilder.Build();
+            using var builder = new Builder(context).WithDefinition(manifest);
+            builder.SetNoEmbed();
+            builder.SetIntent(C2paBuilderIntent.Create, C2paDigitalSourceType.DigitalCreation);
+            builder.SetBasePath(Path.GetTempPath());
+            builder.SetRemoteUrl(new Uri("https://example.com/manifest.c2pa"));
+            builder.AddAction(new ActionV2("c2pa.created"));
+        });
+
+        Assert.True(exception == null || exception is C2paException);
+    }
 }
