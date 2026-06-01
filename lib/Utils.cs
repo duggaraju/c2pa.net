@@ -3,7 +3,6 @@
 namespace ContentAuthenticity;
 
 using System.Security.Cryptography;
-using static ContentAuthenticity.Builder;
 
 public static class JsonExtensions
 {
