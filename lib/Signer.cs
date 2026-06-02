@@ -7,7 +7,7 @@ namespace ContentAuthenticity;
 public sealed class Signer : IDisposable
 {
     private unsafe C2paSigner* signer;
-    private readonly GCHandle handle;
+    private GCHandle handle;
     private Signer? identitySigner;
 
     internal unsafe Signer(C2paSigner* c2paSigner, GCHandle handle = default, Signer? identitySigner = null)
@@ -35,6 +35,25 @@ public sealed class Signer : IDisposable
         identitySigner?.Dispose();
         if (handle.IsAllocated)
             handle.Free();
+    }
+
+    internal unsafe GCHandleCollection DetachHandles()
+    {
+        var detachedHandles = new GCHandleCollection();
+
+        if (handle.IsAllocated)
+        {
+            detachedHandles.Add(handle);
+            handle = default;
+        }
+
+        var childSigner = identitySigner;
+        identitySigner = null;
+        if (childSigner != null)
+            detachedHandles.AddRange(childSigner.DetachHandles());
+
+        signer = null;
+        return detachedHandles;
     }
 
     public long ReserveSize

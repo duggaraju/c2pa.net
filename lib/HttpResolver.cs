@@ -12,7 +12,7 @@ public sealed class HttpResolver : IDisposable
 
     private readonly HttpClient httpClient;
     private readonly bool ownsClient;
-    private readonly GCHandle handle;
+    private GCHandle handle;
     private unsafe readonly C2paHttpResolver* resolver;
     private bool consumed;
 
@@ -55,28 +55,24 @@ public sealed class HttpResolver : IDisposable
         return resolver.resolver;
     }
 
-    /// <summary>
-    /// Marks the native resolver as having been consumed by another native
-    /// call (e.g. <c>c2pa_context_builder_set_http_resolver</c>). After this,
-    /// <see cref="Dispose"/> will not call <c>c2pa_free</c>.
-    /// </summary>
-    internal void MarkConsumed()
+    internal GCHandle DetachHandle()
     {
         consumed = true;
+        var detachedHandle = handle;
+        handle = default;
+        return detachedHandle;
     }
 
     public void Dispose()
     {
         unsafe
         {
-            if (!consumed)
+            if (handle.IsAllocated)
             {
                 C2paBindings.free(resolver);
+                handle.Free();
             }
         }
-
-        if (handle.IsAllocated)
-            handle.Free();
 
         if (ownsClient)
             httpClient.Dispose();

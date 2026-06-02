@@ -9,7 +9,7 @@ namespace ContentAuthenticity;
 public sealed class ContextBuilder : IDisposable
 {
     private unsafe C2paContextBuilder* builder;
-    private GCHandle progressHandle;
+    private GCHandleCollection handles = new();
 
     internal unsafe ContextBuilder(C2paContextBuilder* instance)
     {
@@ -71,12 +71,18 @@ public sealed class ContextBuilder : IDisposable
     public ContextBuilder SetSigner(Signer signer)
     {
         EnsureNotBuilt();
+        GCHandleCollection signerHandles;
         unsafe
         {
             var ret = C2paBindings.context_builder_set_signer(builder, signer);
+            signerHandles = signer.DetachHandles();
             if (ret == -1)
+            {
+                signerHandles.Dispose();
                 C2pa.CheckError();
+            }
         }
+        handles.Transfer(signerHandles);
         return this;
     }
 
@@ -89,16 +95,14 @@ public sealed class ContextBuilder : IDisposable
     {
         EnsureNotBuilt();
 
-        if (progressHandle.IsAllocated)
-            progressHandle.Free();
-        progressHandle = GCHandle.Alloc(callback);
+        var progressHandle = handles.AddObject(callback);
 
         unsafe
         {
             var ret = C2paBindings.context_builder_set_progress_callback(builder, (void*)(nint)progressHandle, &OnProgress);
             if (ret == -1)
             {
-                progressHandle.Free();
+                handles.RemoveAndFree(progressHandle);
                 C2pa.CheckError();
             }
         }
@@ -137,7 +141,9 @@ public sealed class ContextBuilder : IDisposable
             if (ret == -1)
                 C2pa.CheckError();
         }
-        resolver.MarkConsumed();
+        var resolverHandle = resolver.DetachHandle();
+        if (resolverHandle.IsAllocated)
+            handles.Add(resolverHandle);
         return this;
     }
 
@@ -154,17 +160,10 @@ public sealed class ContextBuilder : IDisposable
             builder = null;
             if (ctx == null)
             {
-                if (progressHandle.IsAllocated)
-                {
-                    progressHandle.Free();
-                    progressHandle = default;
-                }
                 C2pa.CheckError();
             }
 
-            var handle = progressHandle;
-            progressHandle = default;
-            return new Context(ctx, handle);
+            return new Context(ctx, handles);
         }
     }
 
@@ -178,8 +177,8 @@ public sealed class ContextBuilder : IDisposable
                 builder = null;
             }
         }
-        if (progressHandle.IsAllocated)
-            progressHandle.Free();
+        handles.Dispose();
+        handles = new GCHandleCollection();
     }
 
     private unsafe void EnsureNotBuilt()
