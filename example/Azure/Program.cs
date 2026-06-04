@@ -3,7 +3,6 @@
 using Azure.Identity;
 using ContentAuthenticity;
 using ContentAuthenticity.Bindings;
-using static ContentAuthenticity.Builder;
 
 namespace C2paSample;
 

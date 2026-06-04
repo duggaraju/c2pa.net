@@ -25,7 +25,7 @@ public class ContextBuilderTests
         Assert.Equal(3, builderHandlesBeforeBuild.Count);
         Assert.Contains(builderHandlesBeforeBuild, handle => handle.IsAllocated && ReferenceEquals(handle.Target, callback));
         Assert.Contains(builderHandlesBeforeBuild, handle => handle.IsAllocated && ReferenceEquals(handle.Target, signerImpl));
-        Assert.Contains(builderHandlesBeforeBuild, handle => handle.IsAllocated && ReferenceEquals(handle.Target, resolver));
+        Assert.Contains(builderHandlesBeforeBuild, IsResolverHandle);
 
         using var context = builder.Build();
 
@@ -36,7 +36,7 @@ public class ContextBuilderTests
         Assert.Equal(3, contextHandles.Count);
         Assert.Contains(contextHandles, handle => handle.IsAllocated && ReferenceEquals(handle.Target, callback));
         Assert.Contains(contextHandles, handle => handle.IsAllocated && ReferenceEquals(handle.Target, signerImpl));
-        Assert.Contains(contextHandles, handle => handle.IsAllocated && ReferenceEquals(handle.Target, resolver));
+        Assert.Contains(contextHandles, IsResolverHandle);
     }
 
     [Fact]
@@ -86,13 +86,10 @@ public class ContextBuilderTests
         var builderHandles = GetHandles(builder);
         Assert.Equal(2, builderHandles.Count);
         Assert.Contains(builderHandles, handle => handle.IsAllocated && ReferenceEquals(handle.Target, signerImpl));
-        Assert.Contains(builderHandles, handle => handle.IsAllocated && ReferenceEquals(handle.Target, resolver));
+        Assert.Contains(builderHandles, IsResolverHandle);
 
         var signerHandle = GetSignerHandle(signer);
         Assert.False(signerHandle.IsAllocated);
-
-        var resolverHandle = GetResolverHandle(resolver);
-        Assert.False(resolverHandle.IsAllocated);
     }
 
     private static GCHandleCollection GetHandles(object instance)
@@ -109,11 +106,9 @@ public class ContextBuilderTests
         return (GCHandle)field!.GetValue(signer)!;
     }
 
-    private static GCHandle GetResolverHandle(HttpResolver resolver)
+    private static bool IsResolverHandle(GCHandle handle)
     {
-        var field = typeof(HttpResolver).GetField("handle", BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.NotNull(field);
-        return (GCHandle)field!.GetValue(resolver)!;
+        return handle.IsAllocated && handle.Target?.GetType().Name == "C2paHttpResolver";
     }
 
     private sealed class TestSigner : ISigner, IDisposable

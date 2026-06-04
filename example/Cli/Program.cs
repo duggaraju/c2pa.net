@@ -4,7 +4,6 @@ using ContentAuthenticity;
 using ContentAuthenticity.Bindings;
 using System.CommandLine;
 using System.Text.Json;
-using static ContentAuthenticity.Builder;
 
 namespace Cli;
 
@@ -264,8 +263,7 @@ class Program
             Console.WriteLine($"Signing file: {input.FullName}");
 
             // Create or load manifest definition
-            var manifestJson = File.ReadAllText(manifestFile.FullName);
-            var manifest = manifestJson.Deserialize<ManifestDefinition>();
+            var manifest = File.ReadAllText(manifestFile.FullName);
 
             Console.WriteLine("Using file-based signer with provided certificate and key");
             var certContent = File.ReadAllText(certFile.FullName);

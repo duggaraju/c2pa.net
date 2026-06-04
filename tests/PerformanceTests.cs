@@ -521,11 +521,8 @@ public class PerformanceTests
 
         // Ensure we don't attempt to generate an MP4 thumbnail for MP4 inputs.
         // (Some native builds don't support `video/mp4` thumbnails.)
-        var settings = C2pa.Settings.Default;
-        Assert.NotNull(settings.Builder);
-        Assert.NotNull(settings.Builder.Thumbnail);
-        var thumbnailSettings = settings.Builder.Thumbnail!;
-        thumbnailSettings.Format = C2pa.ThumbnailFormat.Jpeg;
+        var settings = new C2paSettings();
+        settings.SetValue("builder.thumbnail_format", "\"jpeg\"");
 
         var manifest = """
                         {

@@ -2,19 +2,38 @@
 namespace ContentAuthenticity;
 
 /// <summary>
-/// Managed wrapper around the native <see cref="C2paHttpResolver"/>. Routes
-/// HTTP requests issued by the underlying c2pa library (remote manifest
-/// fetches, OCSP, timestamp, etc.) through an <see cref="System.Net.Http.HttpClient"/>.
+/// Resolves HTTP requests issued by the underlying c2pa library.
 /// </summary>
-public sealed class HttpResolver : IDisposable
+public interface IHttpResolver
 {
-    private static readonly char[] HeaderLineSeparators = ['\n'];
+    HttpResolverResponse Resolve(HttpResolverRequest request);
+}
 
+public sealed class HttpResolverRequest
+{
+    public required Uri Url { get; init; }
+
+    public required string Method { get; init; }
+
+    public IReadOnlyDictionary<string, string> Headers { get; init; } = new Dictionary<string, string>();
+
+    public byte[]? Body { get; init; }
+}
+
+public sealed class HttpResolverResponse
+{
+    public required int Status { get; init; }
+
+    public byte[] Body { get; init; } = [];
+}
+
+/// <summary>
+/// Resolves HTTP requests issued by the underlying c2pa library using an <see cref="System.Net.Http.HttpClient"/>.
+/// </summary>
+public sealed class HttpResolver : IHttpResolver, IDisposable
+{
     private readonly HttpClient httpClient;
     private readonly bool ownsClient;
-    private GCHandle handle;
-    private unsafe readonly C2paHttpResolver* resolver;
-    private bool consumed;
 
     /// <summary>
     /// Creates a new <see cref="HttpResolver"/> using a default <see cref="System.Net.Http.HttpClient"/>.
@@ -37,27 +56,80 @@ public sealed class HttpResolver : IDisposable
     {
         this.httpClient = httpClient;
         this.ownsClient = ownsClient;
+    }
 
-        handle = GCHandle.Alloc(this);
-        unsafe
+    public HttpResolverResponse Resolve(HttpResolverRequest request)
+    {
+        using var message = BuildRequest(request);
+        using var result = httpClient.Send(message, HttpCompletionOption.ResponseContentRead);
+
+        byte[] bodyBytes;
+        using (var ms = new MemoryStream())
         {
-            resolver = C2paBindings.http_resolver_create((void*)(nint)handle, &OnResolve);
-            if (resolver == null)
+            result.Content.CopyTo(ms, context: null, cancellationToken: default);
+            bodyBytes = ms.ToArray();
+        }
+
+        return new HttpResolverResponse
+        {
+            Status = (int)result.StatusCode,
+            Body = bodyBytes
+        };
+    }
+
+    public void Dispose()
+    {
+        if (ownsClient)
+            httpClient.Dispose();
+    }
+
+    private static HttpRequestMessage BuildRequest(HttpResolverRequest request)
+    {
+        var message = new HttpRequestMessage(new HttpMethod(request.Method), request.Url);
+
+        if (request.Body is { Length: > 0 })
+            message.Content = new ReadOnlyMemoryContent(request.Body);
+
+        foreach (var (name, value) in request.Headers)
+        {
+            if (!message.Headers.TryAddWithoutValidation(name, value))
             {
-                handle.Free();
-                C2pa.CheckError();
+                message.Content ??= new ByteArrayContent([]);
+                message.Content.Headers.TryAddWithoutValidation(name, value);
             }
+        }
+
+        return message;
+    }
+}
+
+internal sealed unsafe class C2paHttpResolver : IDisposable
+{
+    private static readonly char[] HeaderLineSeparators = ['\n'];
+
+    private readonly IHttpResolver resolver;
+    private GCHandle handle;
+    private Bindings.C2paHttpResolver* nativeResolver;
+
+    public C2paHttpResolver(IHttpResolver resolver)
+    {
+        this.resolver = resolver;
+        handle = GCHandle.Alloc(this);
+        nativeResolver = C2paBindings.http_resolver_create((void*)(nint)handle, &OnResolve);
+        if (nativeResolver == null)
+        {
+            handle.Free();
+            C2pa.CheckError();
         }
     }
 
-    public static unsafe implicit operator C2paHttpResolver*(HttpResolver resolver)
+    public static implicit operator Bindings.C2paHttpResolver*(C2paHttpResolver resolver)
     {
-        return resolver.resolver;
+        return resolver.nativeResolver;
     }
 
-    internal GCHandle DetachHandle()
+    public GCHandle DetachHandle()
     {
-        consumed = true;
         var detachedHandle = handle;
         handle = default;
         return detachedHandle;
@@ -65,46 +137,36 @@ public sealed class HttpResolver : IDisposable
 
     public void Dispose()
     {
-        unsafe
+        if (nativeResolver != null)
         {
-            if (handle.IsAllocated)
-            {
-                C2paBindings.free(resolver);
-                handle.Free();
-            }
+            C2paBindings.free(nativeResolver);
+            nativeResolver = null;
         }
 
-        if (ownsClient)
-            httpClient.Dispose();
+        if (handle.IsAllocated)
+            handle.Free();
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
-    private static unsafe int OnResolve(void* context, C2paHttpRequest* request, C2paHttpResponse* response)
+    private static int OnResolve(void* context, C2paHttpRequest* request, C2paHttpResponse* response)
     {
         try
         {
             var handle = GCHandle.FromIntPtr((nint)context);
-            if (handle.Target is not HttpResolver self)
+            if (handle.Target is not C2paHttpResolver self)
                 return -1;
 
-            using var message = BuildRequest(request);
-            using var result = self.httpClient.Send(message, HttpCompletionOption.ResponseContentRead);
+            var resolverRequest = BuildRequest(request);
+            var resolverResponse = self.resolver.Resolve(resolverRequest);
 
-            byte[] bodyBytes;
-            using (var ms = new MemoryStream())
-            {
-                result.Content.CopyTo(ms, context: null, cancellationToken: default);
-                bodyBytes = ms.ToArray();
-            }
-
-            response->status = (int)result.StatusCode;
-            response->body_len = (nuint)bodyBytes.Length;
-            response->body = AllocateNative(bodyBytes);
+            response->status = resolverResponse.Status;
+            response->body_len = (nuint)resolverResponse.Body.Length;
+            response->body = AllocateNative(resolverResponse.Body);
             return 0;
         }
         catch (Exception ex)
         {
-            SetLastError(ex.Message);
+            C2pa.SetError("Other", ex.Message);
             response->status = 0;
             response->body = null;
             response->body_len = 0;
@@ -112,19 +174,19 @@ public sealed class HttpResolver : IDisposable
         }
     }
 
-    private static unsafe HttpRequestMessage BuildRequest(C2paHttpRequest* request)
+    private static HttpResolverRequest BuildRequest(C2paHttpRequest* request)
     {
         string url = Utils.FromCString(request->url, freeResource: false);
         string methodStr = Utils.FromCString(request->method, freeResource: false);
-        var method = new HttpMethod(methodStr);
-        var message = new HttpRequestMessage(method, url);
+        byte[]? body = null;
 
         if (request->body != null && request->body_len > 0)
         {
-            var body = new byte[(int)request->body_len];
+            body = new byte[(int)request->body_len];
             Marshal.Copy((nint)request->body, body, 0, body.Length);
-            message.Content = new ReadOnlyMemoryContent(body);
         }
+
+        var headers = new Dictionary<string, string>();
 
         string headersRaw = request->headers != null
             ? Utils.FromCString(request->headers, freeResource: false)
@@ -141,15 +203,17 @@ public sealed class HttpResolver : IDisposable
                 if (name.Length == 0)
                     continue;
 
-                if (!message.Headers.TryAddWithoutValidation(name, value))
-                {
-                    message.Content ??= new ByteArrayContent([]);
-                    message.Content.Headers.TryAddWithoutValidation(name, value);
-                }
+                headers[name] = value;
             }
         }
 
-        return message;
+        return new HttpResolverRequest
+        {
+            Url = new Uri(url),
+            Method = methodStr,
+            Headers = headers,
+            Body = body
+        };
     }
 
     private static unsafe byte* AllocateNative(byte[] data)
@@ -161,14 +225,5 @@ public sealed class HttpResolver : IDisposable
         byte* ptr = (byte*)NativeMemory.Alloc((nuint)data.Length);
         Marshal.Copy(data, 0, (nint)ptr, data.Length);
         return ptr;
-    }
-
-    private static unsafe void SetLastError(string message)
-    {
-        var bytes = Encoding.UTF8.GetBytes(message + "\0");
-        fixed (byte* p = bytes)
-        {
-            C2paBindings.error_set_last((sbyte*)p);
-        }
     }
 }

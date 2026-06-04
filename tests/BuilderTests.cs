@@ -1,5 +1,3 @@
-using static ContentAuthenticity.Builder;
-
 namespace ContentAuthenticity.Tests;
 
 public class BuilderTests

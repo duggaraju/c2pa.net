@@ -39,7 +39,7 @@ public sealed class ContextBuilder : IDisposable
     /// <summary>
     /// Sets the settings on the context builder.
     /// </summary>
-    public void SetSettings(C2pa.Settings settings)
+    public void SetSettings(Settings settings)
     {
         SetSettings(settings.ToJson());
     }
@@ -128,20 +128,22 @@ public sealed class ContextBuilder : IDisposable
     }
 
     /// <summary>
-    /// Sets the HTTP resolver on the context builder. The native resolver
-    /// owned by <paramref name="resolver"/> is consumed; the managed wrapper
-    /// remains safe to dispose afterward.
+    /// Sets the HTTP resolver on the context builder.
     /// </summary>
-    public ContextBuilder SetHttpResolver(HttpResolver resolver)
+    public ContextBuilder SetHttpResolver(IHttpResolver resolver)
     {
         EnsureNotBuilt();
+        var c2paResolver = new C2paHttpResolver(resolver);
         unsafe
         {
-            var ret = C2paBindings.context_builder_set_http_resolver(builder, resolver);
+            var ret = C2paBindings.context_builder_set_http_resolver(builder, c2paResolver);
             if (ret == -1)
+            {
+                c2paResolver.Dispose();
                 C2pa.CheckError();
+            }
         }
-        var resolverHandle = resolver.DetachHandle();
+        var resolverHandle = c2paResolver.DetachHandle();
         if (resolverHandle.IsAllocated)
             handles.Add(resolverHandle);
         return this;

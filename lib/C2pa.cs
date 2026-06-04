@@ -36,6 +36,22 @@ public static partial class C2pa
         throw new C2paException(errType, errMsg);
     }
 
+    public static void SetError(string type, string message)
+    {
+        unsafe
+        {
+            var ptr = Marshal.StringToCoTaskMemUTF8($"{type}: {message}");
+            try
+            {
+                C2paBindings.error_set_last((sbyte*)ptr);
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(ptr);
+            }
+        }
+    }
+
     /// <summary>
     /// Converts a raw binary C2PA manifest (in <c>application/c2pa</c> format)
     /// into an embeddable representation suitable for the given asset format.

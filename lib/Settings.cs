@@ -1,46 +1,7 @@
 // Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
-using static ContentAuthenticity.C2pa;
-
 namespace ContentAuthenticity;
 
-
-/// <summary>
-/// Schema-generated root DTO for c2pa settings. Renamed from "Settings" to
-/// avoid collision with the enclosing wrapper class.
-/// </summary>
-[JsonSchema("../c2pa-rs/target/schema/Settings.schema.json")]
-public static partial class C2pa
-{
-    public partial class Settings
-    {
-        public static Settings Default => new()
-        {
-            Trust = new(),
-            Verify = new(),
-            CawgTrust = new(),
-            Core = new(),
-            Builder = new()
-            {
-                Actions = new()
-                {
-                    AutoCreatedAction = new(),
-                    AutoOpenedAction = new()
-                    {
-                        Enabled = false,
-                    },
-                    AutoPlacedAction = new()
-                    {
-                        Enabled = false,
-                    },
-                    Templates = []
-                },
-                Thumbnail = new(),
-                AutoTimestampAssertion = new()
-            }
-        };
-    }
-}
 
 /// <summary>
 /// Managed wrapper around a native <see cref="Bindings.C2paSettings"/> handle.
@@ -107,7 +68,9 @@ public sealed class C2paSettings : IDisposable
     {
         unsafe
         {
-            C2paBindings.free(handle);
+            var r = C2paBindings.free(handle);
+            if (r != 0)
+                C2pa.CheckError();
         }
     }
 }

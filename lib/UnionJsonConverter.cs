@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace ContentAuthenticity;
 
-public class UnionJsonConverter<TLeft, TRight, TUnion> : JsonConverter<TUnion>
+internal class UnionJsonConverter<TLeft, TRight, TUnion> : JsonConverter<TUnion>
     where TLeft : class
     where TRight : class
 {
@@ -124,7 +124,7 @@ public class UnionJsonConverter<TLeft, TRight, TUnion> : JsonConverter<TUnion>
     }
 }
 
-public sealed class NullableUnionJsonConverter<TLeft, TRight, TUnion> : UnionJsonConverter<TLeft, TRight, TUnion>
+internal sealed class NullableUnionJsonConverter<TLeft, TRight, TUnion> : UnionJsonConverter<TLeft, TRight, TUnion>
     where TLeft : class
     where TRight : class
 {
@@ -144,7 +144,7 @@ public sealed class NullableUnionJsonConverter<TLeft, TRight, TUnion> : UnionJso
 }
 
 // Back-compat for the typo in the request.
-public sealed class UnionJsonCoverter<TLeft, TRight, TUnion> : UnionJsonConverter<TLeft, TRight, TUnion>
+internal sealed class UnionJsonCoverter<TLeft, TRight, TUnion> : UnionJsonConverter<TLeft, TRight, TUnion>
     where TLeft : class
     where TRight : class
 {

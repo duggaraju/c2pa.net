@@ -89,7 +89,7 @@ public class UtilsTests
         var json = """{"name": "Test", "value": 42}""";
 
         // Act
-        var obj = json.Deserialize<TestObject>();
+        var obj = json.FromJson<TestObject>();
 
         // Assert
         Assert.NotNull(obj);
@@ -104,7 +104,7 @@ public class UtilsTests
         var invalidJson = "invalid json";
 
         // Act & Assert
-        Assert.Throws<JsonException>(() => invalidJson.Deserialize<TestObject>());
+        Assert.Throws<JsonException>(() => invalidJson.FromJson<TestObject>());
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public class UtilsTests
         var nullJson = "null";
 
         // Act & Assert
-        Assert.Throws<JsonException>(() => nullJson.Deserialize<TestObject>());
+        Assert.Throws<JsonException>(() => nullJson.FromJson<TestObject>());
     }
 
     [Fact]

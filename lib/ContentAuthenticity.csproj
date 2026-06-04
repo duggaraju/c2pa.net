@@ -82,20 +82,15 @@
       <HostArchitecture Remove="@(HostArchitecture)" />
     </ItemGroup>
     <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
-      <HostArchitecture Include="@(BindingsPlatform)"
-                        Condition="'%(BindingsPlatform.Identity)' == 'win-x64'" />
-      <HostArchitecture Include="@(BindingsPlatform)"
-                        Condition="'%(BindingsPlatform.Identity)' == 'win-arm64' and '$(BuildArm64)' == 'true'" />
+      <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == 'win-x64'" />
+      <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == 'win-arm64' and '$(BuildArm64)' == 'true'" />
     </ItemGroup>
     <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-      <HostArchitecture Include="@(BindingsPlatform)"
-                        Condition="'%(BindingsPlatform.Identity)' == 'linux-x64'" />
-      <HostArchitecture Include="@(BindingsPlatform)"
-                        Condition="'%(BindingsPlatform.Identity)' == 'linux-arm64' and '$(BuildArm64)' == 'true'" />
+      <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == 'linux-x64'" />
+      <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == 'linux-arm64' and '$(BuildArm64)' == 'true'" />
     </ItemGroup>
     <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
-      <HostArchitecture Include="@(BindingsPlatform)"
-                        Condition="'%(BindingsPlatform.Identity)' == 'osx-arm64'" />
+      <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == 'osx-arm64'" />
     </ItemGroup>
     <ItemGroup>
       <NativeLibrary Include="@(HostArchitecture->'$(MSBuildThisFileDirectory)../c2pa-rs/target/%(CargoTarget)/$(Configuration.ToLower())/%(NativeLibrary)')" />
@@ -105,9 +100,7 @@
     <Message Text="Native Libraries @(NativeLibrary) GeneratedFiles:@(GeneratedFile)" Importance="high" />
     <!-- Always copy + pack the native library for the current OS (independent of whether Cargo runs incrementally). -->
     <ItemGroup>
-      <Content Include="@(HostArchitecture-> '$(MSBuildThisFileDirectory)../c2pa-rs/target/%(CargoTarget)/$(Configuration.ToLower())/%(NativeLibrary)')"
-        CopyToOutputDirectory="PreserveNewest" Link="runtimes/%(HostArchitecture.Identity)/native/%(NativeLibrary)"
-        />
+      <Content Include="@(HostArchitecture-> '$(MSBuildThisFileDirectory)../c2pa-rs/target/%(CargoTarget)/$(Configuration.ToLower())/%(NativeLibrary)')" CopyToOutputDirectory="PreserveNewest" Link="runtimes/%(HostArchitecture.Identity)/native/%(NativeLibrary)" />
     </ItemGroup>
   </Target>
 
@@ -139,8 +132,7 @@
       <EnvironmentVariables>DYLD_LIBRARY_PATH=$(PkglibClangSharp_runtime_osx-arm64)/runtimes/osx-arm64/native:$(Pkglibclang_runtime_osx-arm64)/runtimes/osx-arm64/native</EnvironmentVariables>
     </PropertyGroup>
 
-    <Exec Command="$(EnvironmentVariables) dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutputForBindings)c2pa.h -o $(BindingsFolder) $(InteropArgsCommon) -m C2paBindings $(ConfigOptions) $(PlatformArgs)"
-      IgnoreStandardErrorWarningFormat="true" EnvironmentVariables="$(EnvironmentVariables)" />
+    <Exec Command="$(EnvironmentVariables) dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutputForBindings)c2pa.h -o $(BindingsFolder) $(InteropArgsCommon) -m C2paBindings $(ConfigOptions) $(PlatformArgs)" IgnoreStandardErrorWarningFormat="true" EnvironmentVariables="$(EnvironmentVariables)" />
   </Target>
 
   <Target Name="IncludeGeneratedBindings" DependsOnTargets="GenerateBindings" BeforeTargets="CoreCompile">
@@ -156,14 +148,12 @@
       <!-- Opt-in: Release-only Cargo profile tuning. -->
       <CargoEnvironmentVariables Condition="'$(Configuration)' == 'Release' and '$(EnableCargoReleaseOptimizations)' == 'true'">CARGO_PROFILE_RELEASE_OPT_LEVEL=z;CARGO_PROFILE_RELEASE_STRIP=symbols;CARGO_PROFILE_RELEASE_LTO=thin</CargoEnvironmentVariables>
     </PropertyGroup>
-    <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto,http,add_thumbnails --target %(HostArchitecture.CargoTarget) -p c2pa-c-ffi -p export_schema"
-          EnvironmentVariables="$(CargoEnvironmentVariables)"
-          WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/" />
+    <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto,http,add_thumbnails --target %(HostArchitecture.CargoTarget) -p c2pa-c-ffi -p export_schema" EnvironmentVariables="$(CargoEnvironmentVariables)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/" />
   </Target>
 
   <Target Name="GenerateSchema" DependsOnTargets="Cargo" Outputs="@(SchemaFile)" Inputs="../c2pa-rs/export_schema/Cargo.toml">
     <ItemGroup>
-      <FirstArch Include="@(HostArchitecture->Reverse())" />
+      <FirstArch Include="@(HostArchitecture-&gt;Reverse())" />
     </ItemGroup>
     <PropertyGroup>
       <CargoTarget>%(FirstArch.CargoTarget)</CargoTarget>

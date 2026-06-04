@@ -388,7 +388,7 @@ public class AssertionTests
 
         // Act - Serialize and deserialize
         var json = originalAssertion.ToJson();
-        var deserializedAssertion = json.Deserialize<TrainingAssertion>();
+        var deserializedAssertion = json.FromJson<TrainingAssertion>();
 
         // Assert
         Assert.Equal(originalAssertion.Label, deserializedAssertion.Label);
@@ -582,7 +582,7 @@ public class AssertionTests
 
         // Act - Serialize and deserialize
         var json = originalAssertion.ToJson();
-        var deserializedAssertion = json.Deserialize<CertificateStatusAssertion>();
+        var deserializedAssertion = json.FromJson<CertificateStatusAssertion>();
 
         // Assert
         Assert.Equal(originalAssertion.Label, deserializedAssertion.Label);

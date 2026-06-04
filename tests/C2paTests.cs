@@ -36,7 +36,11 @@ public class C2paTests
     public void CheckError_ShouldNotThrowWhenNoError()
     {
         // Act & Assert
-        var exception = Record.Exception(() => C2pa.CheckError());
+        var exception = Record.Exception(() =>
+        {
+            _ = C2pa.Version;
+            C2pa.CheckError();
+        });
         Assert.Null(exception);
     }
 

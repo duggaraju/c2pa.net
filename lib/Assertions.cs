@@ -1,31 +1,30 @@
 // Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
-using static ContentAuthenticity.Builder;
 
 namespace ContentAuthenticity;
 
-public abstract record Assertion(string Label, object Data)
+public abstract class Assertion : Schema.Builder.AssertionDefinition
 {
-    public static T FromJson<T>(string json) where T : Assertion
+    [SetsRequiredMembers]
+    protected Assertion(string label, object data)
     {
-        return JsonExtensions.Deserialize<T>(json);
+        Label = label;
+        base.Data = JsonSerializer.SerializeToElement(data);
     }
 
-    public static implicit operator AssertionDefinition(Assertion assertion)
+    public static T FromJson<T>(string json) where T : Assertion
     {
-        return new()
-        {
-            Label = assertion.Label,
-            Data = JsonSerializer.SerializeToElement(assertion.Data)
-        };
+        return JsonExtensions.FromJson<T>(json);
     }
 }
 
-public abstract record Assertion<T> : Assertion where T : notnull
+public abstract class Assertion<T> : Assertion where T : notnull
 {
     public new T Data { get; init; }
 
+    [SetsRequiredMembers]
     public Assertion(string label, T data)
         : base(label, data)
     {
@@ -35,11 +34,29 @@ public abstract record Assertion<T> : Assertion where T : notnull
 
 public record ThumbnailAssertionData(string Thumbnail, string InstanceID);
 
-public record ThumbnailAssertion(ThumbnailAssertionData Data) : Assertion<ThumbnailAssertionData>("c2pa.thumbnail", Data);
+public class ThumbnailAssertion : Assertion<ThumbnailAssertionData>
+{
+    [SetsRequiredMembers]
+    public ThumbnailAssertion(ThumbnailAssertionData data) : base("c2pa.thumbnail", data)
+    {
+    }
+}
 
-public record ClaimThumbnailAssertion(ThumbnailAssertionData Data) : Assertion<ThumbnailAssertionData>("c2pa.thumbnail.claim", Data);
+public class ClaimThumbnailAssertion : Assertion<ThumbnailAssertionData>
+{
+    [SetsRequiredMembers]
+    public ClaimThumbnailAssertion(ThumbnailAssertionData data) : base("c2pa.thumbnail.claim", data)
+    {
+    }
+}
 
-public record IngredientThumbnailAssertion(ThumbnailAssertionData Data) : Assertion<ThumbnailAssertionData>("c2pa.thumbnail.ingredient", Data);
+public class IngredientThumbnailAssertion : Assertion<ThumbnailAssertionData>
+{
+    [SetsRequiredMembers]
+    public IngredientThumbnailAssertion(ThumbnailAssertionData data) : base("c2pa.thumbnail.ingredient", data)
+    {
+    }
+}
 
 public record ActionV1(
     string Action,
@@ -51,7 +68,13 @@ public record ActionV1(
 
 public record ActionAssertionData(List<ActionV1> Actions);
 
-public record ActionsAssertion(ActionAssertionData Data) : Assertion<ActionAssertionData>("c2pa.actions", Data);
+public class ActionsAssertion : Assertion<ActionAssertionData>
+{
+    [SetsRequiredMembers]
+    public ActionsAssertion(ActionAssertionData data) : base("c2pa.actions", data)
+    {
+    }
+}
 
 public record ActionV2(
     string Action,
@@ -69,10 +92,21 @@ public record Template(string DigitalSourceType, string Action);
 
 public record ActionsAssertionV2Data(List<ActionV2> Actions, bool AllActionsIncluded = false, Template[]? Templates = null);
 
-public record ActionsAssertionV2(ActionsAssertionV2Data Data) : Assertion<ActionsAssertionV2Data>("c2pa.actions.v2", Data);
-
-public record CustomAssertion(string Label, dynamic Data) : Assertion<dynamic>(Label, (object)Data)
+public class ActionsAssertionV2 : Assertion<ActionsAssertionV2Data>
 {
+    [SetsRequiredMembers]
+    public ActionsAssertionV2(ActionsAssertionV2Data data) : base("c2pa.actions.v2", data)
+    {
+    }
+}
+
+public class CustomAssertion : Assertion<dynamic>
+{
+    [SetsRequiredMembers]
+    public CustomAssertion(string label, dynamic data) : base(label, (object)data)
+    {
+    }
+
     public ExpandoObject GetDataAsExpandoObject()
     {
         return ConvertElementToExpandoObject(Data);
@@ -117,7 +151,13 @@ public record CreativeWorkAssertionData(
     public IDictionary<string, object>? Value { get; set; } = null;
 }
 
-public record CreativeWorkAssertion(CreativeWorkAssertionData Data) : Assertion<CreativeWorkAssertionData>("stds.schema-org.CreativeWork", Data);
+public class CreativeWorkAssertion : Assertion<CreativeWorkAssertionData>
+{
+    [SetsRequiredMembers]
+    public CreativeWorkAssertion(CreativeWorkAssertionData data) : base("stds.schema-org.CreativeWork", data)
+    {
+    }
+}
 
 public enum Training
 {
@@ -129,22 +169,40 @@ public enum Training
 
 public record TrainingAssertionData(Dictionary<string, Training> Entries);
 
-public record TrainingAssertion(TrainingAssertionData Data) : Assertion<TrainingAssertionData>("c2pa.training-mining", Data);
+public class TrainingAssertion : Assertion<TrainingAssertionData>
+{
+    [SetsRequiredMembers]
+    public TrainingAssertion(TrainingAssertionData data) : base("c2pa.training-mining", data)
+    {
+    }
+}
 
 public record EmbeddedDataAssertionData(string ContentType, byte[] Data);
 
-public record EmbeddedDataAssertion(EmbeddedDataAssertionData Data) : Assertion<EmbeddedDataAssertionData>("c2pa.embedded-data", Data);
+public class EmbeddedDataAssertion : Assertion<EmbeddedDataAssertionData>
+{
+    [SetsRequiredMembers]
+    public EmbeddedDataAssertion(EmbeddedDataAssertionData data) : base("c2pa.embedded-data", data)
+    {
+    }
+}
 
 public record MetadataAssertionData(
     [property: JsonPropertyName("@context")] Dictionary<string, string> Context,
     [property: JsonExtensionData] Dictionary<string, object>? Value,
     string? CustomMetadataLabel);
 
-public record MetadataAssertion(MetadataAssertionData Data) : Assertion<MetadataAssertionData>("c2pa.metadata", Data);
+public class MetadataAssertion : Assertion<MetadataAssertionData>
+{
+    [SetsRequiredMembers]
+    public MetadataAssertion(MetadataAssertionData data) : base("c2pa.metadata", data)
+    {
+    }
+}
 
 public record SoftBindingTimespan(nuint Start, nuint End);
 
-public record SoftBindingScope(SoftBindingTimespan? Timespan = null, RegionOfInterest? Region = null, string? Extent = null);
+public record SoftBindingScope(SoftBindingTimespan? Timespan = null, Schema.Builder.RegionOfInterest? Region = null, string? Extent = null);
 
 public record SoftBindingBlock(SoftBindingScope Scope, string Value);
 
@@ -156,17 +214,35 @@ public record SoftBindingAssertionData(
     IList<byte>? Pad2 = null,
     string? Url = null);
 
-public record SoftBindingAssertion(SoftBindingAssertionData Data) : Assertion<SoftBindingAssertionData>("c2pa.soft-binding", Data);
+public class SoftBindingAssertion : Assertion<SoftBindingAssertionData>
+{
+    [SetsRequiredMembers]
+    public SoftBindingAssertion(SoftBindingAssertionData data) : base("c2pa.soft-binding", data)
+    {
+    }
+}
 
 public record CertificateStatusAssertionData(
     [property: JsonPropertyName("ocspVals")]
     IList<IList<byte>> OcspVals);
 
-public record CertificateStatusAssertion(CertificateStatusAssertionData Data) : Assertion<CertificateStatusAssertionData>("c2pa.certificate-status", Data);
+public class CertificateStatusAssertion : Assertion<CertificateStatusAssertionData>
+{
+    [SetsRequiredMembers]
+    public CertificateStatusAssertion(CertificateStatusAssertionData data) : base("c2pa.certificate-status", data)
+    {
+    }
+}
 
 public record TimeStampAssertionData(Dictionary<string, byte[]> Timestamps);
 
-public record TimeStampAssertion(TimeStampAssertionData Data) : Assertion<TimeStampAssertionData>("c2pa.time-stamp", Data);
+public class TimeStampAssertion : Assertion<TimeStampAssertionData>
+{
+    [SetsRequiredMembers]
+    public TimeStampAssertion(TimeStampAssertionData data) : base("c2pa.time-stamp", data)
+    {
+    }
+}
 
 public record ReferenceUri(string Uri);
 
@@ -174,8 +250,20 @@ public record ReferenceSetting(ReferenceUri Reference, string? Description = nul
 
 public record AssetReferenceAssertionData(List<ReferenceSetting> References);
 
-public record AssetReferenceAssertion(AssetReferenceAssertionData Data) : Assertion<AssetReferenceAssertionData>("c2pa.asset-ref", Data);
+public class AssetReferenceAssertion : Assertion<AssetReferenceAssertionData>
+{
+    [SetsRequiredMembers]
+    public AssetReferenceAssertion(AssetReferenceAssertionData data) : base("c2pa.asset-ref", data)
+    {
+    }
+}
 
-public record AssetTypeAssertionData(IList<AssetType> Types, AssertionMetadata? Metadata = null);
+public record AssetTypeAssertionData(IList<Schema.Builder.AssetType> Types, Schema.Builder.AssertionMetadata? Metadata = null);
 
-public record AssetTypeAssertion(AssetTypeAssertionData Data) : Assertion<AssetTypeAssertionData>("c2pa.asset-type", Data);
+public class AssetTypeAssertion : Assertion<AssetTypeAssertionData>
+{
+    [SetsRequiredMembers]
+    public AssetTypeAssertion(AssetTypeAssertionData data) : base("c2pa.asset-type", data)
+    {
+    }
+}

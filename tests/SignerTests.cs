@@ -12,10 +12,8 @@ public sealed class SignerTests
     public void From_WithValidSigner_CanSign_AndInvokesCallback()
     {
         // Arrange
-        var settings = C2pa.Settings.Default;
-        Assert.NotNull(settings.Builder);
-        Assert.NotNull(settings.Builder.Thumbnail);
-        settings.Builder.Thumbnail.Format = C2pa.ThumbnailFormat.Jpeg;
+        var settings = new C2paSettings();
+        settings.SetValue("build.thumbnail.format", "\"jpeg\"");
 
         var manifest = """
                         {

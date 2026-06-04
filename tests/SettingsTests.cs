@@ -8,19 +8,19 @@ public class SettingsTests
     public void Settings_CheckDefaults()
     {
         // Act
-        var settings = C2pa.Settings.Default;
+        var settings = new Settings();
         // Assert
-        Assert.NotNull(settings.Trust);
-        Assert.NotNull(settings.Verify);
-        Assert.NotNull(settings.Core);
-        Assert.NotNull(settings.Builder);
+        Assert.Null(settings.Trust);
+        Assert.Null(settings.Verify);
+        Assert.Null(settings.Core);
+        Assert.Null(settings.Builder);
     }
 
     [Fact]
     public void ToJson_ShouldReturnValidJson()
     {
         // Arrange
-        var settings = C2pa.Settings.Default;
+        var settings = new Settings();
 
         // Act
         var json = settings.ToJson();
@@ -28,20 +28,19 @@ public class SettingsTests
         // Assert
         Assert.NotNull(json);
         Assert.NotEmpty(json);
-        Assert.Contains("trust", json);
-        Assert.Contains("verify", json);
+        Assert.Equal("{}", json);
     }
 
     [Fact]
     public void Load_ShouldLoadCorrectly()
     {
         // Arrange
-        var original = C2pa.Settings.Default;
+        var original = new Settings();
 
         var json = original.ToJson();
 
         // Act
-        var act = json.Deserialize<C2pa.Settings>();
+        var act = json.FromJson<Settings>();
         Assert.True(JsonDocument.Equals(json, act.ToJson()));
     }
 
@@ -86,7 +85,7 @@ public class SettingsTests
             }
             """;
 
-        var settings = json.Deserialize<C2pa.Settings>();
+        var settings = json.FromJson<Settings>();
         Assert.NotNull(settings);
     }
 }
