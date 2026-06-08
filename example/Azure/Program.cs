@@ -67,17 +67,17 @@ partial class Program
         ManifestDefinition manifest = new()
         {
             Format = Utils.GetMimeType(inputFile),
-            ClaimGeneratorInfo = new()
-            {
+            ClaimGeneratorInfo =
+            [
                 new ClaimGeneratorInfo
                 {
                    Name = "C# Binding test",
                    Version = "1.0.0"
                 }
-            },
+            ],
             Title = "C# Test Image",
-            Assertions = new()
-            {
+            Assertions =
+            [
                 new CreativeWorkAssertion(
                     new CreativeWorkAssertionData("http://schema.org/", "CreativeWork")
                     {
@@ -86,7 +86,7 @@ partial class Program
                             { "person", "Isaiah Carrington" }
                         }
                     })
-            }
+            ]
         };
 
         using var builder = new Builder(context).WithDefinition(manifest);
