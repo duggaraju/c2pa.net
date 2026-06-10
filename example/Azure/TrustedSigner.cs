@@ -25,7 +25,7 @@ class TrustedSignerConfiguration
     public Uri? TimeAuthorityUrl { get; init; }
 }
 
-class TrustedSigner : ISigner
+class TrustedSigner : ICallbackSigner
 {
     private readonly TrustedSignerConfiguration _config;
     private readonly CertificateProfileClient _client;

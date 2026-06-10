@@ -36,8 +36,6 @@ namespace ContentAuthenticity
         [JsonSchema("../c2pa-rs/target/schema/Settings.schema.json")]
         public static partial class Settings
         {
-
         }
-
     }
 }

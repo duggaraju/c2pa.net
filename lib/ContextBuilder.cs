@@ -30,12 +30,6 @@ public sealed class ContextBuilder : IDisposable
         }
     }
 
-    public void SetSigner(ISigner signer)
-    {
-        SetSigner(Signer.From(signer));
-    }
-
-
     /// <summary>
     /// Sets the settings on the context builder.
     /// </summary>
@@ -44,15 +38,19 @@ public sealed class ContextBuilder : IDisposable
         SetSettings(settings.ToJson());
     }
 
+    /// <summary>
+    /// Sets settings using serialized data and format (for example, JSON).
+    /// </summary>
     public void SetSettings(string settings, string format = "json")
     {
-        using var handle = new C2paSettings();
-        handle.Update(settings, format);
+        using var handle = new C2paSettings(settings, format);
         SetSettings(handle);
     }
 
     /// <summary>
-    /// Sets the settings on the context builder. The settings are cloned.
+    /// Sets the settings on the context builder from a native settings object.
+    /// This overload allows callers to pre-populate settings via
+    /// <see cref="C2paSettings.SetValue(string, string)"/>.
     /// </summary>
     public void SetSettings(C2paSettings settings)
     {
@@ -66,23 +64,36 @@ public sealed class ContextBuilder : IDisposable
     }
 
     /// <summary>
-    /// Sets the signer on the context builder.
+    /// Sets the signer on the context builder using a single signer.
     /// </summary>
-    public ContextBuilder SetSigner(Signer signer)
+    public void SetSigner(ISigner signer)
+    {
+        SetSigner(new SigningOptions(signer));
+    }
+
+
+    /// <summary>
+    /// Sets signer configuration on the context builder, including optional
+    /// identity-signing parameters.
+    /// </summary>
+    public ContextBuilder SetSigner(SigningOptions options)
+    {
+        using var signer = new Signer(options);
+        return SetSigner(signer);
+    }
+
+    internal ContextBuilder SetSigner(Signer signer)
     {
         EnsureNotBuilt();
-        GCHandleCollection signerHandles;
         unsafe
         {
             var ret = C2paBindings.context_builder_set_signer(builder, signer);
-            signerHandles = signer.DetachHandles();
             if (ret == -1)
             {
-                signerHandles.Dispose();
                 C2pa.CheckError();
             }
         }
-        handles.Transfer(signerHandles);
+        handles.Transfer(signer.DetachHandles());
         return this;
     }
 

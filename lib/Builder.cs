@@ -104,33 +104,15 @@ public partial class Builder : IDisposable
         }
     }
 
-    public byte[] Sign(ISigner signer, Stream source, Stream dest, string format)
-    {
-        using var s = Signer.From(signer);
-        return Sign(s, source, dest, format);
-    }
-
-    public byte[] Sign(Signer signer, Stream source, Stream dest, string format)
-    {
-        using var inputStream = new StreamAdapter(source);
-        using var outputStream = new StreamAdapter(dest);
-        unsafe
-        {
-            fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
-            {
-                byte* manifest = null;
-                var ret = C2paBindings.builder_sign(handle, (sbyte*)formatBytes, inputStream, outputStream, signer, &manifest);
-                if (ret == -1)
-                    C2pa.CheckError();
-                var bytes = new byte[ret];
-                Marshal.Copy((nint)manifest, bytes, 0, bytes.Length);
-                C2paBindings.free(manifest);
-                return bytes;
-            }
-        }
-    }
-
-    public byte[] Sign(Stream source, Stream dest, string format)
+    /// <summary>
+    /// Signs the source stream and writes the output and manifest to the destination stream.
+    /// </summary>
+    /// <param name="source">The source stream to read from.</param>
+    /// <param name="dest">The destination stream to write signed content to.</param>
+    /// <param name="format">The media format (e.g., "image/jpeg", "video/mp4").</param>
+    /// <param name="signer">Optional signer. If null, uses the signer from the context.</param>
+    /// <returns>The C2PA manifest bytes.</returns>
+    public byte[] Sign(Stream source, Stream dest, string format, ISigner? signer = null)
     {
         using var inputStream = new StreamAdapter(source);
         using var outputStream = new StreamAdapter(dest);
@@ -139,9 +121,16 @@ public partial class Builder : IDisposable
             fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
             {
                 byte* manifest = null;
-                var ret = C2paBindings.builder_sign_context(handle, (sbyte*)formatBytes, inputStream, outputStream, &manifest);
+                using var wrappedSigner = signer == null ? null : new Signer(signer);
+
+                // Keep var inference here so the native return type maps correctly on each platform.
+                var ret = wrappedSigner != null
+                    ? C2paBindings.builder_sign(handle, (sbyte*)formatBytes, inputStream, outputStream, wrappedSigner, &manifest)
+                    : C2paBindings.builder_sign_context(handle, (sbyte*)formatBytes, inputStream, outputStream, &manifest);
+
                 if (ret == -1)
                     C2pa.CheckError();
+
                 var bytes = new byte[ret];
                 Marshal.Copy((nint)manifest, bytes, 0, bytes.Length);
                 C2paBindings.free(manifest);
@@ -151,20 +140,19 @@ public partial class Builder : IDisposable
     }
 
     /// <summary>
-    /// Sign the input file using the provided signer and write the C2PA manifest to the output file.
+    /// Signs the input file and writes the signed output to the destination file.
     /// </summary>
-    public byte[] Sign(ISigner signer, string input, string output)
+    /// <param name="input">The input file path to read from.</param>
+    /// <param name="output">The output file path to write signed content to.</param>
+    /// <param name="format">Optional media format. If null, inferred from the input file extension.</param>
+    /// <param name="signer">Optional signer. If null, uses the signer from the context.</param>
+    /// <returns>The C2PA manifest bytes.</returns>
+    public byte[] Sign(string input, string output, string? format = null, ISigner? signer = null)
     {
+        format ??= input.GetMimeType();
         using var inputStream = new FileStream(input, FileMode.Open);
         using var outputStream = new FileStream(output, FileMode.Create);
-        return Sign(signer, inputStream, outputStream, input.GetMimeType());
-    }
-
-    public byte[] Sign(string input, string output)
-    {
-        using var inputStream = new FileStream(input, FileMode.Open);
-        using var outputStream = new FileStream(output, FileMode.Create);
-        return Sign(inputStream, outputStream, input.GetMimeType());
+        return Sign(inputStream, outputStream, format, signer);
     }
 
     /// <summary>
@@ -442,38 +430,26 @@ public partial class Builder : IDisposable
     /// <param name="asset">Optional asset stream. If <c>null</c> pre-calculated hashes are used.</param>
     public byte[] SignDataHashedEmbeddable(ISigner signer, string dataHashJson, string format, Stream? asset = null)
     {
-        using var s = Signer.From(signer);
-        return SignDataHashedEmbeddable(s, dataHashJson, format, asset);
-    }
-
-    public byte[] SignDataHashedEmbeddable(Signer signer, string dataHashJson, string format, Stream? asset = null)
-    {
-        StreamAdapter? assetStream = asset == null ? null : new StreamAdapter(asset);
-        try
+        using var s = new Signer(signer);
+        using var assetStream = asset == null ? null : new StreamAdapter(asset);
+        unsafe
         {
-            unsafe
+            fixed (byte* dataHashBytes = Encoding.UTF8.GetBytes(dataHashJson))
+            fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
             {
-                fixed (byte* dataHashBytes = Encoding.UTF8.GetBytes(dataHashJson))
-                fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
+                byte* manifest = null;
+                C2paStream* nativeAsset = assetStream == null ? null : (C2paStream*)assetStream;
+                var ret = C2paBindings.builder_sign_data_hashed_embeddable(handle, s, (sbyte*)dataHashBytes, (sbyte*)formatBytes, nativeAsset, &manifest);
+                if (ret == -1)
+                    C2pa.CheckError();
+                var bytes = new byte[ret];
+                if (ret > 0 && manifest != null)
                 {
-                    byte* manifest = null;
-                    C2paStream* nativeAsset = assetStream == null ? null : (C2paStream*)assetStream;
-                    var ret = C2paBindings.builder_sign_data_hashed_embeddable(handle, signer, (sbyte*)dataHashBytes, (sbyte*)formatBytes, nativeAsset, &manifest);
-                    if (ret == -1)
-                        C2pa.CheckError();
-                    var bytes = new byte[ret];
-                    if (ret > 0 && manifest != null)
-                    {
-                        Marshal.Copy((nint)manifest, bytes, 0, bytes.Length);
-                        C2paBindings.free(manifest);
-                    }
-                    return bytes;
+                    Marshal.Copy((nint)manifest, bytes, 0, bytes.Length);
+                    C2paBindings.free(manifest);
                 }
+                return bytes;
             }
-        }
-        finally
-        {
-            assetStream?.Dispose();
         }
     }
 

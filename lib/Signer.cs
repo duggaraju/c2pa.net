@@ -4,17 +4,34 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace ContentAuthenticity;
 
-public sealed class Signer : IDisposable
+internal sealed class Signer : IDisposable
 {
     private unsafe C2paSigner* signer;
-    private GCHandle handle;
-    private Signer? identitySigner;
+    private GCHandleCollection handles = new();
 
-    internal unsafe Signer(C2paSigner* c2paSigner, GCHandle handle = default, Signer? identitySigner = null)
+    public Signer(ISigner signer)
+        : this(new SigningOptions(signer))
     {
-        this.signer = c2paSigner;
-        this.handle = handle;
-        this.identitySigner = identitySigner;
+    }
+
+    public Signer(SigningOptions options)
+    {
+        if (options.IdentitySigner == null)
+        {
+            unsafe
+            {
+                signer = CreateNativeSigner(options.C2paSigner, out var handle);
+                if (handle.IsAllocated)
+                    handles.Add(handle);
+            }
+            return;
+        }
+
+        unsafe
+        {
+            signer = CreateIdentitySigner(options, out var combinedHandles);
+            handles.Transfer(combinedHandles);
+        }
     }
 
     public static unsafe implicit operator C2paSigner*(Signer signer)
@@ -32,25 +49,14 @@ public sealed class Signer : IDisposable
                 signer = null;
             }
         }
-        identitySigner?.Dispose();
-        if (handle.IsAllocated)
-            handle.Free();
+        handles.Dispose();
+        handles = new GCHandleCollection();
     }
 
     internal unsafe GCHandleCollection DetachHandles()
     {
-        var detachedHandles = new GCHandleCollection();
-
-        if (handle.IsAllocated)
-        {
-            detachedHandles.Add(handle);
-            handle = default;
-        }
-
-        var childSigner = identitySigner;
-        identitySigner = null;
-        if (childSigner != null)
-            detachedHandles.AddRange(childSigner.DetachHandles());
+        var detachedHandles = handles;
+        handles = new GCHandleCollection();
 
         signer = null;
         return detachedHandles;
@@ -67,125 +73,52 @@ public sealed class Signer : IDisposable
         }
     }
 
-    public static Signer From(ISigner signer)
-    {
-        unsafe
-        {
-            fixed (byte* certs = Encoding.UTF8.GetBytes(signer.Certs))
-            fixed (byte* taUrl = signer.TimeAuthorityUrl == null ? null : Encoding.UTF8.GetBytes(signer.TimeAuthorityUrl.OriginalString))
-            {
-                var handle = GCHandle.Alloc(signer);
-                var c2paSigner = C2paBindings.signer_create((void*)(nint)handle, &Sign, signer.Alg, (sbyte*)certs, (sbyte*)taUrl);
-                if (c2paSigner == null)
-                {
-                    handle.Free();
-                    C2pa.CheckError();
-                }
-                return new Signer(c2paSigner, handle);
-            }
-        }
-    }
-
     /// <summary>
     /// Creates a combined signer that signs the C2PA claim with
     /// <paramref name="c2paSigner"/> and emits a CAWG X.509 identity
     /// assertion signed by <paramref name="identitySigner"/>.
     /// </summary>
-    public static Signer FromIdentity(
-        ISigner c2paSigner,
-        ISigner identitySigner,
-        IReadOnlyList<string>? referencedAssertions = null,
-        IReadOnlyList<string>? roles = null)
+    private static unsafe C2paSigner* CreateIdentitySigner(
+        SigningOptions options,
+        out GCHandleCollection combinedHandles)
     {
-        var c2pa = From(c2paSigner);
-        var identity = From(identitySigner);
+        ArgumentNullException.ThrowIfNull(options.IdentitySigner, nameof(options.IdentitySigner));
+
+        combinedHandles = new GCHandleCollection();
+
+        var c2paSigner = CreateNativeSigner(options.C2paSigner, out var c2paHandle);
+        if (c2paHandle.IsAllocated)
+            combinedHandles.Add(c2paHandle);
+
+        var identitySigner = CreateNativeSigner(options.IdentitySigner!, out var identityHandle);
+        if (identityHandle.IsAllocated)
+            combinedHandles.Add(identityHandle);
 
         try
         {
-            return FromIdentity(c2pa, identity, referencedAssertions, roles);
+            return CreateIdentitySigner(
+                c2paSigner,
+                identitySigner,
+                options.ReferencedAssertions,
+                options.Roles);
         }
         catch
         {
-            c2pa.Dispose();
-            identity.Dispose();
+            combinedHandles.Dispose();
+            combinedHandles = new GCHandleCollection();
             throw;
         }
     }
 
-    /// <summary>
-    /// Creates a combined signer that signs the C2PA claim with
-    /// <paramref name="c2paSigner"/> and emits a CAWG X.509 identity
-    /// assertion signed by <paramref name="identitySigner"/>.
-    /// The supplied signers are consumed by this call.
-    /// </summary>
-    public static Signer FromIdentity(
-        Signer c2paSigner,
-        Signer identitySigner,
-        IReadOnlyList<string>? referencedAssertions = null,
-        IReadOnlyList<string>? roles = null)
+    private static unsafe C2paSigner* CreateNativeSigner(ISigner signer, out GCHandle handle)
     {
-        unsafe
+        handle = default;
+        return signer switch
         {
-            var referencedAssertionPointers = Array.Empty<nint>();
-            var rolePointers = Array.Empty<nint>();
-            nint referencedAssertionsArray = 0;
-            nint rolesArray = 0;
-
-            try
-            {
-                referencedAssertionsArray = CreateNullTerminatedUtf8Array(referencedAssertions, out referencedAssertionPointers);
-                rolesArray = CreateNullTerminatedUtf8Array(roles, out rolePointers);
-
-                var combinedSigner = C2paBindings.identity_signer_create(
-                    c2paSigner.Detach(),
-                    identitySigner.Detach(),
-                    (sbyte**)referencedAssertionsArray,
-                    (sbyte**)rolesArray);
-
-                if (combinedSigner == null)
-                    C2pa.CheckError();
-
-                c2paSigner.identitySigner = identitySigner;
-                var signer = new Signer(combinedSigner, default, c2paSigner);
-                return signer;
-            }
-            finally
-            {
-                FreeUtf8Array(referencedAssertionsArray, referencedAssertionPointers);
-                FreeUtf8Array(rolesArray, rolePointers);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Creates a <see cref="Signer"/> from inline signing material (algorithm,
-    /// certificate chain in PEM, private key in PEM and an optional timestamp
-    /// authority URL). The private key is sent to the native library which
-    /// performs signing internally.
-    /// </summary>
-    public static Signer FromInfo(SigningAlg alg, string signCertPem, string privateKeyPem, Uri? timeAuthorityUrl = null)
-    {
-        unsafe
-        {
-            var algName = alg.ToString().ToLowerInvariant();
-            fixed (byte* algBytes = Encoding.UTF8.GetBytes(algName))
-            fixed (byte* certBytes = Encoding.UTF8.GetBytes(signCertPem))
-            fixed (byte* keyBytes = Encoding.UTF8.GetBytes(privateKeyPem))
-            fixed (byte* taBytes = timeAuthorityUrl == null ? null : Encoding.UTF8.GetBytes(timeAuthorityUrl.OriginalString))
-            {
-                var info = new C2paSignerInfo
-                {
-                    alg = (sbyte*)algBytes,
-                    sign_cert = (sbyte*)certBytes,
-                    private_key = (sbyte*)keyBytes,
-                    ta_url = (sbyte*)taBytes,
-                };
-                var c2paSigner = C2paBindings.signer_from_info(&info);
-                if (c2paSigner == null)
-                    C2pa.CheckError();
-                return new Signer(c2paSigner);
-            }
-        }
+            ICallbackSigner callbackSigner => CreateSigner(callbackSigner, out handle),
+            SignerInfo signerInfo => CreateSignerFromInfo(signerInfo),
+            _ => throw new ArgumentException($"Unsupported signer type: {signer.GetType().FullName}", nameof(signer)),
+        };
     }
 
     /// <summary>
@@ -216,7 +149,7 @@ public sealed class Signer : IDisposable
     private static unsafe nint Sign(void* context, byte* data, nuint len, byte* signature, nuint sig_max_size)
     {
         GCHandle handle = GCHandle.FromIntPtr((nint)context);
-        if (handle.Target is ISigner signer)
+        if (handle.Target is ICallbackSigner signer)
         {
             var span = new ReadOnlySpan<byte>(data, (int)len);
             var hash = new Span<byte>(signature, (int)sig_max_size);
@@ -225,10 +158,10 @@ public sealed class Signer : IDisposable
         return -1;
     }
 
-    public Signer CreateRSASigner(X509Certificate2Collection certifciates, RSA algorithm, Uri? TimeAuthorityUrl = null)
+    public Signer(X509Certificate2Collection certificates, RSA algorithm, Uri? timeAuthorityUrl = null)
     {
         StringBuilder builder = new();
-        foreach (var cert in certifciates)
+        foreach (var cert in certificates)
         {
             // Console.WriteLine("Subject = {0} Issuer = {1} Expiry = {2}", cert.Subject, cert.Issuer, cert.GetExpirationDateString());
             builder.AppendLine(cert.ExportCertificatePem());
@@ -242,14 +175,15 @@ public sealed class Signer : IDisposable
         {
             unsafe
             {
-                fixed (byte* taUrlBytes = TimeAuthorityUrl == null ? null : Encoding.UTF8.GetBytes(TimeAuthorityUrl.OriginalString))
+                fixed (byte* taUrlBytes = timeAuthorityUrl == null ? null : Encoding.UTF8.GetBytes(timeAuthorityUrl.OriginalString))
                 fixed (byte* certsBytes = Encoding.UTF8.GetBytes(certs))
                 {
                     var c2paSigner = C2paBindings.signer_create((void*)GCHandle.ToIntPtr(handle), &RSASign, alg, (sbyte*)certsBytes, (sbyte*)taUrlBytes);
                     if (c2paSigner == null)
                         C2pa.CheckError();
                     created = true;
-                    return new Signer(c2paSigner, handle);
+                    signer = c2paSigner;
+                    handles = new GCHandleCollection { handle };
                 }
             }
         }
@@ -320,4 +254,75 @@ public sealed class Signer : IDisposable
             Marshal.FreeHGlobal(arrayPointer);
     }
 
+    private static unsafe C2paSigner* CreateSigner(ICallbackSigner signer, out GCHandle handle)
+    {
+        fixed (byte* certs = Encoding.UTF8.GetBytes(signer.Certs))
+        fixed (byte* taUrl = signer.TimeAuthorityUrl == null ? null : Encoding.UTF8.GetBytes(signer.TimeAuthorityUrl.OriginalString))
+        {
+            handle = GCHandle.Alloc(signer);
+            var c2paSigner = C2paBindings.signer_create((void*)(nint)handle, &Sign, signer.Alg, (sbyte*)certs, (sbyte*)taUrl);
+            if (c2paSigner == null)
+            {
+                handle.Free();
+                C2pa.CheckError();
+            }
+            return c2paSigner;
+        }
+    }
+
+    private static unsafe C2paSigner* CreateSignerFromInfo(SignerInfo signerInfo)
+    {
+        var algName = signerInfo.Alg.ToString().ToLowerInvariant();
+        fixed (byte* algBytes = Encoding.UTF8.GetBytes(algName))
+        fixed (byte* certBytes = Encoding.UTF8.GetBytes(signerInfo.Certs))
+        fixed (byte* keyBytes = Encoding.UTF8.GetBytes(signerInfo.PrivateKey))
+        fixed (byte* taBytes = signerInfo.TimeAuthorityUrl == null ? null : Encoding.UTF8.GetBytes(signerInfo.TimeAuthorityUrl.OriginalString))
+        {
+            var info = new C2paSignerInfo
+            {
+                alg = (sbyte*)algBytes,
+                sign_cert = (sbyte*)certBytes,
+                private_key = (sbyte*)keyBytes,
+                ta_url = (sbyte*)taBytes,
+            };
+            var c2paSigner = C2paBindings.signer_from_info(&info);
+            if (c2paSigner == null)
+                C2pa.CheckError();
+            return c2paSigner;
+        }
+    }
+
+    private static unsafe C2paSigner* CreateIdentitySigner(
+        C2paSigner* c2paSigner,
+        C2paSigner* identitySigner,
+        IReadOnlyList<string>? referencedAssertions = null,
+        IReadOnlyList<string>? roles = null)
+    {
+        var referencedAssertionPointers = Array.Empty<nint>();
+        var rolePointers = Array.Empty<nint>();
+        nint referencedAssertionsArray = 0;
+        nint rolesArray = 0;
+
+        try
+        {
+            referencedAssertionsArray = CreateNullTerminatedUtf8Array(referencedAssertions, out referencedAssertionPointers);
+            rolesArray = CreateNullTerminatedUtf8Array(roles, out rolePointers);
+
+            var combinedSigner = C2paBindings.identity_signer_create(
+                c2paSigner,
+                identitySigner,
+                (sbyte**)referencedAssertionsArray,
+                (sbyte**)rolesArray);
+
+            if (combinedSigner == null)
+                C2pa.CheckError();
+
+            return combinedSigner;
+        }
+        finally
+        {
+            FreeUtf8Array(referencedAssertionsArray, referencedAssertionPointers);
+            FreeUtf8Array(rolesArray, rolePointers);
+        }
+    }
 }

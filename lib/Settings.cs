@@ -25,6 +25,11 @@ public sealed class C2paSettings : IDisposable
         }
     }
 
+    public C2paSettings(string contents, string format = "json") : this()
+    {
+        Update(contents, format);
+    }
+
     /// <summary>
     /// Updates this settings object from a serialized representation.
     /// </summary>

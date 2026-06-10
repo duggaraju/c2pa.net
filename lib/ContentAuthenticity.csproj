@@ -27,6 +27,11 @@
     <DefineConstants>OSX</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>ContentAuthenticity.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+  <ItemGroup>
     <BindingsPlatform Include="win-x64">
       <CargoTarget>x86_64-pc-windows-msvc</CargoTarget>
       <NativeLibrary>c2pa_c.dll</NativeLibrary>

@@ -92,9 +92,15 @@ var definition = new ManifestDefinition
     ],
 };
 
-// Provide an ISigner implementation (see `example/` projects for working signers,
-// including local PEM/key signers and Azure Key Vault).
-ISigner signer = /* new FileSigner(certPem, keyPem, tsaUrl) */ ...;
+// Provide a signer using either:
+// - SignerInfo (simplest when you already have cert/key PEM strings), or
+// - a custom class implementing ICallbackSigner (for external/HSM/remote signing).
+// This example uses SignerInfo.
+var signer = new SignerInfo(
+    SigningAlg.Ps256,
+    File.ReadAllText("./certs/rs256.pub"),
+    File.ReadAllText("./certs/rs256.pem"),
+    new Uri("https://timestamp.digicert.com"));
 
 // Configure a context with the signer (and any other shared options).
 using var contextBuilder = new ContextBuilder();

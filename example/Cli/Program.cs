@@ -268,7 +268,7 @@ class Program
             Console.WriteLine("Using file-based signer with provided certificate and key");
             var certContent = File.ReadAllText(certFile.FullName);
             var keyContent = File.ReadAllText(keyFile.FullName);
-            // using var signer = Signer.FromInfo(alg, certContent, keyContent, tsaUrl);
+            // using var signer = new Signer(new SignerInfo(alg, certContent, keyContent, tsaUrl));
             using var signer = new FileSigner(certContent, keyContent, tsaUrl);
             var alg = signer.Alg;
             Console.WriteLine($"Detected signing algorithm: {alg}");

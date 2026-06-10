@@ -18,7 +18,7 @@ namespace Cli;
 ///
 /// The algorithm is inferred from the certificate/public key (and key size where applicable).
 /// </remarks>
-internal sealed class FileSigner : ISigner, IDisposable
+internal sealed class FileSigner : ICallbackSigner, IDisposable
 {
     private readonly string _certs;
     private readonly Uri? _tsaUrl;

@@ -41,16 +41,15 @@ public sealed class SignerTests
         using var source = new MemoryStream(inputBytes);
         using var dest = new MemoryStream();
 
-        var signerImpl = new CountingRsaSigner();
-        using var signer = Signer.From(signerImpl);
+        var signer = new CountingRsaSigner();
 
         // Act
-        var manifestBytes = builder.Sign(signer, source, dest, "image/jpeg");
+        var manifestBytes = builder.Sign(source, dest, "image/jpeg", signer);
 
         // Assert
         Assert.NotNull(manifestBytes);
         Assert.NotEmpty(manifestBytes);
-        Assert.True(signerImpl.CallCount > 0);
+        Assert.True(signer.CallCount > 0);
     }
 
     [Fact]
@@ -60,30 +59,47 @@ public sealed class SignerTests
         var signerImpl = new CountingRsaSigner();
 
         // Act
-        using var signer = Signer.From(signerImpl);
+        using var signer = new Signer(signerImpl);
 
         // Assert
-        var handleField = typeof(Signer).GetField("handle", BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.NotNull(handleField);
+        var handles = GetHandles(signer);
+        Assert.Single(handles);
+        Assert.True(handles[0].IsAllocated);
+        Assert.Same(signerImpl, handles[0].Target);
+    }
 
-        var handleValue = (GCHandle)handleField!.GetValue(signer)!;
-        Assert.True(handleValue.IsAllocated);
-        Assert.Same(signerImpl, handleValue.Target);
+    [Fact]
+    public void From_WithSignerInfo_CreatesNativeSignerWithoutCallbackHandle()
+    {
+        var keyPath = Path.Combine(AppContext.BaseDirectory, "certs", "rs256.pem");
+        var certPath = Path.Combine(AppContext.BaseDirectory, "certs", "rs256.pub");
+
+        var signerInfo = new SignerInfo(
+            SigningAlg.Ps256,
+            File.ReadAllText(certPath),
+            File.ReadAllText(keyPath));
+
+        using var signer = new Signer(signerInfo);
+
+        var handles = GetHandles(signer);
+        Assert.Empty(handles);
+        Assert.True(signer.ReserveSize >= 0);
     }
 
     [Fact]
     public void FromIdentity_WithManagedSigners_CreatesCombinedSignerOrThrowsNativeException()
     {
-        var c2paSigner = new CountingRsaSigner();
-        var identitySigner = new CountingRsaSigner();
+        using var c2paSigner = new CountingRsaSigner();
+        using var identitySigner = new CountingRsaSigner();
+        var options = new SigningOptions(
+            C2paSigner: c2paSigner,
+            IdentitySigner: identitySigner,
+            ReferencedAssertions: ["c2pa.actions"],
+            Roles: ["creator"]);
 
         var exception = Record.Exception(() =>
         {
-            using var signer = Signer.FromIdentity(
-                c2paSigner,
-                identitySigner,
-                ["c2pa.actions"],
-                ["creator"]);
+            using var signer = new Signer(options);
 
             Assert.True(signer.ReserveSize >= 0);
         });
@@ -96,30 +112,28 @@ public sealed class SignerTests
     {
         using var c2paSigner = new CountingRsaSigner();
         using var identitySigner = new CountingRsaSigner();
+        var options = new SigningOptions(
+            C2paSigner: c2paSigner,
+            IdentitySigner: identitySigner,
+            ReferencedAssertions: ["c2pa.actions"],
+            Roles: ["creator"]);
 
-        using var signer = Signer.FromIdentity(
-            c2paSigner,
-            identitySigner,
-            ["c2pa.actions"],
-            ["creator"]);
+        using var signer = new Signer(options);
 
-        var identitySignerField = typeof(Signer).GetField("identitySigner", BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.NotNull(identitySignerField);
-
-        var childSigner = Assert.IsType<Signer>(identitySignerField!.GetValue(signer));
-
-        var handleField = typeof(Signer).GetField("handle", BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.NotNull(handleField);
-
-        var childHandle = (GCHandle)handleField!.GetValue(childSigner)!;
-        Assert.True(childHandle.IsAllocated);
-
-        var nestedChildSigner = Assert.IsType<Signer>(identitySignerField.GetValue(childSigner));
-        var nestedHandle = (GCHandle)handleField.GetValue(nestedChildSigner)!;
-        Assert.True(nestedHandle.IsAllocated);
+        var handles = GetHandles(signer);
+        Assert.Equal(2, handles.Count);
+        Assert.Contains(handles, h => h.IsAllocated && ReferenceEquals(h.Target, c2paSigner));
+        Assert.Contains(handles, h => h.IsAllocated && ReferenceEquals(h.Target, identitySigner));
     }
 
-    private sealed class CountingRsaSigner : ISigner, IDisposable
+    private static GCHandleCollection GetHandles(Signer signer)
+    {
+        var field = typeof(Signer).GetField("handles", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(field);
+        return Assert.IsType<GCHandleCollection>(field!.GetValue(signer));
+    }
+
+    private sealed class CountingRsaSigner : ICallbackSigner, IDisposable
     {
         private readonly RSA _key;
 

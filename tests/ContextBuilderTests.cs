@@ -14,7 +14,7 @@ public class ContextBuilderTests
         using var builder = new ContextBuilder();
         Func<C2paProgressPhase, uint, uint, int> callback = (_, _, _) => 1;
         using var signerImpl = new TestSigner();
-        using var signer = Signer.From(signerImpl);
+        using var signer = new Signer(signerImpl);
         using var resolver = new HttpResolver(new HttpClient());
 
         builder.SetSigner(signer);
@@ -77,7 +77,7 @@ public class ContextBuilderTests
     {
         using var builder = new ContextBuilder();
         using var signerImpl = new TestSigner();
-        using var signer = Signer.From(signerImpl);
+        using var signer = new Signer(signerImpl);
         using var resolver = new HttpResolver(new HttpClient());
 
         builder.SetSigner(signer);
@@ -88,8 +88,8 @@ public class ContextBuilderTests
         Assert.Contains(builderHandles, handle => handle.IsAllocated && ReferenceEquals(handle.Target, signerImpl));
         Assert.Contains(builderHandles, IsResolverHandle);
 
-        var signerHandle = GetSignerHandle(signer);
-        Assert.False(signerHandle.IsAllocated);
+        var signerHandles = GetSignerHandles(signer);
+        Assert.Empty(signerHandles);
     }
 
     private static GCHandleCollection GetHandles(object instance)
@@ -99,11 +99,11 @@ public class ContextBuilderTests
         return Assert.IsType<GCHandleCollection>(field!.GetValue(instance));
     }
 
-    private static GCHandle GetSignerHandle(Signer signer)
+    private static GCHandleCollection GetSignerHandles(Signer signer)
     {
-        var field = typeof(Signer).GetField("handle", BindingFlags.Instance | BindingFlags.NonPublic);
+        var field = typeof(Signer).GetField("handles", BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.NotNull(field);
-        return (GCHandle)field!.GetValue(signer)!;
+        return Assert.IsType<GCHandleCollection>(field!.GetValue(signer));
     }
 
     private static bool IsResolverHandle(GCHandle handle)
@@ -111,7 +111,7 @@ public class ContextBuilderTests
         return handle.IsAllocated && handle.Target?.GetType().Name == "C2paHttpResolver";
     }
 
-    private sealed class TestSigner : ISigner, IDisposable
+    private sealed class TestSigner : ICallbackSigner, IDisposable
     {
         private readonly RSA key;
 

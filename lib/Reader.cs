@@ -21,7 +21,7 @@ public sealed partial class Reader : IDisposable
     }
 
     /// <summary>
-    /// Creates a new bare <see cref="Reader"/> with default settings.
+    /// Creates a new bare <see cref="Reader"/> with default context and settings.
     /// Use <see cref="Reader(Context)"/> to construct a reader bound to an
     /// explicit <see cref="Context"/>.
     /// </summary>
@@ -79,6 +79,9 @@ public sealed partial class Reader : IDisposable
         return this;
     }
 
+    /// <summary>
+    /// Configures this reader from a stream.
+    /// </summary>
     public Reader WithStream(Stream stream, string format)
     {
         unsafe
@@ -95,12 +98,20 @@ public sealed partial class Reader : IDisposable
         return this;
     }
 
-    public Reader WithFile(string path)
+    /// <summary>
+    /// Configures this reader from a file path.
+    /// If <paramref name="format"/> is null, the format is inferred from the
+    /// file extension.
+    /// </summary>
+    public Reader WithFile(string path, string? format = null)
     {
         using var stream = File.OpenRead(path);
-        return WithStream(stream, path.GetMimeType());
+        return WithStream(stream, format ?? path.GetMimeType());
     }
 
+    /// <summary>
+    /// Configures this reader from a stream and detached manifest bytes.
+    /// </summary>
     public Reader WithStreamAndManifest(Stream stream, string format, ReadOnlySpan<byte> manifest)
     {
         unsafe

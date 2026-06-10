@@ -468,7 +468,7 @@ public class PerformanceTests
         """;
     }
 
-    public sealed class TestSigner : ISigner, IDisposable
+    public sealed class TestSigner : ICallbackSigner, IDisposable
     {
         private readonly RSA _key;
 
@@ -490,8 +490,6 @@ public class PerformanceTests
         public string Certs { get; } = File.ReadAllText("certs/rs256.pub");
 
         public Uri? TimeAuthorityUrl { get; }
-
-        public bool UseOcsp { get; }
 
         public int Sign(ReadOnlySpan<byte> data, Span<byte> hash)
         {
@@ -515,7 +513,7 @@ public class PerformanceTests
         _output.WriteLine("Running test: {0} {1} times", testDescription, num_iterations);
         string inputFile = "video1_no_manifest.mp4";
         string outputFile = "output.mp4";
-        ISigner signer = new TestSigner();
+        var signer = new TestSigner();
         var inputFileBuffer = use_buffer_api ? File.ReadAllBytes(inputFile) : null;
         string mimeType = inputFile.GetMimeType();
 
@@ -549,7 +547,7 @@ public class PerformanceTests
             {
                 var inputStream = new MemoryStream(inputFileBuffer!);
                 var outputStream = new MemoryStream();
-                builder.Sign(signer, inputStream, outputStream, mimeType);
+                builder.Sign(inputStream, outputStream, mimeType, signer);
                 outputStream.Position = 0;
                 using var readerCtx = new Context();
                 var reader = new Reader(readerCtx).WithStream(outputStream, mimeType);
@@ -562,7 +560,7 @@ public class PerformanceTests
                     File.Delete(outputFile);
                 }
 
-                builder.Sign(signer, inputFile, outputFile);
+                builder.Sign(inputFile, outputFile, signer: signer);
                 using var readerCtx = new Context();
                 var reader = new Reader(readerCtx).WithFile(outputFile);
                 Assert.NotNull(reader.Json);
