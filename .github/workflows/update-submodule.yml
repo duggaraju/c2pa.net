@@ -211,6 +211,27 @@ jobs:
 
               console.log(`Created PR #${pr.number}: ${pr.html_url}`);
 
+              // Prefer linear history by requesting auto-merge with rebase.
+              // This will take effect when branch protection requirements are satisfied.
+              try {
+                await github.graphql(
+                  `mutation($pullRequestId: ID!) {
+                    enablePullRequestAutoMerge(input: {
+                      pullRequestId: $pullRequestId,
+                      mergeMethod: REBASE
+                    }) {
+                      pullRequest {
+                        number
+                      }
+                    }
+                  }`,
+                  { pullRequestId: pr.node_id }
+                );
+                console.log(`Enabled auto-merge (REBASE) for PR #${pr.number}`);
+              } catch (autoMergeError) {
+                console.log(`Could not enable auto-merge with REBASE for PR #${pr.number}: ${autoMergeError.message}`);
+              }
+
               // Add labels to the PR
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
