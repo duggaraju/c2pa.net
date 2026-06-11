@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 env:
@@ -263,6 +263,15 @@ jobs:
 
           echo "Publishing merged package to NuGet.org: $MERGED_NUPKG"
           dotnet nuget push "$MERGED_NUPKG" --api-key "${{ secrets.NUGET_API_KEY }}" --source "https://api.nuget.org/v3/index.json" --skip-duplicate
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            ${{ env.MERGED_NUPKG }}
 
   # Security scanning
   security-scan:
