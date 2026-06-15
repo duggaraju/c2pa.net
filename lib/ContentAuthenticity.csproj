@@ -152,8 +152,10 @@
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
       <!-- Opt-in: Release-only Cargo profile tuning. -->
       <CargoEnvironmentVariables Condition="'$(Configuration)' == 'Release' and '$(EnableCargoReleaseOptimizations)' == 'true'">CARGO_PROFILE_RELEASE_OPT_LEVEL=z;CARGO_PROFILE_RELEASE_STRIP=symbols;CARGO_PROFILE_RELEASE_LTO=thin</CargoEnvironmentVariables>
+      <!-- Pass all targets in a single cargo invocation; cargo builds them in parallel internally -->
+      <CargoTargetArgs>@(HostArchitecture->'--target %(CargoTarget)', ' ')</CargoTargetArgs>
     </PropertyGroup>
-    <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto,http,add_thumbnails --target %(HostArchitecture.CargoTarget) -p c2pa-c-ffi -p export_schema" EnvironmentVariables="$(CargoEnvironmentVariables)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/" />
+    <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto,http,add_thumbnails $(CargoTargetArgs) -p c2pa-c-ffi" EnvironmentVariables="$(CargoEnvironmentVariables)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/" />
   </Target>
 
   <Target Name="GenerateSchema" DependsOnTargets="Cargo" Outputs="@(SchemaFile)" Inputs="../c2pa-rs/export_schema/Cargo.toml">
@@ -162,8 +164,8 @@
     </ItemGroup>
     <PropertyGroup>
       <CargoTarget>%(FirstArch.CargoTarget)</CargoTarget>
-      <SchemaGenerator>$(MSBuildThisFileDirectory)../c2pa-rs/target/$(CargoTarget)/$(Configuration.ToLower())/export_schema</SchemaGenerator>
+      <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
     </PropertyGroup>
-    <Exec Command="$(SchemaGenerator)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs" />
+    <Exec Command="cargo run $(CargoArgs) --no-default-features --features c2pa/rust_native_crypto,c2pa/json_schema --target $(CargoTarget) -p export_schema" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs" />
   </Target>
 </Project>
