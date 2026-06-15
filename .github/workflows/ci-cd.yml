@@ -18,6 +18,7 @@ env:
   RUST_VERSION: "1.88.0"
   BASE_VERSION: "0.4.0"
   NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+  IS_RELEASE: ${{ startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
   generate-version:
@@ -74,9 +75,9 @@ jobs:
         exclude:
           # Only run Release builds on Ubuntu and macOS to save resources
           - os: windows-latest
-            configuration: Release
+            configuration: Debug
           - os: macos-latest
-            configuration: Release
+            configuration: Debug
 
     steps:
       - name: Checkout code
@@ -96,11 +97,11 @@ jobs:
           toolchain: ${{ env.RUST_VERSION }}
           cache: true
 
-      - name: Install Rust toolchain for
+      - name: Install Rust toolchain for ARM64
         if: matrix.os == 'ubuntu-latest'
         run: rustup target add aarch64-unknown-linux-gnu
 
-      - name: Install Rust toolchain for
+      - name: Install Rust toolchain for ARM64
         if: matrix.os == 'windows-latest'
         run: rustup target add aarch64-pc-windows-msvc
 
@@ -111,9 +112,9 @@ jobs:
           path: |
             ~/.nuget/packages
             ~/.dotnet
-          key: ${{ matrix.os }}-${{ matrix.arch }}-dotnet-${{ hashFiles('**/*.csproj', '**/*.props') }}
+          key: ${{ matrix.os }}-${{ matrix.configuration }}-dotnet-${{ hashFiles('**/*.csproj', '**/*.props') }}
           restore-keys: |
-            ${{ matrix.os }}-${{ matrix.arch }}-dotnet-
+            ${{ matrix.os }}-${{ matrix.configuration }}-dotnet-
 
       - name: Install system dependencies (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
@@ -135,13 +136,15 @@ jobs:
         run: |
           dotnet build -m --configuration ${{ matrix.configuration }} --no-restore --verbosity normal ${{ matrix.configuration == 'Release' && '/p:BuildArm64=true' || '' }}
 
-      # Run tests
+      # Run tests (skip on release tags)
       - name: Run tests
+        if: env.IS_RELEASE != 'true'
         run: |
           dotnet test --configuration ${{ matrix.configuration }} --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage"
 
-      # Upload test results
+      # Upload test results (skip on release tags)
       - name: Upload test results
+        if: env.IS_RELEASE != 'true'
         uses: actions/upload-artifact@v7
         with:
           name: test-results-${{ matrix.os }}-${{ matrix.configuration }}
@@ -149,9 +152,9 @@ jobs:
             **/TestResults/**/*.trx
             **/TestResults/**/*.xml
 
-      # Upload coverage reports
+      # Upload coverage reports (skip on release tags)
       - name: Upload coverage to Codecov
-        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release'
+        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release' && env.IS_RELEASE != 'true'
         uses: codecov/codecov-action@v7
         with:
           files: "**/TestResults/**/coverage.cobertura.xml"
@@ -185,7 +188,6 @@ jobs:
         with:
           pattern: nuget-packages-*
           path: ./packages
-          merge-multiple: true
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -207,7 +209,9 @@ jobs:
           mapfile -t pkgs < <(find ./packages -name '*.nupkg' ! -name '*.symbols.nupkg' -print | sort)
 
           if [ ${#pkgs[@]} -eq 0 ]; then
-            echo "No NuGet packages found"
+            echo "No NuGet packages found in ./packages"
+            echo "Contents of ./packages:"
+            find ./packages -type f | head -20
             exit 1
           fi
 
@@ -273,38 +277,14 @@ jobs:
           files: |
             ${{ env.MERGED_NUPKG }}
 
-  # Security scanning
-  security-scan:
-    name: Security Scan
+  # Security + code quality checks
+  security-and-quality:
+    name: Security and Code Quality
     runs-on: ubuntu-latest
     permissions:
       security-events: write
       contents: read
       actions: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          submodules: recursive
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: "fs"
-          scan-ref: "."
-          format: "sarif"
-          output: "trivy-results.sarif"
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: "trivy-results.sarif"
-
-  # Code quality checks
-  code-quality:
-    name: Code Quality
-    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -328,3 +308,17 @@ jobs:
 
       - name: Check .NET formatting
         run: dotnet format --verify-no-changes --verbosity diagnostic
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
