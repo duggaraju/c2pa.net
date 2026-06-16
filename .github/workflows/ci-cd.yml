@@ -164,7 +164,7 @@ jobs:
       - name: Create NuGet packages
         if: matrix.configuration == 'Release'
         run: |
-          dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-source -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
+          dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-source -p:BuildArm64=true -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
 
       # Upload NuGet packages as artifacts
       - name: Upload NuGet packages
