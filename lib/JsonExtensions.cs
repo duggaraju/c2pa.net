@@ -52,8 +52,6 @@ public static class JsonExtensions
         {
             "c2pa.actions" => typeof(ActionsAssertion),
             "c2pa.actions.v2" => typeof(ActionsAssertionV2),
-            "c2pa.thumbnail" => typeof(ThumbnailAssertion),
-            "c2pa.training-mining" => typeof(TrainingAssertion),
             "c2pa.soft-binding" => typeof(SoftBindingAssertion),
             "c2pa.asset-type" => typeof(AssetTypeAssertion),
             "c2pa.asset-ref" => typeof(AssetReferenceAssertion),

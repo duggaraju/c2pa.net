@@ -32,70 +32,34 @@ public abstract class Assertion<T> : Assertion where T : notnull
     }
 }
 
-public record ThumbnailAssertionData(string Thumbnail, string InstanceID);
-
-public class ThumbnailAssertion : Assertion<ThumbnailAssertionData>
+public class ClaimThumbnailAssertion : Assertion<Schema.ThumbnailAssertion>
 {
     [SetsRequiredMembers]
-    public ThumbnailAssertion(ThumbnailAssertionData data) : base("c2pa.thumbnail", data)
+    public ClaimThumbnailAssertion(Schema.ThumbnailAssertion data) : base("c2pa.thumbnail.claim", data)
     {
     }
 }
 
-public class ClaimThumbnailAssertion : Assertion<ThumbnailAssertionData>
+public class IngredientThumbnailAssertion : Assertion<Schema.ThumbnailAssertion>
 {
     [SetsRequiredMembers]
-    public ClaimThumbnailAssertion(ThumbnailAssertionData data) : base("c2pa.thumbnail.claim", data)
+    public IngredientThumbnailAssertion(Schema.ThumbnailAssertion data) : base("c2pa.thumbnail.ingredient", data)
     {
     }
 }
 
-public class IngredientThumbnailAssertion : Assertion<ThumbnailAssertionData>
+public class ActionsAssertion : Assertion<Schema.ActionsAssertionV1>
 {
     [SetsRequiredMembers]
-    public IngredientThumbnailAssertion(ThumbnailAssertionData data) : base("c2pa.thumbnail.ingredient", data)
+    public ActionsAssertion(Schema.ActionsAssertionV1 data) : base("c2pa.actions", data)
     {
     }
 }
 
-public record ActionV1(
-    string Action,
-    [property: JsonPropertyName("softwareAgent")] string? SoftwareAgent = null,
-    [property: JsonPropertyName("digitalSourceType")] string? DigitalSourceType = null,
-    string? Changed = null,
-    string? InstanceID = null,
-    Dictionary<string, object>? Parameters = null);
-
-public record ActionAssertionData(List<ActionV1> Actions);
-
-public class ActionsAssertion : Assertion<ActionAssertionData>
+public class ActionsAssertionV2 : Assertion<Schema.ActionsAssertionV2>
 {
     [SetsRequiredMembers]
-    public ActionsAssertion(ActionAssertionData data) : base("c2pa.actions", data)
-    {
-    }
-}
-
-public record ActionV2(
-    string Action,
-    [property: JsonPropertyName("softwareAgent")] ClaimGeneratorInfo? SoftwareAgent = null,
-    string? Description = null,
-    [property: JsonPropertyName("digitalSourceType")] string? DigitalSourceType = null,
-    DateTimeOffset? When = null,
-    Dictionary<string, object>? Changes = null,
-    List<dynamic>? Actors = null,
-    List<ActionV2>? Related = null,
-    string? Reason = null,
-    Dictionary<string, object>? Parameters = null);
-
-public record Template(string DigitalSourceType, string Action);
-
-public record ActionsAssertionV2Data(List<ActionV2> Actions, bool AllActionsIncluded = false, Template[]? Templates = null);
-
-public class ActionsAssertionV2 : Assertion<ActionsAssertionV2Data>
-{
-    [SetsRequiredMembers]
-    public ActionsAssertionV2(ActionsAssertionV2Data data) : base("c2pa.actions.v2", data)
+    public ActionsAssertionV2(Schema.ActionsAssertionV2 data) : base("c2pa.actions.v2", data)
     {
     }
 }
@@ -159,25 +123,7 @@ public class CreativeWorkAssertion : Assertion<CreativeWorkAssertionData>
     }
 }
 
-public enum Training
-{
-    Allowed,
-    [JsonPropertyName("notAllowed")]
-    NotAllowed,
-    Constrained
-}
-
-public record TrainingAssertionData(Dictionary<string, Training> Entries);
-
-public class TrainingAssertion : Assertion<TrainingAssertionData>
-{
-    [SetsRequiredMembers]
-    public TrainingAssertion(TrainingAssertionData data) : base("c2pa.training-mining", data)
-    {
-    }
-}
-
-public record EmbeddedDataAssertionData(string ContentType, byte[] Data);
+public record EmbeddedDataAssertionData([property: JsonExtensionData] IDictionary<string, object>? Parameters = null);
 
 public class EmbeddedDataAssertion : Assertion<EmbeddedDataAssertionData>
 {
@@ -189,8 +135,8 @@ public class EmbeddedDataAssertion : Assertion<EmbeddedDataAssertionData>
 
 public record MetadataAssertionData(
     [property: JsonPropertyName("@context")] Dictionary<string, string> Context,
-    [property: JsonExtensionData] Dictionary<string, object>? Value,
-    string? CustomMetadataLabel);
+    [property: JsonExtensionData] Dictionary<string, object>? Properties = null
+);
 
 public class MetadataAssertion : Assertion<MetadataAssertionData>
 {
@@ -200,70 +146,47 @@ public class MetadataAssertion : Assertion<MetadataAssertionData>
     }
 }
 
-public record SoftBindingTimespan(nuint Start, nuint End);
-
-public record SoftBindingScope(SoftBindingTimespan? Timespan = null, Schema.Builder.RegionOfInterest? Region = null, string? Extent = null);
-
-public record SoftBindingBlock(SoftBindingScope Scope, string Value);
-
-public record SoftBindingAssertionData(
-    IList<SoftBindingBlock> Blocks,
-    IList<byte> Pad,
-    string? Alg = null,
-    string? AlgParams = null,
-    IList<byte>? Pad2 = null,
-    string? Url = null);
-
-public class SoftBindingAssertion : Assertion<SoftBindingAssertionData>
+public class SoftBindingAssertion : Assertion<Schema.SoftBindingAssertion>
 {
     [SetsRequiredMembers]
-    public SoftBindingAssertion(SoftBindingAssertionData data) : base("c2pa.soft-binding", data)
+    public SoftBindingAssertion(Schema.SoftBindingAssertion data) : base("c2pa.soft-binding", data)
     {
     }
 }
 
-public record CertificateStatusAssertionData(
-    [property: JsonPropertyName("ocspVals")]
-    IList<IList<byte>> OcspVals);
-
-public class CertificateStatusAssertion : Assertion<CertificateStatusAssertionData>
+public class CertificateStatusAssertion : Assertion<Schema.CertificateStatusAssertion>
 {
     [SetsRequiredMembers]
-    public CertificateStatusAssertion(CertificateStatusAssertionData data) : base("c2pa.certificate-status", data)
+    public CertificateStatusAssertion(Schema.CertificateStatusAssertion data) : base("c2pa.certificate-status", data)
     {
     }
 }
 
-public record TimeStampAssertionData(Dictionary<string, byte[]> Timestamps);
-
-public class TimeStampAssertion : Assertion<TimeStampAssertionData>
+public class TimeStampAssertion : Assertion<Dictionary<string, string>>
 {
     [SetsRequiredMembers]
-    public TimeStampAssertion(TimeStampAssertionData data) : base("c2pa.time-stamp", data)
+    public TimeStampAssertion(Dictionary<string, string> data) : base("c2pa.time-stamp", data)
+    {
+    }
+
+    [SetsRequiredMembers]
+    public TimeStampAssertion(Dictionary<string, byte[]> data) : base("c2pa.time-stamp", data.ToDictionary(kvp => kvp.Key, kvp => Convert.ToBase64String(kvp.Value)))
     {
     }
 }
 
-public record ReferenceUri(string Uri);
-
-public record ReferenceSetting(ReferenceUri Reference, string? Description = null);
-
-public record AssetReferenceAssertionData(List<ReferenceSetting> References);
-
-public class AssetReferenceAssertion : Assertion<AssetReferenceAssertionData>
+public class AssetReferenceAssertion : Assertion<Schema.AssetReferenceAssertion>
 {
     [SetsRequiredMembers]
-    public AssetReferenceAssertion(AssetReferenceAssertionData data) : base("c2pa.asset-ref", data)
+    public AssetReferenceAssertion(Schema.AssetReferenceAssertion data) : base("c2pa.asset-ref", data)
     {
     }
 }
 
-public record AssetTypeAssertionData(IList<Schema.Builder.AssetType> Types, Schema.Builder.AssertionMetadata? Metadata = null);
-
-public class AssetTypeAssertion : Assertion<AssetTypeAssertionData>
+public class AssetTypeAssertion : Assertion<Schema.AssetTypeAssertion>
 {
     [SetsRequiredMembers]
-    public AssetTypeAssertion(AssetTypeAssertionData data) : base("c2pa.asset-type", data)
+    public AssetTypeAssertion(Schema.AssetTypeAssertion data) : base("c2pa.asset-type", data)
     {
     }
 }

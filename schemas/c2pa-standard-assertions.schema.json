@@ -1,0 +1,558 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c2pa.net/schemas/c2pa-standard-assertions.schema.json",
+  "title": "C2PA Standard Assertions",
+  "description": "Schema-aligned DTO source for standard assertion payloads based on C2PA specification section 18.",
+  "type": "object",
+  "properties": {
+    "c2pa.actions": { "$ref": "#/definitions/actionsAssertionV1" },
+    "c2pa.actions.v2": { "$ref": "#/definitions/actionsAssertionV2" },
+    "c2pa.alternative-content-representation": { "$ref": "#/definitions/alternativeContentRepresentationAssertion" },
+    "c2pa.assertion.metadata": { "$ref": "#/definitions/assertionMetadataMap" },
+    "c2pa.asset-ref": { "$ref": "#/definitions/assetReferenceAssertion" },
+    "c2pa.asset-type": { "$ref": "#/definitions/assetTypeAssertion" },
+    "c2pa.asset-type.v2": { "$ref": "#/definitions/assetTypeAssertion" },
+    "c2pa.certificate-status": { "$ref": "#/definitions/certificateStatusAssertion" },
+    "c2pa.cloud-data": { "$ref": "#/definitions/cloudDataAssertion" },
+    "c2pa.depthmap.GDepth": { "$ref": "#/definitions/depthMapAssertion" },
+    "c2pa.embedded-data": { "$ref": "#/definitions/embeddedDataAssertion" },
+    "c2pa.external-reference": { "$ref": "#/definitions/externalReferenceAssertion" },
+    "font.info": { "$ref": "#/definitions/fontInfoAssertion" },
+    "c2pa.hash.bmff.v2": { "$ref": "#/definitions/hashBmffAssertion" },
+    "c2pa.hash.bmff.v3": { "$ref": "#/definitions/hashBmffAssertion" },
+    "c2pa.hash.boxes": { "$ref": "#/definitions/hashBoxesAssertion" },
+    "c2pa.hash.collection.data": { "$ref": "#/definitions/hashCollectionDataAssertion" },
+    "c2pa.hash.data": { "$ref": "#/definitions/hashDataAssertion" },
+    "c2pa.hash.multi-asset": { "$ref": "#/definitions/hashMultiAssetAssertion" },
+    "c2pa.ingredient": { "$ref": "#/definitions/ingredientAssertionV1" },
+    "c2pa.ingredient.v2": { "$ref": "#/definitions/ingredientAssertionV2" },
+    "c2pa.ingredient.v3": { "$ref": "#/definitions/ingredientAssertionV3" },
+    "c2pa.session-keys": { "$ref": "#/definitions/sessionKeysAssertion" },
+    "c2pa.soft-binding": { "$ref": "#/definitions/softBindingAssertion" },
+    "c2pa.thumbnail.claim": { "$ref": "#/definitions/thumbnailAssertion" },
+    "c2pa.thumbnail.ingredient": { "$ref": "#/definitions/thumbnailAssertion" },
+    "c2pa.time-stamp": { "$ref": "#/definitions/timeStampAssertion" }
+  },
+  "patternProperties": {
+    "^c2pa\\.thumbnail\\.ingredient(__[0-9]+)?$": { "$ref": "#/definitions/thumbnailAssertion" }
+  },
+  "additionalProperties": true,
+  "definitions": {
+    "hashedUriMap": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" },
+        "hash": { "type": "string" },
+        "alg": { "type": "string" }
+      },
+      "required": ["url", "hash"],
+      "additionalProperties": false
+    },
+    "hashedExtUriMap": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" },
+        "hash": { "type": "string" },
+        "alg": { "type": "string" },
+        "dc:format": { "type": "string" },
+        "size": { "type": "integer" },
+        "data_types": {
+          "type": "array",
+          "items": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "required": ["url", "hash", "alg"],
+      "additionalProperties": false
+    },
+    "assertionMetadataMap": {
+      "type": "object",
+      "properties": {
+        "dateTime": { "type": "string" },
+        "reviewRatings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": { "type": "integer" },
+              "code": { "type": "string" },
+              "explanation": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "reference": { "$ref": "#/definitions/hashedUriMap" },
+        "dataSource": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string" },
+            "details": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "localizations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        },
+        "regionOfInterest": { "type": "object", "additionalProperties": true }
+      },
+      "additionalProperties": true
+    },
+    "softwareAgent": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "icon": { "$ref": "#/definitions/hashedUriMap" },
+        "operating_system": { "type": "string" }
+      },
+      "required": ["name"],
+      "additionalProperties": true
+    },
+    "actionsAssertionV1": {
+      "type": "object",
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/actionItemV1" }
+        },
+        "metadata": { "$ref": "#/definitions/assertionMetadataMap" }
+      },
+      "required": ["actions"],
+      "additionalProperties": false
+    },
+    "actionItemV1": {
+      "type": "object",
+      "properties": {
+        "action": { "type": "string" },
+        "when": { "type": "string" },
+        "softwareAgent": { "type": "string" },
+        "changed": { "type": "string" },
+        "instanceID": { "type": "string" },
+        "digitalSourceType": { "type": "string" },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ingredient": { "$ref": "#/definitions/hashedUriMap" },
+            "description": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "required": ["action"],
+      "additionalProperties": false
+    },
+    "actionsAssertionV2": {
+      "type": "object",
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/actionItemV2" }
+        },
+        "templates": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/actionTemplateV2" }
+        },
+        "softwareAgents": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/softwareAgent" }
+        },
+        "metadata": { "$ref": "#/definitions/assertionMetadataMap" },
+        "allActionsIncluded": { "type": "boolean" }
+      },
+      "required": ["actions"],
+      "additionalProperties": false
+    },
+    "actionItemV2": {
+      "type": "object",
+      "properties": {
+        "action": { "type": "string" },
+        "softwareAgent": { "$ref": "#/definitions/softwareAgent" },
+        "softwareAgentIndex": { "type": "integer" },
+        "description": { "type": "string" },
+        "digitalSourceType": { "type": "string" },
+        "when": { "type": "string" },
+        "changes": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "related": { "type": "array", "items": { "$ref": "#/definitions/actionItemV2" } },
+        "reason": { "type": "string" },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "redacted": { "type": "string" },
+            "ingredients": { "type": "array", "items": { "$ref": "#/definitions/hashedUriMap" } },
+            "sourceLanguage": { "type": "string" },
+            "targetLanguage": { "type": "string" },
+            "multipleInstances": { "type": "boolean" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "required": ["action"],
+      "additionalProperties": false
+    },
+    "actionTemplateV2": {
+      "type": "object",
+      "properties": {
+        "action": { "type": "string" },
+        "softwareAgent": { "$ref": "#/definitions/softwareAgent" },
+        "softwareAgentIndex": { "type": "integer" },
+        "description": { "type": "string" },
+        "digitalSourceType": { "type": "string" },
+        "icon": { "$ref": "#/definitions/hashedUriMap" },
+        "templateParameters": { "type": "object", "additionalProperties": true }
+      },
+      "required": ["action"],
+      "additionalProperties": false
+    },
+    "hashDataAssertion": {
+      "type": "object",
+      "properties": {
+        "alg": { "type": "string" },
+        "hash": { "type": "string" },
+        "pad": { "type": "string" },
+        "pad2": { "type": "string" },
+        "name": { "type": "string" },
+        "exclusions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "start": { "type": "integer" },
+              "length": { "type": "integer" }
+            },
+            "required": ["start", "length"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["hash", "pad"],
+      "additionalProperties": false
+    },
+    "hashBoxesAssertion": {
+      "type": "object",
+      "properties": {
+        "boxes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "names": { "type": "array", "items": { "type": "string" } },
+              "alg": { "type": "string" },
+              "hash": { "type": "string" },
+              "excluded": { "type": "boolean" },
+              "exclusions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "start": { "type": "integer" },
+                    "length": { "type": "integer" },
+                    "boxIndex": { "type": "integer" }
+                  },
+                  "required": ["start", "length"],
+                  "additionalProperties": false
+                }
+              },
+              "pad": { "type": "string" },
+              "pad2": { "type": "string" }
+            },
+            "required": ["names", "hash"],
+            "additionalProperties": false
+          }
+        },
+        "alg": { "type": "string" }
+      },
+      "required": ["boxes"],
+      "additionalProperties": false
+    },
+    "hashBmffAssertion": {
+      "type": "object",
+      "properties": {
+        "exclusions": {
+          "type": "array",
+          "items": { "type": "object", "additionalProperties": true }
+        },
+        "alg": { "type": "string" },
+        "hash": { "type": "string" },
+        "merkle": {
+          "type": "array",
+          "items": { "type": "object", "additionalProperties": true }
+        },
+        "name": { "type": "string" },
+        "sequenceNumber": { "type": "integer" }
+      },
+      "required": ["exclusions"],
+      "additionalProperties": false
+    },
+    "hashCollectionDataAssertion": {
+      "type": "object",
+      "properties": {
+        "uris": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "uri": { "type": "string" },
+              "hash": { "type": "string" },
+              "size": { "type": "integer" },
+              "dc:format": { "type": "string" },
+              "data_types": {
+                "type": "array",
+                "items": { "type": "object", "additionalProperties": true }
+              }
+            },
+            "required": ["uri", "hash"],
+            "additionalProperties": false
+          }
+        },
+        "alg": { "type": "string" },
+        "zip_central_directory_hash": { "type": "string" }
+      },
+      "required": ["uris", "alg"],
+      "additionalProperties": false
+    },
+    "hashMultiAssetAssertion": {
+      "type": "object",
+      "properties": {
+        "parts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "location": { "type": "object", "additionalProperties": true },
+              "hashAssertion": { "$ref": "#/definitions/hashedUriMap" },
+              "optional": { "type": "boolean" }
+            },
+            "required": ["location", "hashAssertion"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["parts"],
+      "additionalProperties": false
+    },
+    "ingredientAssertionV1": {
+      "type": "object",
+      "properties": {
+        "dc:title": { "type": "string" },
+        "dc:format": { "type": "string" },
+        "documentID": { "type": "string" },
+        "instanceID": { "type": "string" },
+        "relationship": { "type": "string" },
+        "c2pa_manifest": { "$ref": "#/definitions/hashedUriMap" },
+        "thumbnail": { "$ref": "#/definitions/hashedUriMap" },
+        "validationStatus": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "metadata": { "$ref": "#/definitions/assertionMetadataMap" }
+      },
+      "required": ["dc:title", "dc:format", "instanceID", "relationship"],
+      "additionalProperties": false
+    },
+    "ingredientAssertionV2": {
+      "type": "object",
+      "properties": {
+        "dc:title": { "type": "string" },
+        "dc:format": { "type": "string" },
+        "relationship": { "type": "string" },
+        "documentID": { "type": "string" },
+        "instanceID": { "type": "string" },
+        "data": {
+          "oneOf": [
+            { "$ref": "#/definitions/hashedUriMap" },
+            { "$ref": "#/definitions/hashedExtUriMap" }
+          ]
+        },
+        "data_types": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "c2pa_manifest": { "$ref": "#/definitions/hashedUriMap" },
+        "thumbnail": { "$ref": "#/definitions/hashedUriMap" },
+        "validationStatus": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "description": { "type": "string" },
+        "informational_URI": { "type": "string" },
+        "metadata": { "$ref": "#/definitions/assertionMetadataMap" }
+      },
+      "required": ["dc:title", "dc:format", "relationship"],
+      "additionalProperties": false
+    },
+    "ingredientAssertionV3": {
+      "type": "object",
+      "properties": {
+        "dc:title": { "type": "string" },
+        "dc:format": { "type": "string" },
+        "relationship": { "type": "string" },
+        "validationResults": { "type": "object", "additionalProperties": true },
+        "instanceID": { "type": "string" },
+        "data": {
+          "oneOf": [
+            { "$ref": "#/definitions/hashedUriMap" },
+            { "$ref": "#/definitions/hashedExtUriMap" }
+          ]
+        },
+        "dataTypes": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "activeManifest": { "$ref": "#/definitions/hashedUriMap" },
+        "claimSignature": { "$ref": "#/definitions/hashedUriMap" },
+        "thumbnail": { "$ref": "#/definitions/hashedUriMap" },
+        "description": { "type": "string" },
+        "informationalURI": { "type": "string" },
+        "softBindingsMatched": { "type": "boolean" },
+        "softBindingAlgorithmsMatched": { "type": "array", "items": { "type": "string" } },
+        "metadata": { "$ref": "#/definitions/assertionMetadataMap" }
+      },
+      "required": ["relationship"],
+      "additionalProperties": false
+    },
+    "softBindingAssertion": {
+      "type": "object",
+      "properties": {
+        "alg": { "type": "string" },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "scope": { "type": "object", "additionalProperties": true },
+              "value": { "type": "string" }
+            },
+            "required": ["scope", "value"],
+            "additionalProperties": false
+          }
+        },
+        "pad": { "type": "string" },
+        "pad2": { "type": "string" },
+        "name": { "type": "string" },
+        "alg-params": { "type": "string" },
+        "bindingMetadata": { "type": "object", "additionalProperties": true }
+      },
+      "required": ["alg", "blocks"],
+      "additionalProperties": false
+    },
+    "timeStampAssertion": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "certificateStatusAssertion": {
+      "type": "object",
+      "properties": {
+        "ocspVals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "contentEncoding": "base64"
+          }
+        }
+      },
+      "required": ["ocspVals"],
+      "additionalProperties": false
+    },
+    "assetReferenceAssertion": {
+      "type": "object",
+      "properties": {
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "reference": {
+                "type": "object",
+                "properties": {
+                  "uri": { "type": "string" }
+                },
+                "required": ["uri"],
+                "additionalProperties": false
+              },
+              "description": { "type": "string" }
+            },
+            "required": ["reference"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["references"],
+      "additionalProperties": false
+    },
+    "assetTypeAssertion": {
+      "type": "object",
+      "properties": {
+        "dc:format": { "type": "string" },
+        "types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string" },
+              "version": { "type": "string" }
+            },
+            "required": ["type"],
+            "additionalProperties": false
+          }
+        },
+        "metadata": { "$ref": "#/definitions/assertionMetadataMap" }
+      },
+      "additionalProperties": false
+    },
+    "cloudDataAssertion": {
+      "type": "object",
+      "properties": {
+        "label": { "type": "string" },
+        "size": { "type": "integer" },
+        "location": { "$ref": "#/definitions/hashedExtUriMap" },
+        "content_type": { "type": "string" },
+        "metadata": { "$ref": "#/definitions/assertionMetadataMap" }
+      },
+      "required": ["label", "size", "location"],
+      "additionalProperties": false
+    },
+    "externalReferenceAssertion": {
+      "type": "object",
+      "properties": {
+        "label": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "uri": { "type": "string" },
+            "content_type": { "type": "string" }
+          },
+          "required": ["uri", "content_type"],
+          "additionalProperties": false
+        },
+        "size": { "type": "integer" },
+        "metadata": { "$ref": "#/definitions/assertionMetadataMap" }
+      },
+      "required": ["location"],
+      "additionalProperties": false
+    },
+    "alternativeContentRepresentationAssertion": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "parameters": { "type": "object", "additionalProperties": true }
+      },
+      "required": ["type", "parameters"],
+      "additionalProperties": false
+    },
+    "thumbnailAssertion": {
+      "type": "object",
+      "properties": {
+        "thumbnailType": { "type": "integer" },
+        "mimeType": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "embeddedDataAssertion": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "depthMapAssertion": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "fontInfoAssertion": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "sessionKeysAssertion": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

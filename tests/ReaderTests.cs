@@ -1,5 +1,6 @@
 namespace ContentAuthenticity.Tests;
 
+using System.Text.Json.Nodes;
 using Xunit.Abstractions;
 
 public class ReaderTests(ITestOutputHelper output)
@@ -65,7 +66,7 @@ public class ReaderTests(ITestOutputHelper output)
     [Fact]
     public void JsonRoundTrip_ShouldPreserveDataIntegrity()
     {
-        var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.png");
+        var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*");
         foreach (var file in files)
         {
             try
@@ -75,12 +76,21 @@ public class ReaderTests(ITestOutputHelper output)
                 var originalJson = reader.Json;
                 var store = reader.Store;
                 var roundTrippedJson = store.ToJson();
-                Assert.Equal(originalJson, roundTrippedJson);
+                AssertJsonEquivalent(originalJson, roundTrippedJson);
             }
             catch (C2paException ex)
             {
                 output.WriteLine($"C2paException for file {file}: {ex}");
             }
         }
+    }
+
+    private static void AssertJsonEquivalent(string expectedJson, string actualJson)
+    {
+        var expectedNode = JsonNode.Parse(expectedJson);
+        var actualNode = JsonNode.Parse(actualJson);
+        Assert.True(
+            JsonNode.DeepEquals(expectedNode, actualNode),
+            $"JSON documents are not equivalent.\nExpected: {expectedJson}\nActual: {actualJson}");
     }
 }

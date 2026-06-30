@@ -228,7 +228,7 @@ public partial class Builder : IDisposable
     /**
     * Adds an action assertion to the manifest.
     */
-    public void AddAction(ActionV2 action)
+    public void AddAction(Schema.ActionItemV2 action)
     {
         AddAction(action.ToJson());
     }
