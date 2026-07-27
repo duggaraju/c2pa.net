@@ -174,6 +174,17 @@ public sealed partial class Reader : IDisposable
         }
     }
 
+    public string CrJson
+    {
+        get
+        {
+            unsafe
+            {
+                return Utils.FromCString(C2paBindings.reader_crjson(handle));
+            }
+        }
+    }
+
     public void ResourceToStream(Uri uri, Stream stream)
     {
         unsafe

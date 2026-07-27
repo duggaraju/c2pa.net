@@ -115,16 +115,43 @@ class Program
             Description = "Pretty print JSON output"
         };
 
+        var detailedOption = new Option<bool>(
+            "--detailed", "-d"
+            )
+        {
+            Description = "Print detailed JSON output"
+        };
+
+        var crJsonOption = new Option<bool>(
+            "--crjson", "-c"
+            )
+        {
+            Description = "Print CRJSON output"
+        };
+
         readCommand.Options.Add(inputOption);
         readCommand.Options.Add(prettyOption);
+        readCommand.Options.Add(detailedOption);
+        readCommand.Options.Add(crJsonOption);
+        readCommand.Validators.Add(result =>
+        {
+            var useDetailed = result.GetValue(detailedOption);
+            var useCrJson = result.GetValue(crJsonOption);
+            if (useDetailed && useCrJson)
+            {
+                result.AddError("Options --detailed/-d and --crjson/-c are mutually exclusive.");
+            }
+        });
         readCommand.SetAction(result =>
         {
             var input = result.GetRequiredValue(inputOption);
             var pretty = result.GetRequiredValue(prettyOption);
+            var useDetailed = result.GetRequiredValue(detailedOption);
+            var useCrJson = result.GetRequiredValue(crJsonOption);
             Console.WriteLine($"Reading C2PA data from: {input.FullName}");
             using var context = contextBuilder.Build();
             using var reader = new Reader(context).WithFile(input.FullName);
-            var json = reader.Json;
+            var json = useDetailed ? reader.DetailedJson : useCrJson ? reader.CrJson : reader.Json;
             FinishProgressLine();
 
             if (pretty)

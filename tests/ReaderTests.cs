@@ -85,6 +85,27 @@ public class ReaderTests(ITestOutputHelper output)
         }
     }
 
+    [Fact]
+    public void CrJson_ShouldBeValidJson()
+    {
+        var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.png");
+        foreach (var file in files)
+        {
+            try
+            {
+                using var ctx = new Context();
+                using var reader = new Reader(ctx).WithFile(file);
+                var crJson = reader.CrJson;
+                output.WriteLine($"CR JSON for file {file}: {crJson}");
+                Assert.NotNull(JsonNode.Parse(crJson));
+            }
+            catch (C2paException ex)
+            {
+                output.WriteLine($"C2paException for file {file}: {ex}");
+            }
+        }
+    }
+
     private static void AssertJsonEquivalent(string expectedJson, string actualJson)
     {
         var expectedNode = JsonNode.Parse(expectedJson);
