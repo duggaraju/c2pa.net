@@ -4,6 +4,8 @@ on:
   schedule:
     # Run once every day
     - cron: '0 0 * * *'
+  pull_request:
+    types: [closed]
   workflow_dispatch:
     inputs:
       tag:
@@ -17,6 +19,7 @@ permissions:
 
 jobs:
   check-and-update:
+    if: github.event_name != 'pull_request'
     name: Check for new c2pa-c-ffi tags
     runs-on: ubuntu-latest
     steps:
@@ -244,3 +247,84 @@ jobs:
               console.error('Error creating PR:', error);
               throw error;
             }
+
+  tag-release:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == github.event.repository.default_branch &&
+      startsWith(github.event.pull_request.head.ref, 'update-c2pa-rs-c2pa-c-ffi-v') &&
+      contains(github.event.pull_request.labels.*.name, 'submodule-update')
+    name: Tag merged submodule update
+    permissions:
+      actions: write
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout merged commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          submodules: true
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release tag
+        id: release
+        run: |
+          git -C c2pa-rs fetch --tags origin
+          UPSTREAM_TAG=$(git -C c2pa-rs tag --points-at HEAD --list 'c2pa-c-ffi-v*' | sort -V | tail -1)
+
+          if [ -z "$UPSTREAM_TAG" ]; then
+            echo "The merged submodule commit does not have a c2pa-c-ffi release tag"
+            exit 1
+          fi
+
+          VERSION=${UPSTREAM_TAG#c2pa-c-ffi-v}
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Cannot derive a valid release version from $UPSTREAM_TAG"
+            exit 1
+          fi
+
+          RELEASE_TAG="v$VERSION"
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          git fetch --tags origin
+
+          if git rev-parse "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            TAG_COMMIT=$(git rev-list -n 1 "$RELEASE_TAG")
+            if [ "$TAG_COMMIT" != "$(git rev-parse HEAD)" ]; then
+              echo "Release tag $RELEASE_TAG already points to $TAG_COMMIT"
+              exit 1
+            fi
+
+            echo "Release tag $RELEASE_TAG already exists on this commit"
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git tag -a "$RELEASE_TAG" -m "Release $RELEASE_TAG"
+          git push origin "$RELEASE_TAG"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      # Events created with GITHUB_TOKEN do not start another workflow, so
+      # explicitly run the release pipeline using the newly created tag ref.
+      - name: Start release workflow
+        if: steps.release.outputs.created == 'true'
+        uses: actions/github-script@v9
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'ci-cd.yml',
+              ref: process.env.RELEASE_TAG
+            });
+            console.log(`Started CI/CD for ${process.env.RELEASE_TAG}`);
