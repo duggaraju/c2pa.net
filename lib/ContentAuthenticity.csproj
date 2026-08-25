@@ -11,10 +11,10 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/duggaraju/c2pa.net</RepositoryUrl>
     <BindingsFolder>Bindings</BindingsFolder>
+    <QuicktypeVersion Condition="'$(QuicktypeVersion)' == ''">26.0.0</QuicktypeVersion>
     <BuildArm64 Condition="'$(BuildArm64)' == ''">false</BuildArm64>
     <EnableCargoReleaseOptimizations Condition="'$(EnableCargoReleaseOptimizations)' == ''">false</EnableCargoReleaseOptimizations>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddNativeRuntimesToPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
@@ -56,9 +56,9 @@
       <CargoTarget>aarch64-apple-darwin</CargoTarget>
       <NativeLibrary>libc2pa_c.dylib</NativeLibrary>
     </BindingsPlatform>
-    <SchemaFile Include="../c2pa-rs/target/schema/Reader.schema.json" />
-    <SchemaFile Include="../c2pa-rs/target/schema/Builder.schema.json" />
-    <SchemaFile Include="../c2pa-rs/target/schema/Settings.schema.json" />
+    <SchemaFile Include="../c2pa-rs/target/schema/Reader.schema.json" Namespace="Reader" GeneratedFile="Reader.cs" />
+    <SchemaFile Include="../c2pa-rs/target/schema/ManifestDefinition.schema.json" Namespace="Builder" GeneratedFile="ManifestDefinition.cs" />
+    <SchemaFile Include="../c2pa-rs/target/schema/Settings.schema.json" Namespace="Settings" GeneratedFile="Settings.cs" />
   </ItemGroup>
 
   <!-- libclang runtime only needed for generation on Linux -->
@@ -76,10 +76,7 @@
       <PackagePath>/</PackagePath>
     </None>
     <Compile Include="*.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\generator\SchemaGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <Compile Include="$(MSBuildProjectDirectory)/Schema/StandardAssertions.cs" />
   </ItemGroup>
 
   <Target Name="ComputeHostArchitecture" BeforeTargets="GetFilesToPack;GenerateNuspec;Pack;PrepareForBuild">
@@ -158,7 +155,7 @@
     <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto,http,add_thumbnails $(CargoTargetArgs) -p c2pa-c-ffi" EnvironmentVariables="$(CargoEnvironmentVariables)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/" />
   </Target>
 
-  <Target Name="GenerateSchema" DependsOnTargets="Cargo" Outputs="@(SchemaFile)" Inputs="../c2pa-rs/export_schema/Cargo.toml">
+  <Target Name="GenerateSchema" DependsOnTargets="Cargo" Inputs="../c2pa-rs/export_schema/Cargo.toml" Outputs="@(SchemaFile)">
     <ItemGroup>
       <FirstArch Include="@(HostArchitecture-&gt;Reverse())" />
     </ItemGroup>
@@ -167,5 +164,29 @@
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
     </PropertyGroup>
     <Exec Command="cargo run $(CargoArgs) --no-default-features --features c2pa/rust_native_crypto,c2pa/json_schema --target $(CargoTarget) -p export_schema" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs" />
+  </Target>
+
+  <Target Name="GenerateSchemaModels" DependsOnTargets="GenerateSchema" Inputs="%(SchemaFile.FullPath)" Outputs="$(MSBuildProjectDirectory)/Schema/%(SchemaFile.GeneratedFile)">
+    <MakeDir Directories="$(MSBuildProjectDirectory)/Schema" />
+    <Exec Command="npx --yes quicktype@$(QuicktypeVersion) --src-lang schema --lang csharp --framework SystemTextJson --namespace ContentAuthenticity.Schema.%(SchemaFile.Namespace) --top-level $([System.IO.Path]::GetFileNameWithoutExtension(%(SchemaFile.Filename))) --out &quot;$(MSBuildProjectDirectory)/Schema/%(SchemaFile.GeneratedFile)&quot; &quot;%(SchemaFile.FullPath)&quot;" />
+    <Message Text="Generated schema models with quicktype $(QuicktypeVersion)" Importance="high" />
+  </Target>
+
+  <Target Name="GenerateStandardAssertionModels" Inputs="$(MSBuildProjectDirectory)/../schemas/c2pa-standard-assertions.schema.json" Outputs="$(MSBuildProjectDirectory)/Schema/StandardAssertions.cs">
+    <MakeDir Directories="$(MSBuildProjectDirectory)/Schema" />
+    <Exec Command="npx --yes quicktype@$(QuicktypeVersion) --src-lang schema --lang csharp --framework SystemTextJson --namespace ContentAuthenticity.Schema --top-level C2PaStandardAssertionsSchema --out &quot;$(MSBuildProjectDirectory)/Schema/StandardAssertions.cs&quot; &quot;$(MSBuildProjectDirectory)/../schemas/c2pa-standard-assertions.schema.json&quot;" />
+    <Message Text="Generated standard assertion models with quicktype $(QuicktypeVersion)" Importance="high" />
+  </Target>
+
+  <Target Name="PrepareGenerateModels" Condition="'$(ForceGenerateModels)' == 'true'">
+    <Delete Files="@(SchemaFile)" />
+  </Target>
+
+  <Target Name="GenerateModels" DependsOnTargets="PrepareGenerateModels;GenerateSchemaModels;GenerateStandardAssertionModels" BeforeTargets="CoreCompile" />
+
+  <Target Name="IncludeGeneratedSchemaModels" BeforeTargets="CoreCompile" DependsOnTargets="GenerateModels">
+    <ItemGroup>
+      <Compile Include="@(SchemaFile->'$(MSBuildProjectDirectory)/Schema/%(GeneratedFile)')" />
+    </ItemGroup>
   </Target>
 </Project>

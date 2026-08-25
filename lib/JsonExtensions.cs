@@ -26,20 +26,31 @@ public static class JsonExtensions
         }
     }
 
-    public static JsonSerializerOptions JsonSerializerOptions(bool indented = true) => new()
+    public static JsonSerializerOptions JsonSerializerOptions(bool indented = true)
     {
-        Converters =
+        var options = new JsonSerializerOptions
         {
-            new AssertionTypeConverter(),
-            new JsonStringEnumConverter()
-        },
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-        WriteIndented = indented,
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        NewLine = "\n"
-    };
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+            WriteIndented = indented,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            NewLine = "\n"
+        };
+
+        options.Converters.Add(new AssertionTypeConverter());
+        AddConverters(options, Schema.Builder.Converter.Settings);
+        AddConverters(options, Schema.Reader.Converter.Settings);
+        AddConverters(options, Schema.Settings.Converter.Settings);
+        options.Converters.Add(new JsonStringEnumConverter());
+        return options;
+    }
+
+    private static void AddConverters(JsonSerializerOptions options, JsonSerializerOptions generatedOptions)
+    {
+        foreach (var converter in generatedOptions.Converters)
+            options.Converters.Add(converter);
+    }
 
     public static T FromJson<T>(this string json)
     {

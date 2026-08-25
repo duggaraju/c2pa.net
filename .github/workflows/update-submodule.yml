@@ -17,6 +17,11 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  DOTNET_VERSION: "10.0.x"
+  RUST_VERSION: "1.88.0"
+  NODE_VERSION: "24"
+
 jobs:
   check-and-update:
     if: github.event_name != 'pull_request'
@@ -34,6 +39,27 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-18 clang-18
 
       - name: Get current submodule commit
         id: current
@@ -137,12 +163,16 @@ jobs:
           # Update the c2pa-rs badge in README.md
           sed -i "s|\[!\[c2pa-rs\](https://img.shields.io/badge/c2pa--rs-[^-]*-informational)\](https://github.com/contentauth/c2pa-rs/releases/tag/[^)]*)|[![c2pa-rs](https://img.shields.io/badge/c2pa--rs-${VERSION}-informational)](https://github.com/contentauth/c2pa-rs/releases/tag/${TARGET_TAG})|" README.md
 
-          # Stage the submodule change and README update
+          # Export the updated Rust schemas and regenerate the committed C# models.
+          dotnet msbuild lib/ContentAuthenticity.csproj /t:GenerateModels /p:Configuration=Release /p:ForceGenerateModels=true /nodeReuse:false
+
+          # Stage the submodule change, README update, and generated models.
           git add README.md
+          git add lib/Schema
           git add -f c2pa-rs
 
           # Check if there are changes to commit
-          if git diff --cached --ignore-submodules=none --quiet -- README.md c2pa-rs; then
+          if git diff --cached --ignore-submodules=none --quiet -- README.md lib/Schema c2pa-rs; then
             echo "No changes to commit"
             exit 0
           fi
@@ -176,11 +206,12 @@ jobs:
 
             ### Changes
 
-            This automated update tracks the upstream c2pa-rs C FFI releases to keep the native bindings up-to-date.
+            This automated update tracks the upstream c2pa-rs C FFI releases and regenerates the committed .NET schema models.
 
             ### Checklist
 
             - [ ] Review the [c2pa-rs release notes](https://github.com/contentauth/c2pa-rs/releases/tag/${targetTag})
+            - [ ] Review generated model changes under lib/Schema
             - [ ] Build and test the changes
             - [ ] Verify native bindings compatibility
             - [ ] Update any related documentation if needed

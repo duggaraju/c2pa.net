@@ -36,7 +36,7 @@ jobs:
             if (changedFiles.some(file => file.startsWith('lib/'))) labels.push('library');
             if (changedFiles.some(file => file.startsWith('tests/'))) labels.push('tests');
             if (changedFiles.some(file => file.startsWith('example/'))) labels.push('example');
-            if (changedFiles.some(file => file.startsWith('generator/'))) labels.push('generator');
+            if (changedFiles.some(file => file.startsWith('lib/Schema/') || file.startsWith('schemas/'))) labels.push('generator');
             if (changedFiles.some(file => file.includes('.csproj') || file.includes('.props') || file.includes('.sln'))) labels.push('build');
             if (changedFiles.some(file => file.startsWith('.github/'))) labels.push('ci/cd');
             if (changedFiles.some(file => file.includes('README') || file.includes('.md'))) labels.push('documentation');

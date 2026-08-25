@@ -8,6 +8,7 @@
 #nullable enable
 #pragma warning disable CS8618
 #pragma warning disable CS8601
+#pragma warning disable CS8602
 #pragma warning disable CS8603
 
 namespace ContentAuthenticity.Schema
@@ -27,111 +28,111 @@ namespace ContentAuthenticity.Schema
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.actions")]
-        public ActionsAssertionV1 C2PaActions { get; set; }
+        public ActionsAssertionV1? C2PaActions { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.actions.v2")]
-        public ActionsAssertionV2 C2PaActionsV2 { get; set; }
+        public ActionsAssertionV2? C2PaActionsV2 { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.alternative-content-representation")]
-        public AlternativeContentRepresentationAssertion C2PaAlternativeContentRepresentation { get; set; }
+        public AlternativeContentRepresentationAssertion? C2PaAlternativeContentRepresentation { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.assertion.metadata")]
-        public AssertionMetadataMap C2PaAssertionMetadata { get; set; }
+        public AssertionMetadataMap? C2PaAssertionMetadata { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.asset-ref")]
-        public AssetReferenceAssertion C2PaAssetRef { get; set; }
+        public AssetReferenceAssertion? C2PaAssetRef { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.asset-type")]
-        public AssetTypeAssertion C2PaAssetType { get; set; }
+        public AssetTypeAssertion? C2PaAssetType { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.asset-type.v2")]
-        public AssetTypeAssertion C2PaAssetTypeV2 { get; set; }
+        public AssetTypeAssertion? C2PaAssetTypeV2 { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.certificate-status")]
-        public CertificateStatusAssertion C2PaCertificateStatus { get; set; }
+        public CertificateStatusAssertion? C2PaCertificateStatus { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.cloud-data")]
-        public CloudDataAssertion C2PaCloudData { get; set; }
+        public CloudDataAssertion? C2PaCloudData { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.depthmap.GDepth")]
-        public Dictionary<string, object> C2PaDepthmapGDepth { get; set; }
+        public Dictionary<string, object>? C2PaDepthmapGDepth { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.embedded-data")]
-        public Dictionary<string, object> C2PaEmbeddedData { get; set; }
+        public Dictionary<string, object>? C2PaEmbeddedData { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.external-reference")]
-        public ExternalReferenceAssertion C2PaExternalReference { get; set; }
+        public ExternalReferenceAssertion? C2PaExternalReference { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.hash.bmff.v2")]
-        public HashBmffAssertion C2PaHashBmffV2 { get; set; }
+        public HashBmffAssertion? C2PaHashBmffV2 { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.hash.bmff.v3")]
-        public HashBmffAssertion C2PaHashBmffV3 { get; set; }
+        public HashBmffAssertion? C2PaHashBmffV3 { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.hash.boxes")]
-        public HashBoxesAssertion C2PaHashBoxes { get; set; }
+        public HashBoxesAssertion? C2PaHashBoxes { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.hash.collection.data")]
-        public HashCollectionDataAssertion C2PaHashCollectionData { get; set; }
+        public HashCollectionDataAssertion? C2PaHashCollectionData { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.hash.data")]
-        public HashDataAssertion C2PaHashData { get; set; }
+        public HashDataAssertion? C2PaHashData { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.hash.multi-asset")]
-        public HashMultiAssetAssertion C2PaHashMultiAsset { get; set; }
+        public HashMultiAssetAssertion? C2PaHashMultiAsset { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.ingredient")]
-        public IngredientAssertionV1 C2PaIngredient { get; set; }
+        public IngredientAssertionV1? C2PaIngredient { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.ingredient.v2")]
-        public IngredientAssertionV2 C2PaIngredientV2 { get; set; }
+        public IngredientAssertionV2? C2PaIngredientV2 { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.ingredient.v3")]
-        public IngredientAssertionV3 C2PaIngredientV3 { get; set; }
+        public IngredientAssertionV3? C2PaIngredientV3 { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.session-keys")]
-        public Dictionary<string, object> C2PaSessionKeys { get; set; }
+        public Dictionary<string, object>? C2PaSessionKeys { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.soft-binding")]
-        public SoftBindingAssertion C2PaSoftBinding { get; set; }
+        public SoftBindingAssertion? C2PaSoftBinding { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.thumbnail.claim")]
-        public ThumbnailAssertion C2PaThumbnailClaim { get; set; }
+        public ThumbnailAssertion? C2PaThumbnailClaim { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.thumbnail.ingredient")]
-        public ThumbnailAssertion C2PaThumbnailIngredient { get; set; }
+        public ThumbnailAssertion? C2PaThumbnailIngredient { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa.time-stamp")]
-        public Dictionary<string, string> C2PaTimeStamp { get; set; }
+        public Dictionary<string, string>? C2PaTimeStamp { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("font.info")]
-        public Dictionary<string, object> FontInfo { get; set; }
+        public Dictionary<string, object>? FontInfo { get; set; }
     }
 
     public partial class ActionsAssertionV1
@@ -141,7 +142,7 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("metadata")]
-        public AssertionMetadataMap Metadata { get; set; }
+        public AssertionMetadataMap? Metadata { get; set; }
     }
 
     public partial class ActionItemV1
@@ -151,45 +152,45 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("changed")]
-        public string Changed { get; set; }
+        public string? Changed { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("digitalSourceType")]
-        public string DigitalSourceType { get; set; }
+        public string? DigitalSourceType { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("instanceID")]
-        public string InstanceId { get; set; }
+        public string? InstanceId { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("parameters")]
-        public PurpleParameters Parameters { get; set; }
+        public PurpleParameters? Parameters { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("softwareAgent")]
-        public string SoftwareAgent { get; set; }
+        public string? SoftwareAgent { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("when")]
-        public string When { get; set; }
+        public string? When { get; set; }
     }
 
     public partial class PurpleParameters
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("description")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("ingredient")]
-        public HashedUriMap Ingredient { get; set; }
+        public HashedUriMap? Ingredient { get; set; }
     }
 
     public partial class HashedUriMap
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("alg")]
-        public string Alg { get; set; }
+        public string? Alg { get; set; }
 
         [JsonPropertyName("hash")]
         public string Hash { get; set; }
@@ -202,49 +203,49 @@ namespace ContentAuthenticity.Schema
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("dataSource")]
-        public DataSource DataSource { get; set; }
+        public DataSource? DataSource { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("dateTime")]
-        public string DateTime { get; set; }
+        public string? DateTime { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("localizations")]
-        public Dictionary<string, string>[] Localizations { get; set; }
+        public Dictionary<string, string>[]? Localizations { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("reference")]
-        public HashedUriMap Reference { get; set; }
+        public HashedUriMap? Reference { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("regionOfInterest")]
-        public Dictionary<string, object> RegionOfInterest { get; set; }
+        public Dictionary<string, object>? RegionOfInterest { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("reviewRatings")]
-        public ReviewRating[] ReviewRatings { get; set; }
+        public ReviewRating[]? ReviewRatings { get; set; }
     }
 
     public partial class DataSource
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("details")]
-        public string Details { get; set; }
+        public string? Details { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("type")]
-        public string Type { get; set; }
+        public string? Type { get; set; }
     }
 
     public partial class ReviewRating
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("code")]
-        public string Code { get; set; }
+        public string? Code { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("explanation")]
-        public string Explanation { get; set; }
+        public string? Explanation { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("value")]
@@ -262,15 +263,15 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("metadata")]
-        public AssertionMetadataMap Metadata { get; set; }
+        public AssertionMetadataMap? Metadata { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("softwareAgents")]
-        public SoftwareAgent[] SoftwareAgents { get; set; }
+        public SoftwareAgent[]? SoftwareAgents { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("templates")]
-        public ActionTemplateV2[] Templates { get; set; }
+        public ActionTemplateV2[]? Templates { get; set; }
     }
 
     public partial class ActionItemV2
@@ -280,31 +281,31 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("changes")]
-        public Dictionary<string, object>[] Changes { get; set; }
+        public Dictionary<string, object>[]? Changes { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("description")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("digitalSourceType")]
-        public string DigitalSourceType { get; set; }
+        public string? DigitalSourceType { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("parameters")]
-        public RelatedParameters Parameters { get; set; }
+        public RelatedParameters? Parameters { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("reason")]
-        public string Reason { get; set; }
+        public string? Reason { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("related")]
-        public ActionItemV2[] Related { get; set; }
+        public ActionItemV2[]? Related { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("softwareAgent")]
-        public SoftwareAgent SoftwareAgent { get; set; }
+        public SoftwareAgent? SoftwareAgent { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("softwareAgentIndex")]
@@ -312,14 +313,14 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("when")]
-        public string When { get; set; }
+        public string? When { get; set; }
     }
 
     public partial class RelatedParameters
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("ingredients")]
-        public HashedUriMap[] Ingredients { get; set; }
+        public HashedUriMap[]? Ingredients { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("multipleInstances")]
@@ -327,33 +328,33 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("redacted")]
-        public string Redacted { get; set; }
+        public string? Redacted { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("sourceLanguage")]
-        public string SourceLanguage { get; set; }
+        public string? SourceLanguage { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("targetLanguage")]
-        public string TargetLanguage { get; set; }
+        public string? TargetLanguage { get; set; }
     }
 
     public partial class SoftwareAgent
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("icon")]
-        public HashedUriMap Icon { get; set; }
+        public HashedUriMap? Icon { get; set; }
 
         [JsonPropertyName("name")]
         public string Name { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("operating_system")]
-        public string OperatingSystem { get; set; }
+        public string? OperatingSystem { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("version")]
-        public string Version { get; set; }
+        public string? Version { get; set; }
     }
 
     public partial class ActionTemplateV2
@@ -363,19 +364,19 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("description")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("digitalSourceType")]
-        public string DigitalSourceType { get; set; }
+        public string? DigitalSourceType { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("icon")]
-        public HashedUriMap Icon { get; set; }
+        public HashedUriMap? Icon { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("softwareAgent")]
-        public SoftwareAgent SoftwareAgent { get; set; }
+        public SoftwareAgent? SoftwareAgent { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("softwareAgentIndex")]
@@ -383,7 +384,7 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("templateParameters")]
-        public Dictionary<string, object> TemplateParameters { get; set; }
+        public Dictionary<string, object>? TemplateParameters { get; set; }
     }
 
     public partial class AlternativeContentRepresentationAssertion
@@ -405,7 +406,7 @@ namespace ContentAuthenticity.Schema
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("description")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [JsonPropertyName("reference")]
         public ReferenceReference Reference { get; set; }
@@ -421,15 +422,15 @@ namespace ContentAuthenticity.Schema
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("dc:format")]
-        public string DcFormat { get; set; }
+        public string? DcFormat { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("metadata")]
-        public AssertionMetadataMap Metadata { get; set; }
+        public AssertionMetadataMap? Metadata { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("types")]
-        public TypeElement[] Types { get; set; }
+        public TypeElement[]? Types { get; set; }
     }
 
     public partial class TypeElement
@@ -439,7 +440,7 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("version")]
-        public string Version { get; set; }
+        public string? Version { get; set; }
     }
 
     public partial class CertificateStatusAssertion
@@ -452,7 +453,7 @@ namespace ContentAuthenticity.Schema
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("content_type")]
-        public string ContentType { get; set; }
+        public string? ContentType { get; set; }
 
         [JsonPropertyName("label")]
         public string Label { get; set; }
@@ -462,7 +463,7 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("metadata")]
-        public AssertionMetadataMap Metadata { get; set; }
+        public AssertionMetadataMap? Metadata { get; set; }
 
         [JsonPropertyName("size")]
         public long Size { get; set; }
@@ -475,11 +476,11 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("data_types")]
-        public Dictionary<string, object>[] DataTypes { get; set; }
+        public Dictionary<string, object>[]? DataTypes { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("dc:format")]
-        public string DcFormat { get; set; }
+        public string? DcFormat { get; set; }
 
         [JsonPropertyName("hash")]
         public string Hash { get; set; }
@@ -496,14 +497,14 @@ namespace ContentAuthenticity.Schema
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("label")]
-        public string Label { get; set; }
+        public string? Label { get; set; }
 
         [JsonPropertyName("location")]
         public Location Location { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("metadata")]
-        public AssertionMetadataMap Metadata { get; set; }
+        public AssertionMetadataMap? Metadata { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("size")]
@@ -523,22 +524,22 @@ namespace ContentAuthenticity.Schema
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("alg")]
-        public string Alg { get; set; }
+        public string? Alg { get; set; }
 
         [JsonPropertyName("exclusions")]
         public Dictionary<string, object>[] Exclusions { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("hash")]
-        public string Hash { get; set; }
+        public string? Hash { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("merkle")]
-        public Dictionary<string, object>[] Merkle { get; set; }
+        public Dictionary<string, object>[]? Merkle { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("sequenceNumber")]
@@ -549,7 +550,7 @@ namespace ContentAuthenticity.Schema
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("alg")]
-        public string Alg { get; set; }
+        public string? Alg { get; set; }
 
         [JsonPropertyName("boxes")]
         public Box[] Boxes { get; set; }
@@ -559,7 +560,7 @@ namespace ContentAuthenticity.Schema
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("alg")]
-        public string Alg { get; set; }
+        public string? Alg { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("excluded")]
@@ -567,7 +568,7 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("exclusions")]
-        public BoxExclusion[] Exclusions { get; set; }
+        public BoxExclusion[]? Exclusions { get; set; }
 
         [JsonPropertyName("hash")]
         public string Hash { get; set; }
@@ -577,11 +578,11 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("pad")]
-        public string Pad { get; set; }
+        public string? Pad { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("pad2")]
-        public string Pad2 { get; set; }
+        public string? Pad2 { get; set; }
     }
 
     public partial class BoxExclusion
@@ -607,18 +608,18 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("zip_central_directory_hash")]
-        public string ZipCentralDirectoryHash { get; set; }
+        public string? ZipCentralDirectoryHash { get; set; }
     }
 
     public partial class Uris
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("data_types")]
-        public Dictionary<string, object>[] DataTypes { get; set; }
+        public Dictionary<string, object>[]? DataTypes { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("dc:format")]
-        public string DcFormat { get; set; }
+        public string? DcFormat { get; set; }
 
         [JsonPropertyName("hash")]
         public string Hash { get; set; }
@@ -635,25 +636,25 @@ namespace ContentAuthenticity.Schema
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("alg")]
-        public string Alg { get; set; }
+        public string? Alg { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("exclusions")]
-        public C2PaHashDataExclusion[] Exclusions { get; set; }
+        public C2PaHashDataExclusion[]? Exclusions { get; set; }
 
         [JsonPropertyName("hash")]
         public string Hash { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [JsonPropertyName("pad")]
         public string Pad { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("pad2")]
-        public string Pad2 { get; set; }
+        public string? Pad2 { get; set; }
     }
 
     public partial class C2PaHashDataExclusion
@@ -688,7 +689,7 @@ namespace ContentAuthenticity.Schema
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa_manifest")]
-        public HashedUriMap C2PaManifest { get; set; }
+        public HashedUriMap? C2PaManifest { get; set; }
 
         [JsonPropertyName("dc:format")]
         public string DcFormat { get; set; }
@@ -698,40 +699,40 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("documentID")]
-        public string DocumentId { get; set; }
+        public string? DocumentId { get; set; }
 
         [JsonPropertyName("instanceID")]
         public string InstanceId { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("metadata")]
-        public AssertionMetadataMap Metadata { get; set; }
+        public AssertionMetadataMap? Metadata { get; set; }
 
         [JsonPropertyName("relationship")]
         public string Relationship { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("thumbnail")]
-        public HashedUriMap Thumbnail { get; set; }
+        public HashedUriMap? Thumbnail { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("validationStatus")]
-        public Dictionary<string, object>[] ValidationStatus { get; set; }
+        public Dictionary<string, object>[]? ValidationStatus { get; set; }
     }
 
     public partial class IngredientAssertionV2
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("c2pa_manifest")]
-        public HashedUriMap C2PaManifest { get; set; }
+        public HashedUriMap? C2PaManifest { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("data")]
-        public DataClass Data { get; set; }
+        public DataClass? Data { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("data_types")]
-        public Dictionary<string, object>[] DataTypes { get; set; }
+        public Dictionary<string, object>[]? DataTypes { get; set; }
 
         [JsonPropertyName("dc:format")]
         public string DcFormat { get; set; }
@@ -741,41 +742,41 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("description")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("documentID")]
-        public string DocumentId { get; set; }
+        public string? DocumentId { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("informational_URI")]
-        public string InformationalUri { get; set; }
+        public string? InformationalUri { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("instanceID")]
-        public string InstanceId { get; set; }
+        public string? InstanceId { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("metadata")]
-        public AssertionMetadataMap Metadata { get; set; }
+        public AssertionMetadataMap? Metadata { get; set; }
 
         [JsonPropertyName("relationship")]
         public string Relationship { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("thumbnail")]
-        public HashedUriMap Thumbnail { get; set; }
+        public HashedUriMap? Thumbnail { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("validationStatus")]
-        public Dictionary<string, object>[] ValidationStatus { get; set; }
+        public Dictionary<string, object>[]? ValidationStatus { get; set; }
     }
 
     public partial class DataClass
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("alg")]
-        public string Alg { get; set; }
+        public string? Alg { get; set; }
 
         [JsonPropertyName("hash")]
         public string Hash { get; set; }
@@ -785,11 +786,11 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("data_types")]
-        public Dictionary<string, object>[] DataTypes { get; set; }
+        public Dictionary<string, object>[]? DataTypes { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("dc:format")]
-        public string DcFormat { get; set; }
+        public string? DcFormat { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("size")]
@@ -800,50 +801,50 @@ namespace ContentAuthenticity.Schema
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("activeManifest")]
-        public HashedUriMap ActiveManifest { get; set; }
+        public HashedUriMap? ActiveManifest { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("claimSignature")]
-        public HashedUriMap ClaimSignature { get; set; }
+        public HashedUriMap? ClaimSignature { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("data")]
-        public DataClass Data { get; set; }
+        public DataClass? Data { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("dataTypes")]
-        public Dictionary<string, object>[] DataTypes { get; set; }
+        public Dictionary<string, object>[]? DataTypes { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("dc:format")]
-        public string DcFormat { get; set; }
+        public string? DcFormat { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("dc:title")]
-        public string DcTitle { get; set; }
+        public string? DcTitle { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("description")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("informationalURI")]
-        public string InformationalUri { get; set; }
+        public string? InformationalUri { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("instanceID")]
-        public string InstanceId { get; set; }
+        public string? InstanceId { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("metadata")]
-        public AssertionMetadataMap Metadata { get; set; }
+        public AssertionMetadataMap? Metadata { get; set; }
 
         [JsonPropertyName("relationship")]
         public string Relationship { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("softBindingAlgorithmsMatched")]
-        public string[] SoftBindingAlgorithmsMatched { get; set; }
+        public string[]? SoftBindingAlgorithmsMatched { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("softBindingsMatched")]
@@ -851,11 +852,11 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("thumbnail")]
-        public HashedUriMap Thumbnail { get; set; }
+        public HashedUriMap? Thumbnail { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("validationResults")]
-        public Dictionary<string, object> ValidationResults { get; set; }
+        public Dictionary<string, object>? ValidationResults { get; set; }
     }
 
     public partial class SoftBindingAssertion
@@ -865,26 +866,26 @@ namespace ContentAuthenticity.Schema
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("alg-params")]
-        public string AlgParams { get; set; }
+        public string? AlgParams { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("bindingMetadata")]
-        public Dictionary<string, object> BindingMetadata { get; set; }
+        public Dictionary<string, object>? BindingMetadata { get; set; }
 
         [JsonPropertyName("blocks")]
         public Block[] Blocks { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("pad")]
-        public string Pad { get; set; }
+        public string? Pad { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("pad2")]
-        public string Pad2 { get; set; }
+        public string? Pad2 { get; set; }
     }
 
     public partial class Block
@@ -900,7 +901,7 @@ namespace ContentAuthenticity.Schema
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("mimeType")]
-        public string MimeType { get; set; }
+        public string? MimeType { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("thumbnailType")]
@@ -929,7 +930,7 @@ namespace ContentAuthenticity.Schema
             },
         };
     }
-
+    
     public class DateOnlyConverter : JsonConverter<DateOnly>
     {
         private readonly string serializationFormat;
@@ -1042,4 +1043,5 @@ namespace ContentAuthenticity.Schema
 }
 #pragma warning restore CS8618
 #pragma warning restore CS8601
+#pragma warning restore CS8602
 #pragma warning restore CS8603

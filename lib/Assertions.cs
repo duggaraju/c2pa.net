@@ -5,7 +5,7 @@ using System.Dynamic;
 
 namespace ContentAuthenticity;
 
-public abstract class Assertion : Schema.Builder.AssertionDefinition
+public abstract class Assertion : Schema.Builder.AssertionElement
 {
     [SetsRequiredMembers]
     protected Assertion(string label, object data)

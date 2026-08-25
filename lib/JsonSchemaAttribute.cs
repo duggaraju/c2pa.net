@@ -2,7 +2,7 @@
 namespace ContentAuthenticity;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
-public sealed class JsonSchemaAttribute : Attribute
+internal sealed class JsonSchemaAttribute : Attribute
 {
     public JsonSchemaAttribute(string schemaPath)
     {
