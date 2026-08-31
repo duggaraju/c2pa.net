@@ -103,7 +103,7 @@ jobs:
 
       - name: Setup Node.js
         if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
 
