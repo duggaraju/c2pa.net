@@ -164,7 +164,7 @@ jobs:
           sed -i "s|\[!\[c2pa-rs\](https://img.shields.io/badge/c2pa--rs-[^-]*-informational)\](https://github.com/contentauth/c2pa-rs/releases/tag/[^)]*)|[![c2pa-rs](https://img.shields.io/badge/c2pa--rs-${VERSION}-informational)](https://github.com/contentauth/c2pa-rs/releases/tag/${TARGET_TAG})|" README.md
 
           # Export the updated Rust schemas and regenerate the committed C# models.
-          dotnet msbuild lib/ContentAuthenticity.csproj /t:GenerateModels /p:Configuration=Release /p:ForceGenerateModels=true /nodeReuse:false
+          RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-A unused-imports" dotnet msbuild lib/ContentAuthenticity.csproj /t:GenerateModels /p:Configuration=Release /p:ForceGenerateModels=true /nodeReuse:false
 
           # Stage the submodule change, README update, and generated models.
           git add README.md
