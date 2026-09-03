@@ -21,6 +21,7 @@ env:
   DOTNET_VERSION: "10.0.x"
   RUST_VERSION: "1.88.0"
   NODE_VERSION: "24"
+  RUSTFLAGS: "-A unused-imports"
 
 jobs:
   check-and-update:
@@ -133,11 +134,12 @@ jobs:
             echo "needed=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Update submodule
+      - name: Prepare update branch
         id: update
         if: steps.check.outputs.needed == 'true'
+        env:
+          TARGET_TAG: ${{ steps.target.outputs.tag }}
         run: |
-          TARGET_TAG="${{ steps.target.outputs.tag }}"
           BRANCH_NAME="update-c2pa-rs-${TARGET_TAG}"
           DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
           if [ -z "$DEFAULT_BRANCH" ]; then
@@ -150,37 +152,42 @@ jobs:
           git fetch origin "$DEFAULT_BRANCH"
           git checkout -B "$BRANCH_NAME" "origin/$DEFAULT_BRANCH"
 
-          # Update the submodule to the target tag
-          cd c2pa-rs
-          git fetch --tags origin
-          git checkout "$TARGET_TAG"
-          cd ..
+      - name: Update submodule
+        if: steps.check.outputs.needed == 'true'
+        env:
+          TARGET_TAG: ${{ steps.target.outputs.tag }}
+        run: |
+          git -C c2pa-rs fetch --tags origin
+          git -C c2pa-rs checkout "$TARGET_TAG"
 
-          # Extract version number from tag (e.g., c2pa-c-ffi-v0.76.0 -> 0.76.0)
-          VERSION=$(echo "$TARGET_TAG" | sed 's/^c2pa-c-ffi-v//')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-          # Update the c2pa-rs badge in README.md
+      - name: Update c2pa-rs badge
+        if: steps.check.outputs.needed == 'true'
+        env:
+          TARGET_TAG: ${{ steps.target.outputs.tag }}
+        run: |
+          VERSION=${TARGET_TAG#c2pa-c-ffi-v}
           sed -i "s|\[!\[c2pa-rs\](https://img.shields.io/badge/c2pa--rs-[^-]*-informational)\](https://github.com/contentauth/c2pa-rs/releases/tag/[^)]*)|[![c2pa-rs](https://img.shields.io/badge/c2pa--rs-${VERSION}-informational)](https://github.com/contentauth/c2pa-rs/releases/tag/${TARGET_TAG})|" README.md
 
-          # Export the updated Rust schemas and regenerate the committed C# models.
-          RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-A unused-imports" dotnet msbuild lib/ContentAuthenticity.csproj /t:GenerateModels /p:Configuration=Release /p:ForceGenerateModels=true /nodeReuse:false
+      - name: Regenerate schema models
+        if: steps.check.outputs.needed == 'true'
+        run: dotnet msbuild lib/ContentAuthenticity.csproj /t:GenerateModels /p:Configuration=Release /p:ForceGenerateModels=true /nodeReuse:false
 
-          # Stage the submodule change, README update, and generated models.
+      - name: Commit and push update
+        if: steps.check.outputs.needed == 'true'
+        env:
+          TARGET_TAG: ${{ steps.target.outputs.tag }}
+          BRANCH_NAME: ${{ steps.update.outputs.branch }}
+        run: |
           git add README.md
           git add lib/Schema
           git add -f c2pa-rs
 
-          # Check if there are changes to commit
           if git diff --cached --ignore-submodules=none --quiet -- README.md lib/Schema c2pa-rs; then
             echo "No changes to commit"
             exit 0
           fi
 
-          # Commit the change
           git commit -m "Update c2pa-rs submodule to $TARGET_TAG"
-
-          # Push the branch (force-with-lease to update existing branch safely)
           git push --force-with-lease origin "$BRANCH_NAME"
 
       - name: Create Pull Request
