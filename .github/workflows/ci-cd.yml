@@ -14,16 +14,13 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
-  packages: write
+  contents: read
 
 env:
   DOTNET_VERSION: "10.0.x"
   RUST_VERSION: "1.88.0"
   RUSTFLAGS: "-A unused-imports"
   BASE_VERSION: "0.4.0"
-  NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-  IS_RELEASE: ${{ startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
   generate-version:
@@ -72,17 +69,31 @@ jobs:
   build-and-test:
     name: Build and Test
     needs: generate-version
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-        configuration: [Debug, Release]
-        exclude:
-          # Only run Release builds on Ubuntu and macOS to save resources
-          - os: windows-latest
-            configuration: Debug
-          - os: macos-latest
-            configuration: Debug
+        include:
+          - runner: windows-latest
+            platform: windows
+            arch: x64
+            build_arm64: true
+            package: true
+          - runner: ubuntu-latest
+            platform: linux
+            arch: x64
+            build_arm64: true
+            package: true
+          - runner: ubuntu-24.04-arm
+            platform: linux
+            arch: arm64
+            build_arm64: false
+            package: false
+          - runner: macos-latest
+            platform: macos
+            arch: arm64
+            build_arm64: false
+            package: true
 
     steps:
       - name: Checkout code
@@ -103,17 +114,17 @@ jobs:
           cache: true
 
       - name: Setup Node.js
-        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release'
+        if: matrix.platform == 'linux' && matrix.arch == 'x64'
         uses: actions/setup-node@v7
         with:
           node-version: '24'
 
       - name: Install Rust toolchain for ARM64
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.platform == 'linux' && matrix.arch == 'x64'
         run: rustup target add aarch64-unknown-linux-gnu
 
       - name: Install Rust toolchain for ARM64
-        if: matrix.os == 'windows-latest'
+        if: matrix.platform == 'windows'
         run: rustup target add aarch64-pc-windows-msvc
 
       # Cache .NET dependencies
@@ -123,72 +134,67 @@ jobs:
           path: |
             ~/.nuget/packages
             ~/.dotnet
-          key: ${{ matrix.os }}-${{ matrix.configuration }}-dotnet-${{ hashFiles('**/*.csproj', '**/*.props') }}
+          key: ${{ matrix.platform }}-${{ matrix.arch }}-Release-dotnet-${{ hashFiles('**/*.csproj', '**/*.props') }}
           restore-keys: |
-            ${{ matrix.os }}-${{ matrix.configuration }}-dotnet-
+            ${{ matrix.platform }}-${{ matrix.arch }}-Release-dotnet-
 
       - name: Install system dependencies (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y llvm-18 clang-18 gcc-aarch64-linux-gnu
+          sudo apt-get install -y llvm-18 clang-18 ${{ matrix.arch == 'x64' && 'gcc-aarch64-linux-gnu' || '' }}
 
       - name: Install system dependencies (macOS)
-        if: matrix.os == 'macos-latest'
+        if: matrix.platform == 'macos'
         run: |
           brew install llvm
 
       # Restore .NET dependencies
       - name: Restore dependencies
-        run: dotnet restore && dotnet tool restore
+        run: dotnet restore /p:HostArchitectureName=${{ matrix.arch }} && dotnet tool restore
 
-      # Build .NET solution (builds both x64 and arm64 if Release)
+      # Package-producing x64 jobs cross-build ARM64; the ARM64 job tests natively.
       - name: Build solution
         run: |
-          dotnet build -m --configuration ${{ matrix.configuration }} --no-restore --verbosity normal ${{ matrix.configuration == 'Release' && '/p:BuildArm64=true' || '' }}
+          dotnet build -m --configuration Release --no-restore --verbosity normal /p:HostArchitectureName=${{ matrix.arch }} /p:BuildArm64=${{ matrix.build_arm64 }}
 
       - name: Verify generated schema models are current
-        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release'
+        if: matrix.platform == 'linux' && matrix.arch == 'x64'
         run: |
-          dotnet msbuild lib/ContentAuthenticity.csproj /t:GenerateModels /p:Configuration=${{ matrix.configuration }} /p:ForceGenerateModels=true /nodeReuse:false
+          dotnet msbuild lib/ContentAuthenticity.csproj /t:GenerateModels /p:Configuration=Release /p:ForceGenerateModels=true /nodeReuse:false
           git diff --exit-code -- lib/Schema
 
-      # Run tests (skip on release tags)
       - name: Run tests
-        if: env.IS_RELEASE != 'true'
         run: |
-          dotnet test --configuration ${{ matrix.configuration }} --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage"
+          dotnet test --configuration Release --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage"
 
-      # Upload test results (skip on release tags)
       - name: Upload test results
-        if: env.IS_RELEASE != 'true'
+        if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: test-results-${{ matrix.os }}-${{ matrix.configuration }}
+          name: test-results-${{ matrix.platform }}-${{ matrix.arch }}-Release
           path: |
             **/TestResults/**/*.trx
             **/TestResults/**/*.xml
 
-      # Upload coverage reports (skip on release tags)
       - name: Upload coverage to Codecov
-        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release' && env.IS_RELEASE != 'true'
+        if: matrix.platform == 'linux' && matrix.arch == 'x64'
         uses: codecov/codecov-action@v7
         with:
           files: "**/TestResults/**/coverage.cobertura.xml"
           fail_ci_if_error: false
 
-      # Create NuGet packages (only on Release)
       - name: Create NuGet packages
-        if: matrix.configuration == 'Release'
+        if: matrix.package
         run: |
           dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-source -p:BuildArm64=true -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
 
       # Upload NuGet packages as artifacts
       - name: Upload NuGet packages
-        if: matrix.configuration == 'Release'
+        if: matrix.package
         uses: actions/upload-artifact@v7
         with:
-          name: nuget-packages-${{ matrix.os }}
+          name: nuget-packages-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
             artifacts/packages/*.nupkg
 
@@ -198,6 +204,8 @@ jobs:
     needs: [build-and-test, generate-version]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
 
     steps:
       - name: Download NuGet packages
@@ -253,12 +261,28 @@ jobs:
             fi
           done
 
-          if [ ! -d "$workdir/base/runtimes" ]; then
-            echo "WARNING: merged package has no runtimes folder. Native binaries will be missing."
-          else
-            echo "Merged runtimes folder contains:"
-            find "$workdir/base/runtimes" -maxdepth 3 -type d -print | sort
+          expected_native_files=(
+            "runtimes/linux-x64/native/libc2pa_c.so"
+            "runtimes/linux-arm64/native/libc2pa_c.so"
+            "runtimes/osx-arm64/native/libc2pa_c.dylib"
+            "runtimes/win-x64/native/c2pa_c.dll"
+            "runtimes/win-arm64/native/c2pa_c.dll"
+          )
+
+          missing_native_files=()
+          for native_file in "${expected_native_files[@]}"; do
+            if [ ! -f "$workdir/base/$native_file" ]; then
+              missing_native_files+=("$native_file")
+            fi
+          done
+
+          if [ ${#missing_native_files[@]} -ne 0 ]; then
+            echo "Merged package is missing required native libraries:"
+            printf '  %s\n' "${missing_native_files[@]}"
+            exit 1
           fi
+
+          echo "Verified native libraries for all supported RIDs."
 
           # Create merged package
           pushd "$workdir/base" >/dev/null

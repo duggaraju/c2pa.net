@@ -13,18 +13,23 @@
     <BindingsFolder>Bindings</BindingsFolder>
     <QuicktypeVersion Condition="'$(QuicktypeVersion)' == ''">26.0.0</QuicktypeVersion>
     <BuildArm64 Condition="'$(BuildArm64)' == ''">false</BuildArm64>
+    <HostArchitectureName Condition="'$(HostArchitectureName)' == '' and !$([MSBuild]::IsOSPlatform('OSX'))">x64</HostArchitectureName>
+    <HostArchitectureName Condition="'$(HostArchitectureName)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">arm64</HostArchitectureName>
     <EnableCargoReleaseOptimizations Condition="'$(EnableCargoReleaseOptimizations)' == ''">false</EnableCargoReleaseOptimizations>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddNativeRuntimesToPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
     <DefineConstants>LINUX</DefineConstants>
+    <HostPlatformName>linux</HostPlatformName>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
     <DefineConstants>WINDOWS</DefineConstants>
+    <HostPlatformName>win</HostPlatformName>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
     <DefineConstants>OSX</DefineConstants>
+    <HostPlatformName>osx</HostPlatformName>
   </PropertyGroup>
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
@@ -61,14 +66,10 @@
     <SchemaFile Include="../c2pa-rs/target/schema/Settings.schema.json" Namespace="Settings" GeneratedFile="Settings.cs" />
   </ItemGroup>
 
-  <!-- libclang runtime only needed for generation on Linux -->
-  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-    <PackageReference Include="libClangSharp.runtime.linux-x64" GeneratePathProperty="true" IncludeAssets="none" />
-    <PackageReference Include="libclang.runtime.linux-x64" GeneratePathProperty="true" IncludeAssets="none" />
-  </ItemGroup>
-  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
-    <PackageReference Include="libClangSharp.runtime.osx-arm64" GeneratePathProperty="true" IncludeAssets="none" />
-    <PackageReference Include="libclang.runtime.osx-arm64" GeneratePathProperty="true" IncludeAssets="none" />
+  <!-- libclang runtime only needed for binding generation -->
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux')) or $([MSBuild]::IsOSPlatform('OSX'))">
+    <PackageReference Include="libClangSharp.runtime.$(HostPlatformName)-$(HostArchitectureName)" GeneratePathProperty="true" IncludeAssets="none" />
+    <PackageReference Include="libclang.runtime.$(HostPlatformName)-$(HostArchitectureName)" GeneratePathProperty="true" IncludeAssets="none" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md">
@@ -83,16 +84,9 @@
     <ItemGroup>
       <HostArchitecture Remove="@(HostArchitecture)" />
     </ItemGroup>
-    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
-      <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == 'win-x64'" />
-      <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == 'win-arm64' and '$(BuildArm64)' == 'true'" />
-    </ItemGroup>
-    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-      <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == 'linux-x64'" />
-      <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == 'linux-arm64' and '$(BuildArm64)' == 'true'" />
-    </ItemGroup>
-    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
-      <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == 'osx-arm64'" />
+    <ItemGroup>
+      <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == '$(HostPlatformName)-$(HostArchitectureName)'" />
+      <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == '$(HostPlatformName)-arm64' and '$(HostArchitectureName)' == 'x64' and '$(BuildArm64)' == 'true'" />
     </ItemGroup>
     <ItemGroup>
       <NativeLibrary Include="@(HostArchitecture->'$(MSBuildThisFileDirectory)../c2pa-rs/target/%(CargoTarget)/$(Configuration.ToLower())/%(NativeLibrary)')" />
@@ -114,7 +108,7 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="GenerateBindings" DependsOnTargets="GenerateSchema" Inputs="@(NativeLibrary)" Outputs="@(GeneratedFile)">
+  <Target Name="GenerateBindings" DependsOnTargets="Cargo" Inputs="@(NativeLibrary)" Outputs="@(GeneratedFile)">
     <ItemGroup>
       <FirstArch Include="@(HostArchitecture->Reverse())" />
     </ItemGroup>
@@ -122,11 +116,12 @@
     <PropertyGroup>
       <CargoOutputForBindings>$(MSBuildThisFileDirectory)../c2pa-rs/target/%(FirstArch.CargoTarget)/$(Configuration.ToLower())/</CargoOutputForBindings>
       <ConfigOptions>-c latest-codegen multi-file generate-file-scoped-namespaces generate-helper-types -hf header</ConfigOptions>
-      <InteropArgsCommon>-n ContentAuthenticity.Bindings -l c2pa_c -p c2pa_ -r C2paSigningAlg=SigningAlg uint64_t=ulong -x c -a -DC2PA_DYNAMIC_LOADING=1</InteropArgsCommon>
+      <InteropArgsCommon>-n ContentAuthenticity.Bindings -l c2pa_c -p c2pa_ -r C2paSigningAlg=SigningAlg uint64_t=ulong char=sbyte -x c -a -DC2PA_DYNAMIC_LOADING=1</InteropArgsCommon>
     </PropertyGroup>
     <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
       <PlatformArgs>-I "`gcc -print-file-name=include`" -Wno-ignored-attributes -Wno-attributes</PlatformArgs>
-      <EnvironmentVariables>LD_LIBRARY_PATH=$(PkglibClangSharp_runtime_linux-x64)/runtimes/linux-x64/native:$(Pkglibclang_runtime_linux-x64)/runtimes/linux-x64/native</EnvironmentVariables>
+      <EnvironmentVariables Condition="'$(HostArchitectureName)' == 'x64'">LD_LIBRARY_PATH=$(PkglibClangSharp_runtime_linux_x64)/runtimes/linux-x64/native:$(Pkglibclang_runtime_linux_x64)/runtimes/linux-x64/native</EnvironmentVariables>
+      <EnvironmentVariables Condition="'$(HostArchitectureName)' == 'arm64'">LD_LIBRARY_PATH=$(PkglibClangSharp_runtime_linux-arm64)/runtimes/linux-arm64/native:$(Pkglibclang_runtime_linux-arm64)/runtimes/linux-arm64/native</EnvironmentVariables>
     </PropertyGroup>
 
     <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
@@ -137,7 +132,7 @@
     <Exec Command="$(EnvironmentVariables) dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutputForBindings)c2pa.h -o $(BindingsFolder) $(InteropArgsCommon) -m C2paBindings $(ConfigOptions) $(PlatformArgs)" IgnoreStandardErrorWarningFormat="true" EnvironmentVariables="$(EnvironmentVariables)" />
   </Target>
 
-  <Target Name="IncludeGeneratedBindings" DependsOnTargets="GenerateBindings" BeforeTargets="CoreCompile">
+  <Target Name="IncludeGeneratedBindings" DependsOnTargets="Cargo;GenerateBindings" BeforeTargets="CoreCompile">
     <ItemGroup>
       <Compile Include="$(BindingsFolder)/*.cs" />
     </ItemGroup>
@@ -182,9 +177,9 @@
     <Delete Files="@(SchemaFile)" />
   </Target>
 
-  <Target Name="GenerateModels" DependsOnTargets="PrepareGenerateModels;GenerateSchemaModels;GenerateStandardAssertionModels" BeforeTargets="CoreCompile" />
+  <Target Name="GenerateModels" DependsOnTargets="PrepareGenerateModels;GenerateSchemaModels;GenerateStandardAssertionModels" />
 
-  <Target Name="IncludeGeneratedSchemaModels" BeforeTargets="CoreCompile" DependsOnTargets="GenerateModels">
+  <Target Name="IncludeGeneratedSchemaModels" BeforeTargets="CoreCompile">
     <ItemGroup>
       <Compile Include="@(SchemaFile->'$(MSBuildProjectDirectory)/Schema/%(GeneratedFile)')" />
     </ItemGroup>

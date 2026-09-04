@@ -21,6 +21,8 @@
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
     <PackageVersion Include="libclang.runtime.linux-x64" Version="22.1.8" />
     <PackageVersion Include="libClangSharp.runtime.linux-x64" Version="22.1.8.2" />
+    <PackageVersion Include="libclang.runtime.linux-arm64" Version="22.1.8" />
+    <PackageVersion Include="libClangSharp.runtime.linux-arm64" Version="22.1.8.2" />
   </ItemGroup>
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
     <PackageVersion Include="libclang.runtime.osx-arm64" Version="21.1.8" />
