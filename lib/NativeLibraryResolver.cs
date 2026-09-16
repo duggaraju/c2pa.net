@@ -21,51 +21,75 @@ internal static class NativeLibraryResolver
             return nint.Zero;
         }
 
-        string? osPart = GetOsPart();
-        string? archPart = GetArchPart();
         string? fileName = GetNativeFileName();
-
-        if (osPart is null || archPart is null || fileName is null)
+        if (fileName is null)
         {
             return nint.Zero;
         }
 
         string baseDir = AppContext.BaseDirectory;
-        string rid = $"{osPart}-{archPart}";
 
-        string candidate = Path.Combine(baseDir, "runtimes", rid, "native", fileName);
-        if (File.Exists(candidate) && NativeLibrary.TryLoad(candidate, out nint handle))
+        foreach (string rid in GetCandidateRids())
         {
-            return handle;
+            string candidate = Path.Combine(baseDir, "runtimes", rid, "native", fileName);
+            if (NativeLibrary.TryLoad(candidate, out nint handle))
+            {
+                return handle;
+            }
         }
 
-        // Fallback: some runners copy native binaries to the output root.
-        candidate = Path.Combine(baseDir, fileName);
-        if (File.Exists(candidate) && NativeLibrary.TryLoad(candidate, out handle))
+        string candidateInRoot = Path.Combine(baseDir, fileName);
+        if (NativeLibrary.TryLoad(candidateInRoot, out nint rootHandle))
         {
-            return handle;
+            return rootHandle;
         }
 
         return nint.Zero;
     }
 
-    private static string? GetOsPart()
+    private static IEnumerable<string> GetCandidateRids()
     {
-        if (OperatingSystem.IsWindows()) return "win";
-        if (OperatingSystem.IsLinux()) return "linux";
-        if (OperatingSystem.IsMacOS()) return "osx";
+        string runtimeRid = RuntimeInformation.RuntimeIdentifier;
+        yield return runtimeRid;
+
+        string? fallbackRid = GetFallbackRid();
+        if (fallbackRid is not null &&
+            !string.Equals(fallbackRid, runtimeRid, StringComparison.Ordinal))
+        {
+            yield return fallbackRid;
+        }
+    }
+
+    private static string? GetFallbackRid()
+    {
+        string? arch = GetArchPart();
+        if (arch is null)
+        {
+            return null;
+        }
+
+        if (OperatingSystem.IsWindows()) return $"win-{arch}";
+        if (OperatingSystem.IsMacOS()) return $"osx-{arch}";
+
+        if (OperatingSystem.IsLinux())
+        {
+            // RuntimeIdentifier identifies musl for portable .NET runtimes. Alpine's
+            // distro-built runtime can expose an Alpine-specific RID instead.
+            return File.Exists("/etc/alpine-release")
+                ? $"linux-musl-{arch}"
+                : $"linux-{arch}";
+        }
+
         return null;
     }
 
-    private static string? GetArchPart()
-    {
-        return RuntimeInformation.ProcessArchitecture switch
+    private static string? GetArchPart() =>
+        RuntimeInformation.ProcessArchitecture switch
         {
             Architecture.X64 => "x64",
             Architecture.Arm64 => "arm64",
             _ => null,
         };
-    }
 
     private static string? GetNativeFileName()
     {

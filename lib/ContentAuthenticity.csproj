@@ -15,6 +15,8 @@
     <BuildArm64 Condition="'$(BuildArm64)' == ''">false</BuildArm64>
     <HostArchitectureName Condition="'$(HostArchitectureName)' == '' and !$([MSBuild]::IsOSPlatform('OSX'))">x64</HostArchitectureName>
     <HostArchitectureName Condition="'$(HostArchitectureName)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">arm64</HostArchitectureName>
+    <BuildLinuxMusl Condition="'$(BuildLinuxMusl)' == '' and $([MSBuild]::IsOSPlatform('Linux')) and '$(HostArchitectureName)' == 'x64' and '$(Configuration)' == 'Release'">true</BuildLinuxMusl>
+    <BuildLinuxMusl Condition="'$(BuildLinuxMusl)' == ''">false</BuildLinuxMusl>
     <EnableCargoReleaseOptimizations Condition="'$(EnableCargoReleaseOptimizations)' == ''">false</EnableCargoReleaseOptimizations>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddNativeRuntimesToPackage</TargetsForTfmSpecificContentInPackage>
@@ -47,6 +49,10 @@
     </BindingsPlatform>
     <BindingsPlatform Include="linux-x64">
       <CargoTarget>x86_64-unknown-linux-gnu</CargoTarget>
+      <NativeLibrary>libc2pa_c.so</NativeLibrary>
+    </BindingsPlatform>
+    <BindingsPlatform Include="linux-musl-x64">
+      <CargoTarget>x86_64-unknown-linux-musl</CargoTarget>
       <NativeLibrary>libc2pa_c.so</NativeLibrary>
     </BindingsPlatform>
     <BindingsPlatform Include="linux-arm64">
@@ -86,6 +92,7 @@
     </ItemGroup>
     <ItemGroup>
       <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == '$(HostPlatformName)-$(HostArchitectureName)'" />
+      <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == 'linux-musl-$(HostArchitectureName)' and '$(HostPlatformName)' == 'linux' and '$(HostArchitectureName)' == 'x64' and '$(BuildLinuxMusl)' == 'true'" />
       <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == '$(HostPlatformName)-arm64' and '$(HostArchitectureName)' == 'x64' and '$(BuildArm64)' == 'true'" />
     </ItemGroup>
     <ItemGroup>
@@ -148,6 +155,7 @@
       <CargoTargetArgs>@(HostArchitecture->'--target %(CargoTarget)', ' ')</CargoTargetArgs>
     </PropertyGroup>
     <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto,http,add_thumbnails $(CargoTargetArgs) -p c2pa-c-ffi" EnvironmentVariables="$(CargoEnvironmentVariables)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/" />
+    <Exec Condition="$([MSBuild]::IsOSPlatform('Linux')) and '$(HostArchitectureName)' == 'x64' and '$(BuildLinuxMusl)' == 'true'" Command="musl-gcc -shared -Wl,--whole-archive &quot;$(MSBuildThisFileDirectory)../c2pa-rs/target/x86_64-unknown-linux-musl/$(Configuration.ToLower())/libc2pa_c.a&quot; -Wl,--no-whole-archive -o &quot;$(MSBuildThisFileDirectory)../c2pa-rs/target/x86_64-unknown-linux-musl/$(Configuration.ToLower())/libc2pa_c.so&quot; -ldl -lpthread -lm" />
   </Target>
 
   <Target Name="GenerateSchema" DependsOnTargets="Cargo" Inputs="../c2pa-rs/export_schema/Cargo.toml" Outputs="@(SchemaFile)">
