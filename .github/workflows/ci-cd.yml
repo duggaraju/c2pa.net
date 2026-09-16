@@ -94,7 +94,6 @@ jobs:
             arch: arm64
             build_arm64: false
             package: true
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -123,6 +122,10 @@ jobs:
         if: matrix.platform == 'linux' && matrix.arch == 'x64'
         run: rustup target add aarch64-unknown-linux-gnu
 
+      - name: Install Rust toolchain for Linux musl x64
+        if: matrix.platform == 'linux' && matrix.arch == 'x64'
+        run: rustup target add x86_64-unknown-linux-musl
+
       - name: Install Rust toolchain for ARM64
         if: matrix.platform == 'windows'
         run: rustup target add aarch64-pc-windows-msvc
@@ -142,7 +145,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y llvm-18 clang-18 ${{ matrix.arch == 'x64' && 'gcc-aarch64-linux-gnu' || '' }}
+          sudo apt-get install -y llvm-18 clang-18 musl-tools ${{ matrix.arch == 'x64' && 'gcc-aarch64-linux-gnu' || '' }}
 
       - name: Install system dependencies (macOS)
         if: matrix.platform == 'macos'
@@ -263,6 +266,7 @@ jobs:
 
           expected_native_files=(
             "runtimes/linux-x64/native/libc2pa_c.so"
+            "runtimes/linux-musl-x64/native/libc2pa_c.so"
             "runtimes/linux-arm64/native/libc2pa_c.so"
             "runtimes/osx-arm64/native/libc2pa_c.dylib"
             "runtimes/win-x64/native/c2pa_c.dll"
