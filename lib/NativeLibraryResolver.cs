@@ -1,3 +1,5 @@
+// Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
 using System.Reflection;
 
 namespace ContentAuthenticity.Bindings;
@@ -29,7 +31,14 @@ internal static class NativeLibraryResolver
 
         string baseDir = AppContext.BaseDirectory;
 
-        foreach (string rid in GetCandidateRids())
+        var platform = OperatingSystem.IsWindows() ? OSPlatform.Windows
+            : OperatingSystem.IsLinux() ? OSPlatform.Linux
+            : OSPlatform.OSX;
+        foreach (string rid in GetCandidateRids(
+            RuntimeInformation.RuntimeIdentifier,
+            platform,
+            RuntimeInformation.ProcessArchitecture,
+            OperatingSystem.IsLinux() && File.Exists("/etc/alpine-release")))
         {
             string candidate = Path.Combine(baseDir, "runtimes", rid, "native", fileName);
             if (NativeLibrary.TryLoad(candidate, out nint handle))
@@ -47,12 +56,12 @@ internal static class NativeLibraryResolver
         return nint.Zero;
     }
 
-    private static IEnumerable<string> GetCandidateRids()
+    internal static IEnumerable<string> GetCandidateRids(
+        string runtimeRid, OSPlatform platform, Architecture architecture, bool isAlpine)
     {
-        string runtimeRid = RuntimeInformation.RuntimeIdentifier;
         yield return runtimeRid;
 
-        string? fallbackRid = GetFallbackRid();
+        string? fallbackRid = GetFallbackRid(runtimeRid, platform, architecture, isAlpine);
         if (fallbackRid is not null &&
             !string.Equals(fallbackRid, runtimeRid, StringComparison.Ordinal))
         {
@@ -60,36 +69,35 @@ internal static class NativeLibraryResolver
         }
     }
 
-    private static string? GetFallbackRid()
+    private static string? GetFallbackRid(
+        string runtimeRid, OSPlatform platform, Architecture architecture, bool isAlpine)
     {
-        string? arch = GetArchPart();
+        string? arch = architecture switch
+        {
+            Architecture.X64 => "x64",
+            Architecture.Arm64 => "arm64",
+            _ => null,
+        };
         if (arch is null)
         {
             return null;
         }
 
-        if (OperatingSystem.IsWindows()) return $"win-{arch}";
-        if (OperatingSystem.IsMacOS()) return $"osx-{arch}";
+        if (platform == OSPlatform.Windows) return $"win-{arch}";
+        if (platform == OSPlatform.OSX) return $"osx-{arch}";
 
-        if (OperatingSystem.IsLinux())
+        if (platform == OSPlatform.Linux)
         {
             // RuntimeIdentifier identifies musl for portable .NET runtimes. Alpine's
             // distro-built runtime can expose an Alpine-specific RID instead.
-            return File.Exists("/etc/alpine-release")
+            bool isMusl = runtimeRid.StartsWith("linux-musl-", StringComparison.Ordinal) || isAlpine;
+            return isMusl
                 ? $"linux-musl-{arch}"
                 : $"linux-{arch}";
         }
 
         return null;
     }
-
-    private static string? GetArchPart() =>
-        RuntimeInformation.ProcessArchitecture switch
-        {
-            Architecture.X64 => "x64",
-            Architecture.Arm64 => "arm64",
-            _ => null,
-        };
 
     private static string? GetNativeFileName()
     {
