@@ -7,8 +7,9 @@ on:
     types: [opened]
 
 permissions:
+  content: read
   issues: write
-  pull-requests: read
+  pull-requests: write
 
 jobs:
   auto-label:
