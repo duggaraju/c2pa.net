@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="PackageSmoke/**/*.cs" />
     <ProjectReference Include="..\lib\ContentAuthenticity.csproj" />
     <Content Include="..\c2pa-rs\sdk\tests\fixtures\*.*" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     <Content Include="..\c2pa-rs\sdk\tests\fixtures\certs\*">

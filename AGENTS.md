@@ -39,6 +39,7 @@ Key design patterns:
 - Native memory is managed via `IDisposable` wrappers around raw `C2pa*` pointers
 - `C2pa.CheckError()` reads the last native error string and throws `C2paException`
 - `NativeLibraryResolver` uses a `[ModuleInitializer]` to resolve the correct platform-specific native binary at runtime
+- musl x64 is built separately using `.github/docker/musl.Dockerfile`; `IncludeLinuxMusl=true` copies/packs that prebuilt artifact without changing host Cargo or binding generation. CI runs `tests/PackageSmoke` against the package in Alpine. musl ARM64 is deferred.
 
 ## Conventions
 

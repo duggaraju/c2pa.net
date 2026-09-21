@@ -3,3 +3,4 @@ obj/
 bin/
 Bindings/
 .vs/
+artifacts/

@@ -129,6 +129,18 @@ builder.Sign(input, output);
 - [ClangSharp](https://github.com/dotnet/ClangSharp)
 - [Node.js 20.19 or later](https://nodejs.org/) (only when regenerating schema models)
 
+### Alpine Linux / musl
+
+The NuGet package includes a separate `linux-musl-x64` native library for Alpine
+and compatible musl-based x64 systems. Publish applications with
+`dotnet publish -r linux-musl-x64`; the normal `linux-x64` native asset requires
+glibc and cannot be substituted. Use a supported .NET 10 musl runtime and its
+system dependencies, including musl's `libgcc` package for unwind support. The
+native library is built against Alpine 3.22.
+
+TODO: Add `linux-musl-arm64` with a native ARM64 build and an Alpine package-consumer
+test. GNU/Linux ARM64 support does not imply musl ARM64 support.
+
 ## Development
 
 ### 1. Clone the Repository
@@ -281,6 +293,37 @@ Create a nuget package for publishing.
 cd lib
 dotnet pack
 ```
+
+#### Including musl x64 from an Ubuntu build host
+
+Ordinary builds do not require Docker or a musl cross-toolchain. To also include
+musl x64, first build the pinned submodule in an Alpine container, then opt into
+copying and packaging its output. From the repository root:
+
+```bash
+docker build --platform linux/amd64 --file .github/docker/musl.Dockerfile \
+  --build-arg RUST_VERSION=1.88.0 \
+  --output type=local,dest=artifacts/native/linux-musl-x64 .
+dotnet build --configuration Release -p:IncludeLinuxMusl=true
+dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build \
+  --output artifacts/packages -p:IncludeLinuxMusl=true -p:PackageVersion=0.0.0-local
+docker run --rm --platform linux/amd64 \
+  --volume "$PWD:/workspace" --workdir /workspace \
+  mcr.microsoft.com/dotnet/sdk:10.0-alpine3.22 \
+  sh .github/scripts/test-musl-package.sh 0.0.0-local
+```
+
+`IncludeLinuxMusl` defaults to `false`; pass it consistently to build and pack.
+`LinuxMuslLibraryPath` can override the prebuilt library location. Opting in with
+a missing library fails explicitly instead of producing an incomplete package.
+
+The container builds Rust's `cdylib` directly with
+`-C target-feature=-crt-static`, using musl-native compiler and unwind support.
+Its flags are isolated from host `RUSTFLAGS`. ClangSharp and schema generation
+remain on the build host and do not require Alpine-compatible libclang packages.
+CI consumes the actual NuGet package on Alpine and exercises eager symbol resolution and a
+sign/read round trip for both portable build output and RID-specific published
+output before uploading the package.
 
 
 ## Project Structure

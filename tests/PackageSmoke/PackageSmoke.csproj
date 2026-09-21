@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <SelfContained>false</SelfContained>
+    <UseAppHost>false</UseAppHost>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <ContentAuthenticityPackageVersion Condition="'$(ContentAuthenticityPackageVersion)' == ''">0.0.0-local</ContentAuthenticityPackageVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ContentAuthenticity" Version="[$(ContentAuthenticityPackageVersion)]" />
+    <Content Include="../../c2pa-rs/sdk/tests/fixtures/no_manifest.jpg" Link="fixtures/no_manifest.jpg" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../c2pa-rs/sdk/tests/fixtures/certs/rs256.pub" Link="fixtures/rs256.pub" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../c2pa-rs/sdk/tests/fixtures/certs/rs256.pem" Link="fixtures/rs256.pem" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
