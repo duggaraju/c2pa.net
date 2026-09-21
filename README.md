@@ -136,10 +136,10 @@ and compatible musl-based x64 systems. Publish applications with
 `dotnet publish -r linux-musl-x64`; the normal `linux-x64` native asset requires
 glibc and cannot be substituted. Use a supported .NET 10 musl runtime and its
 system dependencies, including musl's `libgcc` package for unwind support. The
-native library is built against Alpine 3.22.
+native library is cross-compiled against musl 1.2.5 and exercised on Alpine 3.22.
 
-TODO: Add `linux-musl-arm64` with a native ARM64 build and an Alpine package-consumer
-test. GNU/Linux ARM64 support does not imply musl ARM64 support.
+TODO: Add `linux-musl-arm64` with a matching cross-toolchain and a native ARM64
+Alpine package-consumer test. GNU/Linux ARM64 support does not imply musl ARM64 support.
 
 ## Development
 
@@ -294,36 +294,51 @@ cd lib
 dotnet pack
 ```
 
-#### Including musl x64 from an Ubuntu build host
+#### Cross-compiling musl x64 on Ubuntu
 
-Ordinary builds do not require Docker or a musl cross-toolchain. To also include
-musl x64, first build the pinned submodule in an Alpine container, then opt into
-copying and packaging its output. From the repository root:
+`BuildLinuxMusl` defaults to `false` for local builds. The GitHub Actions Ubuntu
+x64 job explicitly enables it to build and package both GNU and musl binaries.
+No container is used to compile Rust; Docker is only needed for the Alpine
+package-consumer check.
+
+For an optional local cross-build, install the Rust musl target and the complete
+[Bootlin musl toolchain](https://toolchains.bootlin.com/releases_x86-64.html)
+from the repository root. The installer pins `x86-64--musl--stable-2025.08-1`
+(GCC 14.3.0, musl 1.2.5) and verifies its SHA-256 before extraction. It requires
+an x64 Linux host, `curl`, `tar`, `xz`, and `sha256sum`, and an empty destination:
 
 ```bash
-docker build --platform linux/amd64 --file .github/docker/musl.Dockerfile \
-  --build-arg RUST_VERSION=1.88.0 \
-  --output type=local,dest=artifacts/native/linux-musl-x64 .
-dotnet build --configuration Release -p:IncludeLinuxMusl=true
+rustup target add x86_64-unknown-linux-musl
+bash .github/scripts/install-musl-toolchain.sh artifacts/toolchains/musl
+export PATH="$PWD/artifacts/toolchains/musl/bin:$PATH"
+dotnet build --configuration Release -p:BuildLinuxMusl=true
 dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build \
-  --output artifacts/packages -p:IncludeLinuxMusl=true -p:PackageVersion=0.0.0-local
+  --output artifacts/packages -p:BuildLinuxMusl=true -p:PackageVersion=0.0.0-local
 docker run --rm --platform linux/amd64 \
   --volume "$PWD:/workspace" --workdir /workspace \
   mcr.microsoft.com/dotnet/sdk:10.0-alpine3.22 \
   sh .github/scripts/test-musl-package.sh 0.0.0-local
 ```
 
-`IncludeLinuxMusl` defaults to `false`; pass it consistently to build and pack.
-`LinuxMuslLibraryPath` can override the prebuilt library location. Opting in with
-a missing library fails explicitly instead of producing an incomplete package.
+Pass `BuildLinuxMusl=true` consistently to build and pack. `--no-build` never
+compiles Rust; it requires the existing output for the selected configuration
+under `c2pa-rs/target/x86_64-unknown-linux-musl/`. Missing artifacts or unsupported
+build hosts fail explicitly. Ordinary builds do not need any musl tooling.
 
-The container builds Rust's `cdylib` directly with
-`-C target-feature=-crt-static`, using musl-native compiler and unwind support.
-Its flags are isolated from host `RUSTFLAGS`. ClangSharp and schema generation
-remain on the build host and do not require Alpine-compatible libclang packages.
-CI consumes the actual NuGet package on Alpine and exercises eager symbol resolution and a
-sign/read round trip for both portable build output and RID-specific published
-output before uploading the package.
+The cross-build invokes Cargo separately with `-C target-feature=-crt-static`,
+preserving existing `RUSTFLAGS` (or `CARGO_ENCODED_RUSTFLAGS`). Target-specific
+linker, C/C++ compiler, and archiver settings apply only to this invocation.
+All target dependencies use musl, while build scripts and procedural macros run
+on the Ubuntu host. Installing Ubuntu's `musl-tools` alone is not equivalent:
+the compiler's unwind/runtime libraries must also be built for musl.
+
+`IncludeLinuxMusl` defaults to the value of `BuildLinuxMusl`. To package an
+externally built binary without cross-compiling, leave `BuildLinuxMusl=false`
+and set `IncludeLinuxMusl=true` plus `LinuxMuslLibraryPath` to that binary.
+ClangSharp and schema generation continue using the normal host targets.
+CI consumes the produced NuGet package in Alpine and checks eager symbol
+resolution and a sign/read round trip for both portable and RID-specific
+published output before uploading it.
 
 
 ## Project Structure

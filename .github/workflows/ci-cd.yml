@@ -152,17 +152,17 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore /p:HostArchitectureName=${{ matrix.arch }} && dotnet tool restore
 
-      - name: Build musl x64 native library in Alpine
+      - name: Install musl x64 cross-toolchain
         if: matrix.platform == 'linux' && matrix.arch == 'x64'
         run: |
-          docker build --platform linux/amd64 --file .github/docker/musl.Dockerfile \
-            --build-arg RUST_VERSION=${{ env.RUST_VERSION }} \
-            --output type=local,dest=artifacts/native/linux-musl-x64 .
+          rustup target add x86_64-unknown-linux-musl
+          bash .github/scripts/install-musl-toolchain.sh "$RUNNER_TEMP/musl-toolchain"
+          echo "$RUNNER_TEMP/musl-toolchain/bin" >> "$GITHUB_PATH"
 
       # Package-producing x64 jobs cross-build ARM64; the ARM64 job tests natively.
       - name: Build solution
         run: |
-          dotnet build -m --configuration Release --no-restore --verbosity normal /p:HostArchitectureName=${{ matrix.arch }} /p:BuildArm64=${{ matrix.build_arm64 }} /p:IncludeLinuxMusl=${{ matrix.platform == 'linux' && matrix.arch == 'x64' }}
+          dotnet build -m --configuration Release --no-restore --verbosity normal /p:HostArchitectureName=${{ matrix.arch }} /p:BuildArm64=${{ matrix.build_arm64 }} /p:BuildLinuxMusl=${{ matrix.platform == 'linux' && matrix.arch == 'x64' }}
 
       - name: Verify generated schema models are current
         if: matrix.platform == 'linux' && matrix.arch == 'x64'
@@ -193,7 +193,7 @@ jobs:
       - name: Create NuGet packages
         if: matrix.package
         run: |
-          dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-source -p:BuildArm64=true -p:IncludeLinuxMusl=${{ matrix.platform == 'linux' && matrix.arch == 'x64' }} -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
+          dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-source -p:BuildArm64=true -p:BuildLinuxMusl=${{ matrix.platform == 'linux' && matrix.arch == 'x64' }} -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
 
       - name: Test NuGet package on Alpine x64
         if: matrix.platform == 'linux' && matrix.arch == 'x64'
