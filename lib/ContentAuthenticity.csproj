@@ -15,8 +15,9 @@
     <BuildArm64 Condition="'$(BuildArm64)' == ''">false</BuildArm64>
     <HostArchitectureName Condition="'$(HostArchitectureName)' == '' and !$([MSBuild]::IsOSPlatform('OSX'))">x64</HostArchitectureName>
     <HostArchitectureName Condition="'$(HostArchitectureName)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">arm64</HostArchitectureName>
-    <IncludeLinuxMusl Condition="'$(IncludeLinuxMusl)' == ''">false</IncludeLinuxMusl>
-    <LinuxMuslLibraryPath Condition="'$(LinuxMuslLibraryPath)' == ''">$(MSBuildThisFileDirectory)../artifacts/native/linux-musl-x64/libc2pa_c.so</LinuxMuslLibraryPath>
+    <BuildLinuxMusl Condition="'$(BuildLinuxMusl)' == ''">false</BuildLinuxMusl>
+    <IncludeLinuxMusl Condition="'$(IncludeLinuxMusl)' == ''">$(BuildLinuxMusl)</IncludeLinuxMusl>
+    <LinuxMuslLibraryPath Condition="'$(LinuxMuslLibraryPath)' == ''">$(MSBuildThisFileDirectory)../c2pa-rs/target/x86_64-unknown-linux-musl/$(Configuration.ToLower())/libc2pa_c.so</LinuxMuslLibraryPath>
     <EnableCargoReleaseOptimizations Condition="'$(EnableCargoReleaseOptimizations)' == ''">false</EnableCargoReleaseOptimizations>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddNativeRuntimesToPackage</TargetsForTfmSpecificContentInPackage>
@@ -86,8 +87,16 @@
     <Content Include="$(LinuxMuslLibraryPath)" CopyToOutputDirectory="PreserveNewest" Link="runtimes/linux-musl-x64/native/libc2pa_c.so" Pack="true" PackagePath="runtimes/linux-musl-x64/native/" />
   </ItemGroup>
 
-  <Target Name="ValidateLinuxMuslLibrary" BeforeTargets="PrepareForBuild;AddNativeRuntimesToPackage" Condition="'$(IncludeLinuxMusl)' == 'true'">
-    <Error Condition="!Exists('$(LinuxMuslLibraryPath)')" Text="Missing musl library: $(LinuxMuslLibraryPath). Build .github/docker/musl.Dockerfile first (see README), or set LinuxMuslLibraryPath to a prebuilt musl x64 library." />
+  <Target Name="BuildMuslNativeLibrary" BeforeTargets="PrepareForBuild" Condition="'$(BuildLinuxMusl)' == 'true' and '$(NoBuild)' != 'true'">
+    <Error Condition="!$([MSBuild]::IsOSPlatform('Linux')) or '$(HostArchitectureName)' != 'x64'" Text="BuildLinuxMusl requires an x64 Linux build host. musl ARM64 support is deferred." />
+    <PropertyGroup>
+      <MuslCargoEnvironmentVariables Condition="'$(Configuration)' == 'Release' and '$(EnableCargoReleaseOptimizations)' == 'true'">CARGO_PROFILE_RELEASE_OPT_LEVEL=z;CARGO_PROFILE_RELEASE_STRIP=symbols;CARGO_PROFILE_RELEASE_LTO=thin</MuslCargoEnvironmentVariables>
+    </PropertyGroup>
+    <Exec Command="bash &quot;$(MSBuildThisFileDirectory)../.github/scripts/build-musl.sh&quot; &quot;$(Configuration)&quot;" EnvironmentVariables="$(MuslCargoEnvironmentVariables)" />
+  </Target>
+
+  <Target Name="ValidateLinuxMuslLibrary" BeforeTargets="PrepareForBuild;AddNativeRuntimesToPackage" DependsOnTargets="BuildMuslNativeLibrary" Condition="'$(IncludeLinuxMusl)' == 'true'">
+    <Error Condition="!Exists('$(LinuxMuslLibraryPath)')" Text="Missing musl library: $(LinuxMuslLibraryPath). Build with BuildLinuxMusl=true first (see README), or set LinuxMuslLibraryPath to a prebuilt musl x64 library." />
   </Target>
 
   <Target Name="ComputeHostArchitecture" BeforeTargets="GetFilesToPack;GenerateNuspec;Pack;PrepareForBuild">

@@ -3,6 +3,7 @@
 using ContentAuthenticity;
 using ContentAuthenticity.Bindings;
 using System.Runtime.InteropServices;
+using ValidationState = ContentAuthenticity.Schema.Reader.ValidationStateEnum;
 
 if (RuntimeInformation.RuntimeIdentifier != "linux-musl-x64")
 {
@@ -38,7 +39,12 @@ using var builder = new Builder(context).WithDefinition("""
         "assertions": [
             {
                 "label": "c2pa.actions",
-                "data": { "actions": [{ "action": "c2pa.created" }] }
+                "data": {
+                    "actions": [{
+                        "action": "c2pa.created",
+                        "digitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture"
+                    }]
+                }
             }
         ]
     }
@@ -55,6 +61,7 @@ signed.Position = 0;
 using var reader = new Reader(context).WithStream(signed, "image/jpeg");
 var store = reader.Store;
 if (!reader.IsEmbedded ||
+    store.ValidationState is not (ValidationState.Valid or ValidationState.Trusted) ||
     store.ActiveManifest is null ||
     store.Manifests is null ||
     !store.Manifests.TryGetValue(store.ActiveManifest, out var active) ||
