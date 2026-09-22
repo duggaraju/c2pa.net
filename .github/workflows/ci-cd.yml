@@ -77,23 +77,33 @@ jobs:
           - runner: windows-latest
             platform: windows
             arch: x64
-            build_arm64: true
+            build_arm64: false
             package: true
+            test: true
+          - runner: windows-latest
+            platform: windows
+            arch: arm64
+            build_arm64: false
+            package: true
+            test: false
           - runner: ubuntu-latest
             platform: linux
             arch: x64
-            build_arm64: true
+            build_arm64: false
             package: true
+            test: true
           - runner: ubuntu-24.04-arm
             platform: linux
             arch: arm64
             build_arm64: false
-            package: false
+            package: true
+            test: true
           - runner: macos-latest
             platform: macos
             arch: arm64
             build_arm64: false
             package: true
+            test: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -119,11 +129,7 @@ jobs:
           node-version: '24'
 
       - name: Install Rust toolchain for ARM64
-        if: matrix.platform == 'linux' && matrix.arch == 'x64'
-        run: rustup target add aarch64-unknown-linux-gnu
-
-      - name: Install Rust toolchain for ARM64
-        if: matrix.platform == 'windows'
+        if: matrix.platform == 'windows' && matrix.arch == 'arm64'
         run: rustup target add aarch64-pc-windows-msvc
 
       # Cache .NET dependencies
@@ -141,7 +147,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y llvm-18 clang-18 ${{ matrix.arch == 'x64' && 'gcc-aarch64-linux-gnu' || '' }}
+          sudo apt-get install -y llvm-18 clang-18
 
       - name: Install system dependencies (macOS)
         if: matrix.platform == 'macos'
@@ -152,17 +158,9 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore /p:HostArchitectureName=${{ matrix.arch }} && dotnet tool restore
 
-      - name: Install musl x64 cross-toolchain
-        if: matrix.platform == 'linux' && matrix.arch == 'x64'
-        run: |
-          rustup target add x86_64-unknown-linux-musl
-          bash .github/scripts/install-musl-toolchain.sh "$RUNNER_TEMP/musl-toolchain"
-          echo "$RUNNER_TEMP/musl-toolchain/bin" >> "$GITHUB_PATH"
-
-      # Package-producing x64 jobs cross-build ARM64; the ARM64 job tests natively.
       - name: Build solution
         run: |
-          dotnet build -m --configuration Release --no-restore --verbosity normal /p:HostArchitectureName=${{ matrix.arch }} /p:BuildArm64=${{ matrix.build_arm64 }} /p:BuildLinuxMusl=${{ matrix.platform == 'linux' && matrix.arch == 'x64' }}
+          dotnet build -m --configuration Release --no-restore --verbosity normal /p:HostArchitectureName=${{ matrix.arch }} /p:BuildArm64=${{ matrix.build_arm64 }} /p:BuildLinuxMusl=false
 
       - name: Verify generated schema models are current
         if: matrix.platform == 'linux' && matrix.arch == 'x64'
@@ -171,14 +169,16 @@ jobs:
           git diff --exit-code -- lib/Schema
 
       - name: Run tests
+        if: matrix.test
         run: |
           dotnet test --configuration Release --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage"
 
       - name: Upload test results
-        if: always()
+        if: always() && matrix.test
         uses: actions/upload-artifact@v7
         with:
           name: test-results-${{ matrix.platform }}-${{ matrix.arch }}-Release
+          retention-days: 7
           path: |
             **/TestResults/**/*.trx
             **/TestResults/**/*.xml
@@ -193,10 +193,85 @@ jobs:
       - name: Create NuGet packages
         if: matrix.package
         run: |
-          dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-source -p:BuildArm64=true -p:BuildLinuxMusl=${{ matrix.platform == 'linux' && matrix.arch == 'x64' }} -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
+          dotnet pack lib/ContentAuthenticity.csproj --configuration Release --no-build --output ./artifacts/packages --include-source -p:HostArchitectureName=${{ matrix.arch }} -p:BuildArm64=${{ matrix.build_arm64 }} -p:BuildLinuxMusl=false -p:PackageVersion=${{ needs.generate-version.outputs.build_version }}
+
+      # Upload NuGet packages as artifacts
+      - name: Upload NuGet packages
+        if: matrix.package
+        uses: actions/upload-artifact@v7
+        with:
+          name: nuget-packages-${{ matrix.platform }}-${{ matrix.arch }}
+          retention-days: 1
+          path: |
+            artifacts/packages/*.nupkg
+
+  build-musl:
+    name: Build musl x64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          target: x86_64-unknown-linux-musl
+          cache: true
+
+      - name: Install musl x64 cross-toolchain
+        run: |
+          bash .github/scripts/install-musl-toolchain.sh "$RUNNER_TEMP/musl-toolchain"
+          echo "$RUNNER_TEMP/musl-toolchain/bin" >> "$GITHUB_PATH"
+
+      - name: Build musl native library
+        run: bash .github/scripts/build-musl.sh Release
+
+      - name: Upload musl native library
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-musl-x64-native
+          retention-days: 1
+          path: c2pa-rs/target/x86_64-unknown-linux-musl/release/libc2pa_c.so
+
+  package-musl:
+    name: Package and test musl x64
+    needs: [build-and-test, build-musl, generate-version]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Download Linux x64 package
+        uses: actions/download-artifact@v8
+        with:
+          name: nuget-packages-linux-x64
+          path: artifacts/base-package
+
+      - name: Download musl native library
+        uses: actions/download-artifact@v8
+        with:
+          name: linux-musl-x64-native
+          path: artifacts/musl
+
+      - name: Add musl native library to package
+        shell: bash
+        run: |
+          set -euo pipefail
+          package="$(find artifacts/base-package -name '*.nupkg' ! -name '*.symbols.nupkg' -print -quit)"
+          test -n "$package"
+          workdir="$(mktemp -d)"
+          unzip -q "$package" -d "$workdir/package"
+          mkdir -p "$workdir/package/runtimes/linux-musl-x64/native"
+          cp artifacts/musl/libc2pa_c.so "$workdir/package/runtimes/linux-musl-x64/native/"
+          mkdir -p artifacts/packages
+          (cd "$workdir/package" && zip -qr "$OLDPWD/artifacts/packages/$(basename "$package")" .)
 
       - name: Test NuGet package on Alpine x64
-        if: matrix.platform == 'linux' && matrix.arch == 'x64'
         env:
           PACKAGE_VERSION: ${{ needs.generate-version.outputs.build_version }}
         run: |
@@ -205,19 +280,17 @@ jobs:
             mcr.microsoft.com/dotnet/sdk:10.0-alpine3.22 \
             sh .github/scripts/test-musl-package.sh "$PACKAGE_VERSION"
 
-      # Upload NuGet packages as artifacts
-      - name: Upload NuGet packages
-        if: matrix.package
+      - name: Upload Linux musl package
         uses: actions/upload-artifact@v7
         with:
-          name: nuget-packages-${{ matrix.platform }}-${{ matrix.arch }}
-          path: |
-            artifacts/packages/*.nupkg
+          name: nuget-packages-linux-musl-x64
+          retention-days: 1
+          path: artifacts/packages/*.nupkg
 
   # Publish job that runs only on main branch pushes or releases
   publish:
     name: Publish NuGet Package
-    needs: [build-and-test, generate-version]
+    needs: [build-and-test, package-musl, generate-version]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:

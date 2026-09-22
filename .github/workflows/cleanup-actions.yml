@@ -1,0 +1,67 @@
+name: Cleanup Actions History
+
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: cleanup-actions-history
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cleanup:
+    name: Retain release and recent runs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Delete expired workflow runs
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
+            const runs = await github.paginate(
+              github.rest.actions.listWorkflowRunsForRepo,
+              { owner, repo, per_page: 100 },
+            );
+
+            const isReleaseRun = (run) =>
+              run.event === 'push' && run.head_branch?.startsWith('v');
+
+            const releaseRuns = runs
+              .filter(isReleaseRun)
+              .sort((left, right) =>
+                new Date(right.created_at) - new Date(left.created_at));
+            const retainedReleaseIds = new Set(
+              releaseRuns.slice(0, 7).map((run) => run.id),
+            );
+
+            const expiredRuns = runs.filter((run) => {
+              if (run.id === context.runId) {
+                return false;
+              }
+
+              if (isReleaseRun(run)) {
+                return !retainedReleaseIds.has(run.id);
+              }
+
+              return new Date(run.created_at).getTime() < cutoff;
+            });
+
+            core.info(
+              `Retaining ${retainedReleaseIds.size} release runs and deleting ${expiredRuns.length} expired runs.`,
+            );
+
+            for (const run of expiredRuns) {
+              core.info(`Deleting run ${run.id}: ${run.name} (${run.created_at})`);
+              await github.rest.actions.deleteWorkflowRun({
+                owner,
+                repo,
+                run_id: run.id,
+              });
+            }
