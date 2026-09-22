@@ -325,6 +325,10 @@ compiles Rust; it requires the existing output for the selected configuration
 under `c2pa-rs/target/x86_64-unknown-linux-musl/`. Missing artifacts or unsupported
 build hosts fail explicitly. Ordinary builds do not need any musl tooling.
 
+The upstream `c2pa-rs` submodule does not track `Cargo.lock`. Like the normal
+native build, the musl build lets Cargo create it on the first build and reuse
+it on subsequent builds.
+
 The cross-build invokes Cargo separately with `-C target-feature=-crt-static`,
 preserving existing `RUSTFLAGS` (or `CARGO_ENCODED_RUSTFLAGS`). Target-specific
 linker, C/C++ compiler, and archiver settings apply only to this invocation.
