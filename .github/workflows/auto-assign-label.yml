@@ -7,7 +7,7 @@ on:
     types: [opened]
 
 permissions:
-  content: read
+  contents: read
   issues: write
   pull-requests: write
 
