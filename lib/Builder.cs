@@ -347,6 +347,11 @@ public partial class Builder : IDisposable
     /// placeholder bytes can be embedded directly into an asset to reserve
     /// space for the final signed manifest.
     /// </summary>
+    /// <remarks>
+    /// Configure a signer on the Context before creating this builder. Its reserve
+    /// size determines the placeholder size. Keep the same builder for hashing and
+    /// signing. The returned bytes are already formatted for embedding.
+    /// </remarks>
     public byte[] Placeholder(string format)
     {
         unsafe
@@ -369,26 +374,33 @@ public partial class Builder : IDisposable
     }
 
     /// <summary>
-    /// Reserves a placeholder manifest of the given size for a DataHash
-    /// signing workflow.
+    /// Converts raw application/c2pa manifest bytes into the representation
+    /// required for embedding in the specified asset format.
     /// </summary>
-    public byte[] DataHashedPlaceholder(nuint reservedSize, string format)
+    public byte[] ComposeManifest(string format, ReadOnlySpan<byte> manifest)
     {
         unsafe
         {
-            fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
+            fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format + '\0'))
+            fixed (byte* manifestBytes = manifest)
             {
-                byte* manifest = null;
-                var ret = C2paBindings.builder_data_hashed_placeholder(handle, reservedSize, (sbyte*)formatBytes, &manifest);
-                if (ret == -1)
-                    C2pa.CheckError();
-                var bytes = new byte[ret];
-                if (ret > 0 && manifest != null)
+                byte* result = null;
+                try
                 {
-                    Marshal.Copy((nint)manifest, bytes, 0, bytes.Length);
-                    C2paBindings.free(manifest);
+                    var length = C2paBindings.builder_compose_manifest(handle, (sbyte*)formatBytes,
+                        manifestBytes, (nuint)manifest.Length, &result);
+                    if (length == -1)
+                        C2pa.CheckError();
+                    var bytes = new byte[checked((int)length)];
+                    if (bytes.Length > 0)
+                        Marshal.Copy((nint)result, bytes, 0, bytes.Length);
+                    return bytes;
                 }
-                return bytes;
+                finally
+                {
+                    if (result != null)
+                        C2paBindings.free(result);
+                }
             }
         }
     }
@@ -398,6 +410,11 @@ public partial class Builder : IDisposable
     /// Operates in placeholder mode (after <see cref="Placeholder"/>) or
     /// direct mode (when a hard binding assertion already exists).
     /// </summary>
+    /// <remarks>
+    /// Uses the signer configured on the Context. After <see cref="Placeholder"/>,
+    /// the result has the same length for in-place replacement. Update the hard-binding
+    /// hash before signing. The result is already formatted for embedding.
+    /// </remarks>
     public byte[] SignEmbeddable(string format)
     {
         unsafe
@@ -420,43 +437,14 @@ public partial class Builder : IDisposable
     }
 
     /// <summary>
-    /// Signs this builder using the specified signer and a JSON DataHash
-    /// description. This is a low-level method for advanced use cases where
-    /// the caller handles embedding the manifest.
-    /// </summary>
-    /// <param name="signer">The signer to use.</param>
-    /// <param name="dataHashJson">JSON string containing DataHash information.</param>
-    /// <param name="format">MIME type or extension of the asset.</param>
-    /// <param name="asset">Optional asset stream. If <c>null</c> pre-calculated hashes are used.</param>
-    public byte[] SignDataHashedEmbeddable(ISigner signer, string dataHashJson, string format, Stream? asset = null)
-    {
-        using var s = new Signer(signer);
-        using var assetStream = asset == null ? null : new StreamAdapter(asset);
-        unsafe
-        {
-            fixed (byte* dataHashBytes = Encoding.UTF8.GetBytes(dataHashJson))
-            fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
-            {
-                byte* manifest = null;
-                C2paStream* nativeAsset = assetStream == null ? null : (C2paStream*)assetStream;
-                var ret = C2paBindings.builder_sign_data_hashed_embeddable(handle, s, (sbyte*)dataHashBytes, (sbyte*)formatBytes, nativeAsset, &manifest);
-                if (ret == -1)
-                    C2pa.CheckError();
-                var bytes = new byte[ret];
-                if (ret > 0 && manifest != null)
-                {
-                    Marshal.Copy((nint)manifest, bytes, 0, bytes.Length);
-                    C2paBindings.free(manifest);
-                }
-                return bytes;
-            }
-        }
-    }
-
-    /// <summary>
     /// Sets the byte exclusion ranges on the DataHash assertion. Each pair is
     /// <c>(start, length)</c> in bytes.
     /// </summary>
+    /// <remarks>
+    /// After embedding the placeholder, register its actual location before calling
+    /// <see cref="UpdateHashFromStream"/>. BMFF uses automatic manifest-box exclusions
+    /// and does not require this DataHash-specific step.
+    /// </remarks>
     public void SetDataHashExclusions(IReadOnlyList<(ulong Start, ulong Length)> exclusions)
     {
         var flat = new ulong[exclusions.Count * 2];

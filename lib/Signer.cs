@@ -10,7 +10,7 @@ internal sealed class Signer : IDisposable
     private GCHandleCollection handles = new();
 
     public Signer(ISigner signer)
-        : this(new SigningOptions(signer))
+        : this(new SigningOptions { C2paSigner = signer })
     {
     }
 
@@ -24,13 +24,90 @@ internal sealed class Signer : IDisposable
                 if (handle.IsAllocated)
                     handles.Add(handle);
             }
-            return;
+        }
+        else
+        {
+            unsafe
+            {
+                signer = CreateIdentitySigner(options, out var combinedHandles);
+                handles.Transfer(combinedHandles);
+            }
         }
 
-        unsafe
+        if (options.CredentialHolder != null)
         {
-            signer = CreateIdentitySigner(options, out var combinedHandles);
-            handles.Transfer(combinedHandles);
+            try
+            {
+                AddCredentialHolder(options.CredentialHolder, options.ReferencedAssertions, options.Roles);
+            }
+            catch
+            {
+                Dispose();
+                throw;
+            }
+        }
+    }
+
+    private unsafe void AddCredentialHolder(
+        ICredentialHolder credentialHolder,
+        IReadOnlyList<string>? referencedAssertions,
+        IReadOnlyList<string>? roles)
+    {
+        var signatureType = credentialHolder.SignatureType;
+        var reserveSize = credentialHolder.ReserveSize;
+        ArgumentException.ThrowIfNullOrEmpty(signatureType);
+        if (signatureType.Contains('\0'))
+            throw new ArgumentException("Signature type must not contain a null character.", nameof(credentialHolder));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(reserveSize);
+
+        var referencedAssertionPointers = Array.Empty<nint>();
+        var rolePointers = Array.Empty<nint>();
+        nint referencedAssertionsArray = 0;
+        nint rolesArray = 0;
+        var callbackHandle = GCHandle.Alloc(credentialHolder);
+        var transferred = false;
+        try
+        {
+            referencedAssertionsArray = CreateNullTerminatedUtf8Array(referencedAssertions, out referencedAssertionPointers);
+            rolesArray = CreateNullTerminatedUtf8Array(roles, out rolePointers);
+            fixed (byte* signatureTypeBytes = Encoding.UTF8.GetBytes(signatureType + '\0'))
+            {
+                var combinedSigner = C2paBindings.identity_signer_create_with_credential_holder(
+                    signer, (sbyte*)signatureTypeBytes, (nuint)reserveSize,
+                    (void*)GCHandle.ToIntPtr(callbackHandle), &SignCredential,
+                    (sbyte**)referencedAssertionsArray, (sbyte**)rolesArray);
+                if (combinedSigner == null)
+                    C2pa.CheckError();
+                signer = combinedSigner;
+                handles.Add(callbackHandle);
+                transferred = true;
+            }
+        }
+        finally
+        {
+            FreeUtf8Array(referencedAssertionsArray, referencedAssertionPointers);
+            FreeUtf8Array(rolesArray, rolePointers);
+            if (!transferred)
+                callbackHandle.Free();
+        }
+    }
+
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+    private static unsafe nint SignCredential(void* context, byte* payload, nuint payloadLength, byte* signature, nuint capacity)
+    {
+        try
+        {
+            var callbackHandle = GCHandle.FromIntPtr((nint)context);
+            if (callbackHandle.Target is not ICredentialHolder credentialHolder)
+                return -1;
+            var written = credentialHolder.Sign(
+                new ReadOnlySpan<byte>(payload, checked((int)payloadLength)),
+                new Span<byte>(signature, checked((int)capacity)));
+            return written >= 0 && (nuint)written <= capacity ? written : -1;
+        }
+        catch
+        {
+            return -1;
         }
     }
 

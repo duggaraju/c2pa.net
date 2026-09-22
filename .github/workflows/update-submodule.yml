@@ -176,11 +176,17 @@ jobs:
         if: steps.check.outputs.needed == 'true'
         env:
           TARGET_TAG: ${{ steps.target.outputs.tag }}
+          TARGET_COMMIT: ${{ steps.target.outputs.commit }}
           BRANCH_NAME: ${{ steps.update.outputs.branch }}
         run: |
           git add README.md
           git add lib/Schema
           git add -f c2pa-rs
+
+          if [ "$(git rev-parse :c2pa-rs)" != "$TARGET_COMMIT" ]; then
+            echo "Error: staged submodule gitlink does not match $TARGET_TAG ($TARGET_COMMIT)"
+            exit 1
+          fi
 
           if git diff --cached --ignore-submodules=none --quiet -- README.md lib/Schema c2pa-rs; then
             echo "No changes to commit"
@@ -188,6 +194,10 @@ jobs:
           fi
 
           git commit -m "Update c2pa-rs submodule to $TARGET_TAG"
+          if [ "$(git rev-parse HEAD:c2pa-rs)" != "$TARGET_COMMIT" ]; then
+            echo "Error: committed submodule gitlink does not match $TARGET_TAG ($TARGET_COMMIT)"
+            exit 1
+          fi
           git push --force-with-lease origin "$BRANCH_NAME"
 
       - name: Create Pull Request

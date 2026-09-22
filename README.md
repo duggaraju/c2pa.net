@@ -72,23 +72,14 @@ string roundTripped = store.ToJson();
 using ContentAuthenticity;
 
 // Build a minimal typed manifest definition.
-// The schema requires `NoEmbed` to be set.
 var definition = new ManifestDefinition
 {
-    NoEmbed = false,
     Title = "my-image.jpg",
     Format = "image/jpeg",
     InstanceId = Builder.GenerateInstanceID(),
     ClaimGeneratorInfo =
     [
         new ClaimGeneratorInfo { Name = "c2pa.net" }
-    ],
-    Assertions =
-    [
-        new ActionAssertion(
-        [
-            new ActionV1("c2pa.edited"),
-        ]),
     ],
 };
 
@@ -110,6 +101,7 @@ using var context = contextBuilder.Build();
 
 // Attach the context to a Builder and apply the typed manifest definition.
 using var builder = new Builder(context).WithDefinition(definition);
+builder.AddAction(new ContentAuthenticity.Schema.ActionItemV2 { Action = "c2pa.edited" });
 
 // Optional: add extra resources that the manifest may reference (thumbnails, etc.)
 builder.AddResource("thumbnail", "./thumbnail.jpg");
@@ -120,6 +112,104 @@ var output = "./my-image.signed.jpg";
 // Sign using the signer configured on the context.
 builder.Sign(input, output);
 ```
+
+### Advanced: Sign with an identity credential holder
+
+Implement `ICredentialHolder` for callback-backed CAWG identity credentials, such
+as credentials issued by an identity claims aggregator. Set `SignatureType` to the
+credential's CAWG signature type and `ReserveSize` to its maximum signature size
+in bytes. `Sign` receives the CBOR-encoded signer payload, writes the credential
+signature into the supplied buffer, and returns the number of bytes written.
+
+Pass your implementation as `credentialHolder` when configuring the context:
+
+```csharp
+var options = new SigningOptions
+{
+    C2paSigner = signer,
+    ReferencedAssertions = ["c2pa.actions"],
+    Roles = ["creator"],
+    CredentialHolder = credentialHolder
+};
+using var contextBuilder = new ContextBuilder();
+contextBuilder.SetSigner(options);
+using var context = contextBuilder.Build();
+```
+
+The context retains the callback for its native lifetime. Keep any resources used
+by your implementation available and usable from the signing thread until the
+context and its builders are disposed. Negative return values, oversized results,
+or callback exceptions cause signing to fail with `C2paException`. Supplying an
+`IdentitySigner` as well emits both X.509 and callback-backed identity assertions.
+
+### Advanced: Embed a manifest with your own asset writer
+
+Prefer `Builder.Sign` unless you need to control embedding and patching yourself.
+The context-based embeddable API replaces the older DataHash signing workflow:
+
+| Older API | Preferred workflow |
+| --- | --- |
+| `DataHashedPlaceholder(reservedSize, format)` | `Placeholder(format)` uses the Context signer's reserve size. |
+| `SignDataHashedEmbeddable(signer, dataHashJson, format, asset)` | Set exclusions, call `UpdateHashFromStream`, then `SignEmbeddable`. |
+| `FormatEmbeddable(format, rawManifest)` | `builder.ComposeManifest(format, rawManifest)` for existing raw manifests. Placeholder and signed embeddable bytes are already formatted. |
+
+The pinned native SDK deprecates these older APIs, so their managed wrappers have
+been removed. Migrate signing workflows as shown above. Use `ComposeManifest` only
+for raw `application/c2pa` bytes, not the already composed output of `Placeholder`
+or `SignEmbeddable`.
+
+This JPEG example uses the `signer` configured above and an unsigned input asset:
+
+```csharp
+using var contextBuilder = new ContextBuilder();
+contextBuilder.SetSigner(signer);
+using var context = contextBuilder.Build();
+using var builder = new Builder(context).WithDefinition(new ManifestDefinition
+{
+    Title = "my-image.jpg",
+    Format = "image/jpeg",
+    InstanceId = Builder.GenerateInstanceID(),
+    ClaimGeneratorInfo = [new ClaimGeneratorInfo { Name = "c2pa.net" }],
+});
+builder.AddAction(new ContentAuthenticity.Schema.ActionItemV2
+{
+    Action = "c2pa.created",
+    DigitalSourceType = "http://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture"
+});
+
+const string format = "image/jpeg";
+const int insertOffset = 2;
+byte[] source = File.ReadAllBytes("./my-image.jpg");
+if (source.Length < 2 || source[0] != 0xff || source[1] != 0xd8)
+    throw new InvalidDataException("Expected a JPEG SOI marker.");
+
+byte[] placeholder = builder.Placeholder(format);
+using var asset = new MemoryStream();
+asset.Write(source.AsSpan(0, insertOffset));
+asset.Write(placeholder);
+asset.Write(source.AsSpan(insertOffset));
+
+builder.SetDataHashExclusions([(insertOffset, (ulong)placeholder.Length)]);
+asset.Position = 0;
+builder.UpdateHashFromStream(asset, format);
+byte[] signedManifest = builder.SignEmbeddable(format);
+if (signedManifest.Length != placeholder.Length)
+    throw new InvalidOperationException("Signed manifest must fit the placeholder exactly.");
+
+asset.Position = insertOffset;
+asset.Write(signedManifest);
+File.WriteAllBytes("./my-image.signed.jpg", asset.ToArray());
+```
+
+Keep the same builder from placeholder creation through signing: it retains the
+reserved size. Both returned byte arrays are already formatted for embedding.
+Embedding is format-specific; the JPEG insertion above is not suitable for other
+containers or replacing an existing manifest. For MP4/BMFF, use a container-aware
+writer to insert the placeholder box and maintain offsets, then hash, sign, and
+patch it. Omit `SetDataHashExclusions` for BMFF because the native SDK excludes
+the manifest box automatically.
+
+See the [native embeddable API guide](c2pa-rs/docs/embeddable-api.md) for details.
 
 ## Prerequisites
 

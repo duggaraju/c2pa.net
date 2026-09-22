@@ -68,7 +68,7 @@ public sealed class ContextBuilder : IDisposable
     /// </summary>
     public void SetSigner(ISigner signer)
     {
-        SetSigner(new SigningOptions(signer));
+        SetSigner(new SigningOptions { C2paSigner = signer });
     }
 
 

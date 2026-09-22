@@ -40,6 +40,23 @@
     </AssemblyAttribute>
   </ItemGroup>
   <ItemGroup>
+    <DeprecatedNativeApi Include="c2pa_load_settings" />
+    <DeprecatedNativeApi Include="c2pa_release_string" />
+    <DeprecatedNativeApi Include="c2pa_string_free" />
+    <DeprecatedNativeApi Include="c2pa_reader_from_stream" />
+    <DeprecatedNativeApi Include="c2pa_reader_from_file" />
+    <DeprecatedNativeApi Include="c2pa_reader_from_manifest_data_and_stream" />
+    <DeprecatedNativeApi Include="c2pa_reader_free" />
+    <DeprecatedNativeApi Include="c2pa_builder_from_json" />
+    <DeprecatedNativeApi Include="c2pa_builder_from_archive" />
+    <DeprecatedNativeApi Include="c2pa_builder_free" />
+    <DeprecatedNativeApi Include="c2pa_builder_data_hashed_placeholder" />
+    <DeprecatedNativeApi Include="c2pa_builder_sign_data_hashed_embeddable" />
+    <DeprecatedNativeApi Include="c2pa_format_embeddable" />
+    <DeprecatedNativeApi Include="c2pa_manifest_bytes_free" />
+    <DeprecatedNativeApi Include="c2pa_signer_from_settings" />
+    <DeprecatedNativeApi Include="c2pa_signer_free" />
+    <DeprecatedNativeApi Include="c2pa_signature_free" />
     <BindingsPlatform Include="win-x64">
       <CargoTarget>x86_64-pc-windows-msvc</CargoTarget>
       <NativeLibrary>c2pa_c.dll</NativeLibrary>
@@ -127,7 +144,7 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="GenerateBindings" DependsOnTargets="Cargo" Inputs="@(NativeLibrary)" Outputs="@(GeneratedFile)">
+  <Target Name="GenerateBindings" DependsOnTargets="Cargo" Inputs="@(NativeLibrary);$(MSBuildProjectFullPath)" Outputs="@(GeneratedFile)">
     <ItemGroup>
       <FirstArch Include="@(HostArchitecture->Reverse())" />
     </ItemGroup>
@@ -135,7 +152,7 @@
     <PropertyGroup>
       <CargoOutputForBindings>$(MSBuildThisFileDirectory)../c2pa-rs/target/%(FirstArch.CargoTarget)/$(Configuration.ToLower())/</CargoOutputForBindings>
       <ConfigOptions>-c latest-codegen multi-file generate-file-scoped-namespaces generate-helper-types -hf header</ConfigOptions>
-      <InteropArgsCommon>-n ContentAuthenticity.Bindings -l c2pa_c -p c2pa_ -r C2paSigningAlg=SigningAlg uint64_t=ulong char=sbyte -x c -a -DC2PA_DYNAMIC_LOADING=1</InteropArgsCommon>
+      <InteropArgsCommon>-n ContentAuthenticity.Bindings -l c2pa_c -p c2pa_ -r C2paSigningAlg=SigningAlg uint64_t=ulong char=sbyte -e @(DeprecatedNativeApi, ' ') -x c -a -DC2PA_DYNAMIC_LOADING=1</InteropArgsCommon>
     </PropertyGroup>
     <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
       <PlatformArgs>-I "`gcc -print-file-name=include`" -Wno-ignored-attributes -Wno-attributes</PlatformArgs>

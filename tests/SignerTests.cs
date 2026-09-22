@@ -94,11 +94,13 @@ public sealed class SignerTests
     {
         using var c2paSigner = new CountingRsaSigner();
         using var identitySigner = new CountingRsaSigner();
-        var options = new SigningOptions(
-            C2paSigner: c2paSigner,
-            IdentitySigner: identitySigner,
-            ReferencedAssertions: ["c2pa.actions"],
-            Roles: ["creator"]);
+        var options = new SigningOptions
+        {
+            C2paSigner = c2paSigner,
+            IdentitySigner = identitySigner,
+            ReferencedAssertions = ["c2pa.actions"],
+            Roles = ["creator"]
+        };
 
         var exception = Record.Exception(() =>
         {
@@ -115,11 +117,13 @@ public sealed class SignerTests
     {
         using var c2paSigner = new CountingRsaSigner();
         using var identitySigner = new CountingRsaSigner();
-        var options = new SigningOptions(
-            C2paSigner: c2paSigner,
-            IdentitySigner: identitySigner,
-            ReferencedAssertions: ["c2pa.actions"],
-            Roles: ["creator"]);
+        var options = new SigningOptions
+        {
+            C2paSigner = c2paSigner,
+            IdentitySigner = identitySigner,
+            ReferencedAssertions = ["c2pa.actions"],
+            Roles = ["creator"]
+        };
 
         using var signer = new Signer(options);
 
@@ -127,6 +131,165 @@ public sealed class SignerTests
         Assert.Equal(2, handles.Count);
         Assert.Contains(handles, h => h.IsAllocated && ReferenceEquals(h.Target, c2paSigner));
         Assert.Contains(handles, h => h.IsAllocated && ReferenceEquals(h.Target, identitySigner));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CredentialHolder_KeepsCallbacksOwned_AndReleasesThemOnDispose(bool withIdentitySigner)
+    {
+        using var c2paSigner = new CountingRsaSigner();
+        using var identitySigner = new CountingRsaSigner();
+        var holder = new TestCredentialHolder();
+        var options = new SigningOptions
+        {
+            C2paSigner = c2paSigner,
+            IdentitySigner = withIdentitySigner ? identitySigner : null,
+            ReferencedAssertions = ["c2pa.actions"],
+            Roles = ["creator"],
+            CredentialHolder = holder
+        };
+        var signer = new Signer(options);
+        var handles = GetHandles(signer);
+        try
+        {
+            Assert.True(signer.ReserveSize >= holder.ReserveSize);
+            Assert.Equal(withIdentitySigner ? 3 : 2, handles.Count);
+            Assert.Contains(handles, handle => handle.IsAllocated && ReferenceEquals(handle.Target, holder));
+            Assert.Contains(handles, handle => handle.IsAllocated && ReferenceEquals(handle.Target, c2paSigner));
+            if (withIdentitySigner)
+                Assert.Contains(handles, handle => handle.IsAllocated && ReferenceEquals(handle.Target, identitySigner));
+        }
+        finally
+        {
+            signer.Dispose();
+        }
+        Assert.Empty(handles);
+        signer.Dispose();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("invalid\0type")]
+    public void CredentialHolder_WithInvalidSignatureType_ShouldThrow(string signatureType)
+    {
+        using var c2paSigner = new CountingRsaSigner();
+        var options = new SigningOptions
+        {
+            C2paSigner = c2paSigner,
+            CredentialHolder = new TestCredentialHolder { SignatureType = signatureType }
+        };
+
+        Assert.Throws<ArgumentException>(() => new Signer(options));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void CredentialHolder_WithInvalidReserveSize_ShouldThrow(int reserveSize)
+    {
+        using var c2paSigner = new CountingRsaSigner();
+        var options = new SigningOptions
+        {
+            C2paSigner = c2paSigner,
+            CredentialHolder = new TestCredentialHolder { ReserveSize = reserveSize }
+        };
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => new Signer(options));
+    }
+
+    [Fact]
+    public void CredentialHolder_WithContext_ShouldSignAndEmbedIdentityAssertion()
+    {
+        using var c2paSigner = new CountingRsaSigner();
+        var holder = new TestCredentialHolder();
+        var options = new SigningOptions
+        {
+            C2paSigner = c2paSigner,
+            ReferencedAssertions = ["c2pa.actions"],
+            Roles = ["creator"],
+            CredentialHolder = holder
+        };
+        Context context;
+        using (var contextBuilder = new ContextBuilder())
+        {
+            contextBuilder.SetSigner(options);
+            context = contextBuilder.Build();
+        }
+        using var ownedContext = context;
+        using var builder = new Builder(context).WithDefinition(new ManifestDefinition
+        {
+            Title = "Credential holder JPEG",
+            ClaimGeneratorInfo = [new ClaimGeneratorInfo { Name = "c2pa.net tests" }],
+        });
+        builder.SetIntent(C2paBuilderIntent.Create, C2paDigitalSourceType.DigitalCapture);
+        using var source = File.OpenRead(Path.Combine(AppContext.BaseDirectory, "no_manifest.jpg"));
+        using var destination = new MemoryStream();
+
+        builder.Sign(source, destination, "image/jpeg");
+
+        Assert.True(holder.CallCount > 0);
+        Assert.NotEmpty(holder.Payload);
+        Assert.Equal(holder.ReserveSize, holder.BufferLength);
+        Assert.True(c2paSigner.CallCount > 0);
+        destination.Position = 0;
+        using var reader = new Reader(context).WithStream(destination, "image/jpeg");
+        Assert.Contains("cawg.identity", reader.Json);
+        Assert.Contains(holder.SignatureType, reader.Json);
+        Assert.Contains("creator", reader.Json);
+        Assert.Contains("claimSignature.validated", reader.Json);
+        Assert.Contains("dataHash.match", reader.Json);
+    }
+
+    [Theory]
+    [InlineData(-1, false)]
+    [InlineData(2049, false)]
+    [InlineData(1, true)]
+    public void CredentialHolder_WhenCallbackFails_ShouldThrowNativeException(int result, bool throws)
+    {
+        using var c2paSigner = new CountingRsaSigner();
+        var holder = new TestCredentialHolder { Result = result, Throws = throws };
+        using var contextBuilder = new ContextBuilder();
+        contextBuilder.SetSigner(new SigningOptions { C2paSigner = c2paSigner, CredentialHolder = holder });
+        using var context = contextBuilder.Build();
+        using var builder = new Builder(context).WithDefinition(new ManifestDefinition
+        {
+            ClaimGeneratorInfo = [new ClaimGeneratorInfo { Name = "c2pa.net tests" }],
+        });
+        builder.SetIntent(C2paBuilderIntent.Create, C2paDigitalSourceType.DigitalCapture);
+        using var source = File.OpenRead(Path.Combine(AppContext.BaseDirectory, "no_manifest.jpg"));
+        using var destination = new MemoryStream();
+
+        Assert.Throws<C2paException>(() => builder.Sign(source, destination, "image/jpeg"));
+        Assert.True(holder.CallCount > 0);
+    }
+
+    private sealed class TestCredentialHolder : ICredentialHolder
+    {
+        public string SignatureType { get; init; } = "cawg.test_credential";
+
+        public int ReserveSize { get; init; } = 2048;
+
+        public int Result { get; init; } = 1;
+
+        public bool Throws { get; init; }
+
+        public int CallCount { get; private set; }
+
+        public byte[] Payload { get; private set; } = [];
+
+        public int BufferLength { get; private set; }
+
+        public int Sign(ReadOnlySpan<byte> signerPayload, Span<byte> signature)
+        {
+            CallCount++;
+            Payload = signerPayload.ToArray();
+            BufferLength = signature.Length;
+            if (Throws)
+                throw new InvalidOperationException("Credential service failed.");
+            signature[0] = 0x01;
+            return Result;
+        }
     }
 
     private static GCHandleCollection GetHandles(Signer signer)
