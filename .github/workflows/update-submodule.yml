@@ -19,7 +19,7 @@ permissions:
 
 env:
   DOTNET_VERSION: "10.0.x"
-  RUST_VERSION: "1.88.0"
+  RUST_VERSION: "stable"
   NODE_VERSION: "24"
   RUSTFLAGS: "-A unused-imports"
 
