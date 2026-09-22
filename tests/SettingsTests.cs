@@ -53,9 +53,18 @@ public class SettingsTests
                     "user_anchors": null,
                     "trust_anchors": null,
                     "trust_config": null,
-                    "allowed_list": null
-                },
-                "cawg_trust": {
+                    "anchors": [
+                        {
+                            "trust_anchors": "",
+                            "trust_kind": "manifest",
+                            "allowed_list": null
+                        },
+                        {
+                            "trust_anchors": "",
+                            "trust_kind": "cawg",
+                            "allowed_list": null
+                        }
+                    ]
                 },
                 "core": {
                 },
@@ -87,5 +96,15 @@ public class SettingsTests
 
         var settings = json.FromJson<Settings>();
         Assert.NotNull(settings);
+        Assert.NotNull(settings.Trust);
+        Assert.Collection(settings.Trust.Anchors!,
+            anchor => Assert.Equal(Schema.Settings.TrustKind.Manifest, anchor.TrustKind),
+            anchor => Assert.Equal(Schema.Settings.TrustKind.Cawg, anchor.TrustKind));
+        Assert.True(settings.Verify!.VerifyAfterReading);
+        Assert.True(settings.Verify.VerifyAfterSign);
+        Assert.True(settings.Verify.VerifyTrust);
+        Assert.False(settings.Verify.OcspFetch);
+
+        using var nativeSettings = new C2paSettings(json);
     }
 }

@@ -12,8 +12,8 @@ public sealed class SignerTests
     public void From_WithValidSigner_CanSign_AndInvokesCallback()
     {
         // Arrange
-        var settings = new C2paSettings();
-        settings.SetValue("build.thumbnail.format", "\"jpeg\"");
+        using var settings = new C2paSettings();
+        settings.SetValue("builder.thumbnail.format", "\"jpeg\"");
 
         var manifest = """
                         {
@@ -22,7 +22,10 @@ public sealed class SignerTests
                                     "label": "c2pa.actions",
                                     "data": {
                                         "actions": [
-                                            { "action": "c2pa.created" }
+                                            {
+                                                "action": "c2pa.created",
+                                                "digitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture"
+                                            }
                                         ]
                                     }
                                 }
@@ -41,7 +44,7 @@ public sealed class SignerTests
         using var source = new MemoryStream(inputBytes);
         using var dest = new MemoryStream();
 
-        var signer = new CountingRsaSigner();
+        using var signer = new CountingRsaSigner();
 
         // Act
         var manifestBytes = builder.Sign(source, dest, "image/jpeg", signer);
