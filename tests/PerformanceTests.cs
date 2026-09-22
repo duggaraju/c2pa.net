@@ -458,7 +458,8 @@ public class PerformanceTests
                     "data": {
                         "actions": [
                             {
-                                "action": "c2pa.created"
+                                "action": "c2pa.created",
+                                "digitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture"
                             }
                         ]
                     }
@@ -506,21 +507,21 @@ public class PerformanceTests
 #endif
 
     [Theory]
-    [InlineData("Provenance Memleak test using file API with 1000 iterations", IterationCount, false)]
-    [InlineData("Provenance Memleak test using buffer API with 1000 iterations", IterationCount, true)]
+    [InlineData("Provenance Memleak test using file API", IterationCount, false)]
+    [InlineData("Provenance Memleak test using buffer API", IterationCount, true)]
     public void CheckAuthoringAndValidationMemLeak(string testDescription, int num_iterations, bool use_buffer_api)
     {
         _output.WriteLine("Running test: {0} {1} times", testDescription, num_iterations);
         string inputFile = "video1_no_manifest.mp4";
-        string outputFile = "output.mp4";
-        var signer = new TestSigner();
+        string outputFile = Path.Combine(Path.GetTempPath(), $"c2pa-{Guid.NewGuid():N}.mp4");
+        using var signer = new TestSigner();
         var inputFileBuffer = use_buffer_api ? File.ReadAllBytes(inputFile) : null;
         string mimeType = inputFile.GetMimeType();
 
         // Ensure we don't attempt to generate an MP4 thumbnail for MP4 inputs.
         // (Some native builds don't support `video/mp4` thumbnails.)
-        var settings = new C2paSettings();
-        settings.SetValue("builder.thumbnail_format", "\"jpeg\"");
+        using var settings = new C2paSettings();
+        settings.SetValue("builder.thumbnail.format", "\"jpeg\"");
 
         var manifest = """
                         {
@@ -529,7 +530,10 @@ public class PerformanceTests
                                     "label": "c2pa.actions",
                                     "data": {
                                         "actions": [
-                                            { "action": "c2pa.created" }
+                                            {
+                                                "action": "c2pa.created",
+                                                "digitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture"
+                                            }
                                         ]
                                     }
                                 }
@@ -539,32 +543,34 @@ public class PerformanceTests
         using var contextBuilder = new ContextBuilder();
         contextBuilder.SetSettings(settings);
         using var context = contextBuilder.Build();
-        var builder = new Builder(context).WithDefinition(manifest);
+        using var builder = new Builder(context).WithDefinition(manifest);
 
-        for (int iter = 0; iter < num_iterations; iter++)
+        try
         {
-            if (use_buffer_api)
+            for (int iter = 0; iter < num_iterations; iter++)
             {
-                var inputStream = new MemoryStream(inputFileBuffer!);
-                var outputStream = new MemoryStream();
-                builder.Sign(inputStream, outputStream, mimeType, signer);
-                outputStream.Position = 0;
-                using var readerCtx = new Context();
-                var reader = new Reader(readerCtx).WithStream(outputStream, mimeType);
-                Assert.NotNull(reader.Json);
-            }
-            else
-            {
-                if (File.Exists(outputFile))
+                if (use_buffer_api)
                 {
-                    File.Delete(outputFile);
+                    using var inputStream = new MemoryStream(inputFileBuffer!);
+                    using var outputStream = new MemoryStream();
+                    builder.Sign(inputStream, outputStream, mimeType, signer);
+                    outputStream.Position = 0;
+                    using var readerCtx = new Context();
+                    using var reader = new Reader(readerCtx).WithStream(outputStream, mimeType);
+                    Assert.NotNull(reader.Json);
                 }
-
-                builder.Sign(inputFile, outputFile, signer: signer);
-                using var readerCtx = new Context();
-                var reader = new Reader(readerCtx).WithFile(outputFile);
-                Assert.NotNull(reader.Json);
+                else
+                {
+                    builder.Sign(inputFile, outputFile, signer: signer);
+                    using var readerCtx = new Context();
+                    using var reader = new Reader(readerCtx).WithFile(outputFile);
+                    Assert.NotNull(reader.Json);
+                }
             }
+        }
+        finally
+        {
+            File.Delete(outputFile);
         }
     }
 }
