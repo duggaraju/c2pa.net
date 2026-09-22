@@ -42,13 +42,6 @@ namespace ContentAuthenticity.Schema.Settings
         public Builder? Builder { get; set; }
 
         /// <summary>
-        /// Settings for configuring the CAWG trust lists.
-        /// </summary>
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("cawg_trust")]
-        public CawgTrust? CawgTrust { get; set; }
-
-        /// <summary>
         /// Settings for configuring the CAWG x509 signer, accessible via [`Settings::signer`].
         /// </summary>
         [JsonPropertyName("cawg_x509_signer")]
@@ -68,11 +61,19 @@ namespace ContentAuthenticity.Schema.Settings
         public CawgX509SignerClass? Signer { get; set; }
 
         /// <summary>
-        /// Settings for configuring the C2PA trust lists.
+        /// List of soft binding algorithms to validate against. If not specified, soft binding
+        /// errors may be generated.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("soft_binding")]
+        public SoftBinding? SoftBinding { get; set; }
+
+        /// <summary>
+        /// Settings for configuring the trust lists (C2PA, CAWG, or TSA).
         /// </summary>
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("trust")]
-        public CawgTrust? Trust { get; set; }
+        public Trust? Trust { get; set; }
 
         /// <summary>
         /// Settings for configuring verification.
@@ -113,6 +114,19 @@ namespace ContentAuthenticity.Schema.Settings
         /// </summary>
         [JsonPropertyName("auto_timestamp_assertion")]
         public AutoTimestampAssertion AutoTimestampAssertion { get; set; }
+
+        /// <summary>
+        /// Whether `/free` and `/skip` boxes are excluded from the BMFF/MP4 hard-binding hash.
+        ///
+        /// `/free` and `/skip` are reserved/padding space that apps commonly rewrite after
+        /// signing (e.g. to reclaim or repurpose it), so the C2PA spec permits excluding
+        /// them. Set to `false` to fold their content into the hash instead, so any later
+        /// edit to either box invalidates the hard binding like any other content change.
+        ///
+        /// The default value is `true`.
+        /// </summary>
+        [JsonPropertyName("bmff_hash_exclude_free_and_skip_boxes")]
+        public bool BmffHashExcludeFreeAndSkipBoxes { get; set; }
 
         /// <summary>
         /// Whether to create [`CertificateStatus`] assertions for manifests to store certificate
@@ -179,6 +193,22 @@ namespace ContentAuthenticity.Schema.Settings
         public bool? GenerateC2PaArchive { get; set; }
 
         /// <summary>
+        /// Whether to ignore errors encountered while loading or validating an [`Ingredient`]'s
+        /// manifest (e.g. invalid file format).
+        ///
+        /// When enabled, a hard error is reported as a `general.error` in the ingredient's
+        /// [`validation_results`] instead of being returned, so the [`Ingredient`] still loads
+        /// and callers can inspect what went wrong.
+        ///
+        /// The default value is false.
+        ///
+        /// [`Ingredient`]: crate::Ingredient
+        /// [`validation_results`]: crate::Ingredient::validation_results
+        /// </summary>
+        [JsonPropertyName("ignore_ingredient_errors")]
+        public bool IgnoreIngredientErrors { get; set; }
+
+        /// <summary>
         /// The default [`BuilderIntent`] for the [`Builder`].
         ///
         /// See [`BuilderIntent`] for more information.
@@ -242,6 +272,24 @@ namespace ContentAuthenticity.Schema.Settings
         /// </summary>
         [JsonPropertyName("all_actions_included")]
         public bool? AllActionsIncluded { get; set; }
+
+        /// <summary>
+        /// Whether to automatically set
+        /// [Actions::all_actions_included][crate::assertions::Actions::all_actions_included]
+        /// to `true` when the manifest's sole recorded action is `c2pa.opened` — i.e. the asset was
+        /// opened only to record that action and immediately re-saved without any other changes,
+        /// as required by the
+        /// [C2PA Technical
+        /// Specification](https://spec.c2pa.org/specifications/specifications/2.4/specs/C2PA_Specification.html#_all_actions_included).
+        ///
+        /// Disabled by default: the builder can only see changes that were recorded as an
+        /// [`Action`], so enabling this is an assertion by the caller that every change made to
+        /// the asset in this workflow is in fact tracked as an action.
+        /// Takes priority over `all_actions_included` when it applies, but never overrides a value
+        /// the caller explicitly set on the actions assertion data itself.
+        /// </summary>
+        [JsonPropertyName("auto_all_actions_included")]
+        public bool AutoAllActionsIncluded { get; set; }
 
         /// <summary>
         /// Whether to automatically generate a c2pa.created [Action] assertion or error that it
@@ -609,59 +657,6 @@ namespace ContentAuthenticity.Schema.Settings
     }
 
     /// <summary>
-    /// Settings for configuring the CAWG trust lists.
-    ///
-    /// Settings to configure the trust list.
-    ///
-    /// Settings for configuring the C2PA trust lists.
-    /// </summary>
-    public partial class CawgTrust
-    {
-        /// <summary>
-        /// List of explicitly allowed certificates as a PEM bundle.
-        /// </summary>
-        [JsonPropertyName("allowed_list")]
-        public string? AllowedList { get; set; }
-
-        /// <summary>
-        /// List of default trust anchor root certificates as a PEM bundle.
-        ///
-        /// Normally this option contains the official C2PA-recognized trust anchors found here:
-        /// &lt;https://github.com/c2pa-org/conformance-public/tree/main/trust-list&gt;
-        /// </summary>
-        [JsonPropertyName("trust_anchors")]
-        public string? TrustAnchors { get; set; }
-
-        /// <summary>
-        /// List of allowed extended key usage (EKU) object identifiers (OID) that
-        /// certificates must have.
-        /// </summary>
-        [JsonPropertyName("trust_config")]
-        public string? TrustConfig { get; set; }
-
-        /// <summary>
-        /// List of additional user-provided trust anchor root certificates as a PEM bundle.
-        /// </summary>
-        [JsonPropertyName("user_anchors")]
-        public string? UserAnchors { get; set; }
-
-        /// <summary>
-        /// Whether to verify certificates against the trust lists specified in [`Trust`]. This
-        /// option is ONLY applicable to CAWG.
-        ///
-        /// The default value is true.
-        ///
-        /// &lt;div class="warning"&gt;
-        /// Verifying trust is REQUIRED by the CAWG spec. This option should only be used for
-        /// development or testing.
-        /// &lt;/div&gt;
-        /// </summary>
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("verify_trust_list")]
-        public bool? VerifyTrustList { get; set; }
-    }
-
-    /// <summary>
     /// A signer configured locally.
     ///
     /// A signer configured remotely.
@@ -760,9 +755,50 @@ namespace ContentAuthenticity.Schema.Settings
     /// Settings for configuring core features.
     ///
     /// Settings to configure core features.
+    ///
+    /// This struct is `#[non_exhaustive]`: construct it via [`Default`] (and the `with_*`
+    /// builders on
+    /// [`Settings`]) rather than a struct literal, so that future settings can be added without
+    /// a
+    /// breaking change.
     /// </summary>
     public partial class Core
     {
+        /// <summary>
+        /// Whether the SDK follows HTTP redirects for requests made while reading and validating
+        /// (remote manifests, OCSP, timestamps, `did:web`).
+        ///
+        /// Because some request URLs come from untrusted content, following redirects can be abused
+        /// to
+        /// reach internal or cloud-metadata endpoints (SSRF – CAI-12574). To prevent that while
+        /// remaining compatible with legitimate redirects:
+        ///
+        /// - `true` (default): redirects are followed, **except** when a redirect target is a
+        /// non-globally-routable address (loopback, private/RFC1918, link-local and
+        /// cloud-metadata,
+        /// IPv6 unique-local/link-local, CGNAT, etc.). Such a redirect is rejected with
+        /// [`HttpResolverError::RedirectTargetDisallowed`]. Redirects to public hosts are followed
+        /// normally.
+        /// - `false`: redirects are not followed at all; a redirect response is surfaced as
+        /// [`HttpResolverError::RedirectDisallowed`].
+        ///
+        /// This applies to redirect *targets*, not the initial request: a URL that *directly* names
+        /// an
+        /// internal host (for example an enterprise OCSP responder on a private address, or a
+        /// `localhost` development server) is still fetched. Use [`allowed_network_hosts`] to
+        /// restrict
+        /// which hosts may be contacted at all.
+        ///
+        /// [`allowed_network_hosts`]: Core::allowed_network_hosts
+        /// [`HttpResolverError::RedirectTargetDisallowed`]:
+        /// crate::http::HttpResolverError::RedirectTargetDisallowed
+        /// [`HttpResolverError::RedirectDisallowed`]:
+        /// crate::http::HttpResolverError::RedirectDisallowed
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("allow_redirects")]
+        public bool? AllowRedirects { get; set; }
+
         /// <summary>
         /// &lt;div class="warning"&gt;
         /// The CAWG identity assertion does not currently respect this setting.
@@ -786,9 +822,16 @@ namespace ContentAuthenticity.Schema.Settings
         /// is omitted, any scheme is allowed as long as the host matches.
         ///
         /// The behavior is as follows:
-        /// - `None` (default) no filtering enabled.
+        /// - `None` (default): no host allow-list is applied. Redirect handling is governed
+        /// independently by [`allow_redirects`] (which rejects redirects to internal addresses).
         /// - `Some(vec)` where `vec` is empty, all traffic is blocked.
         /// - `Some(vec)` with at least one pattern, filtering enabled for only those patterns.
+        ///
+        /// When an allow-list is set it is enforced on every request, including each redirect hop
+        /// the
+        /// SDK follows, so a redirect to a host outside the allow-list is rejected.
+        ///
+        /// [`allow_redirects`]: Core::allow_redirects
         ///
         /// # Examples
         ///
@@ -898,6 +941,134 @@ namespace ContentAuthenticity.Schema.Settings
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("prefer_compress_manifests")]
         public bool? PreferCompressManifests { get; set; }
+    }
+
+    /// <summary>
+    /// List of soft binding algorithms to validate against. If not specified, soft binding
+    /// errors may be generated.
+    /// </summary>
+    public partial class SoftBinding
+    {
+        [JsonPropertyName("soft_binding_algorithms")]
+        public string[]? SoftBindingAlgorithms { get; set; }
+    }
+
+    /// <summary>
+    /// Settings for configuring the trust lists (C2PA, CAWG, or TSA).
+    ///
+    /// Settings to configure the trust list.
+    /// </summary>
+    public partial class Trust
+    {
+        /// <summary>
+        /// This option contains the set of trust anchors used to validate certificates.
+        /// </summary>
+        [JsonPropertyName("anchors")]
+        public AnchorElement[]? Anchors { get; set; }
+
+        [JsonPropertyName("trust_anchors")]
+        public string? TrustAnchors { get; set; }
+
+        /// <summary>
+        /// List of allowed extended key usage (EKU) object identifiers (OID) that
+        /// certificates must have.
+        /// </summary>
+        [JsonPropertyName("trust_config")]
+        public string? TrustConfig { get; set; }
+
+        [JsonPropertyName("user_anchors")]
+        public string? UserAnchors { get; set; }
+    }
+
+    public partial class AnchorElement
+    {
+        /// <summary>
+        /// List of explicitly allowed CAWG identity or Singing certificates as a PEM bundle.
+        ///
+        /// Under the CAWG interim trust model (CAWG identity assertion spec §8.2.4.1),
+        /// this corresponds to the IPTC Origin Verified News Publishers end-entity
+        /// certificate list (&lt;https://trust.iptc.org/end-entity-list.pem&gt;).
+        ///
+        /// When used for C2PA this will not be C2PA trust list recognized or acknowledged
+        /// certificates and
+        /// should only be used for non-C2PA conformant cases.
+        /// </summary>
+        [JsonPropertyName("allowed_list")]
+        public string? AllowedList { get; set; }
+
+        /// <summary>
+        /// Specifies the details of a specific trust list.
+        ///
+        /// Normally this option contains the official C2PA-recognized trust anchors found here:
+        /// &lt;https://github.com/c2pa-org/conformance-public/tree/main/trust-list&gt;
+        /// or a user supplied trust list.  This format is a PEM string of certificates.
+        /// For C2PA trust lists the TrustListKind should be ['Signer]
+        ///
+        /// When validating CAWG X.509 identity signatures.
+        ///
+        /// Under the CAWG interim trust model (CAWG identity assertion spec §8.2.4.1,
+        /// valid for assertions issued on or before 31 March 2027 and carrying a
+        /// trusted time stamp), these are the CAWG-recognized trust anchors – the
+        /// Mozilla Root Store with the Email (S/MIME) trust bit enabled
+        ///
+        /// (&lt;https://ccadb.my.salesforce-sites.com/mozilla/IncludedRootsPEMTxt?TrustBitsInclude=Email&gt;)
+        /// and the IPTC Origin Verified News Publishers trust-anchor list
+        /// (&lt;https://trust.iptc.org/anchor-list.pem&gt;) – not the C2PA conformance
+        /// trust-list.  For CAWG trust the TrustListKind should be ['CAWG']
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("trust_anchors")]
+        public string? TrustAnchors { get; set; }
+
+        /// <summary>
+        /// List of allowed extended key usage (EKU) object identifiers (OID) that
+        /// certificates must have. This will overlay the default top level trust_config.
+        /// If the trust_kind is CAWG it will override the top level trust config
+        ///
+        /// When validating CAWG identity certificates.
+        ///
+        /// The CAWG interim trust model (CAWG identity assertion spec §8.2.4.1)
+        /// requires the `id-kp-emailProtection` EKU (1.3.6.1.5.5.7.3.4) together with
+        /// one of the CA/Browser Forum S/MIME certificate-policy OIDs:
+        /// organization-validated (2.23.140.1.5.2.2 / 2.23.140.1.5.2.3),
+        /// sponsor-validated (2.23.140.1.5.3.2 / 2.23.140.1.5.3.3), or
+        /// individual-validated (2.23.140.1.5.4.2 / 2.23.140.1.5.4.3). Mailbox-validated
+        /// and legacy certificate purposes are not accepted.
+        /// </summary>
+        [JsonPropertyName("trust_config")]
+        public string? TrustConfig { get; set; }
+
+        /// <summary>
+        /// Kind of trust list.  This is used to determine the trust purpose, default is Signer.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("trust_kind")]
+        public TrustKind? TrustKind { get; set; }
+
+        /// <summary>
+        /// URI identifier for the trust list.  If not is present a unique identifier will be
+        /// generated.
+        /// </summary>
+        [JsonPropertyName("trust_uri")]
+        public string? TrustUri { get; set; }
+
+        /// <summary>
+        /// Exact-match allow-list of trusted CAWG identity claims aggregation (ICA)
+        /// issuer DIDs.
+        ///
+        /// Each entry is a full DID string (any DID method) that is compared, after
+        /// stripping any fragment, against the `issuer` of an ICA verifiable
+        /// credential. An issuer that is not present on this list is reported with
+        /// the informational code `cawg.ica.untrusted_issuer` for that identity
+        /// assertion and its `cawg.ica.credential_valid` success code is withheld.
+        ///
+        /// The default value is empty, meaning that NO ICA issuer is trusted. This
+        /// is a deliberate secure default: a self-issued `did:jwk` (or any other
+        /// issuer) is not trustworthy simply because its signature is
+        /// self-consistent. Populate this list with the DIDs of issuers you trust.
+        /// </summary>
+        [JsonPropertyName("trusted_ica_issuers")]
+        public string[]? TrustedIcaIssuers { get; set; }
     }
 
     /// <summary>
@@ -1054,7 +1225,7 @@ namespace ContentAuthenticity.Schema.Settings
     ///
     /// Fetch timestamps for only the parent manifest.
     ///
-    /// Fetch timestmaps for all manifests in the manifest store.
+    /// Fetch timestamps for all manifests in the manifest store.
     /// </summary>
     public enum FetchScope { All, Parent };
 
@@ -1114,32 +1285,19 @@ namespace ContentAuthenticity.Schema.Settings
     /// <summary>
     /// Algorithm to use for signing.
     ///
-    /// Describes the digital signature algorithms allowed by the C2PA spec.
+    /// JSON Schema proxy for [`SigningAlg`].
     ///
-    /// Per [§13.2, “Digital Signatures”]:
-    ///
-    /// &gt; All digital signatures applied as per the technical requirements of this
-    /// &gt; specification shall be generated using one of the digital signature
-    /// &gt; algorithms and key types listed as described in this section.
-    ///
-    /// [§13.2, “Digital Signatures”]:
-    /// https://spec.c2pa.org/specifications/specifications/2.3/specs/C2PA_Specification.html#_digital_signatures
-    ///
-    /// ECDSA with SHA-256
-    ///
-    /// ECDSA with SHA-384
-    ///
-    /// ECDSA with SHA-512
-    ///
-    /// RSASSA-PSS using SHA-256 and MGF1 with SHA-256
-    ///
-    /// RSASSA-PSS using SHA-384 and MGF1 with SHA-384
-    ///
-    /// RSASSA-PSS using SHA-512 and MGF1 with SHA-512
-    ///
-    /// Edwards-Curve DSA (Ed25519 instance only)
+    /// `c2pa_raw_crypto::SigningAlg` intentionally does not depend on `schemars`,
+    /// so it does not implement [`schemars::JsonSchema`]. SDK types that expose a
+    /// `SigningAlg` in their JSON schema reference this mirror (whose variants match
+    /// `SigningAlg`'s serialized form) via `#[schemars(with = "...")]`.
     /// </summary>
     public enum Alg { Ed25519, Es256, Es384, Es512, Ps256, Ps384, Ps512 };
+
+    /// <summary>
+    /// Kind of trust list.  This is used to determine the trust purpose, default is Signer.
+    /// </summary>
+    public enum TrustKind { Cawg, Manifest, Tsa };
 
     /// <summary>
     /// The default [`BuilderIntent`] for the [`Builder`].
@@ -1182,6 +1340,7 @@ namespace ContentAuthenticity.Schema.Settings
                 FormatEnumConverter.Singleton,
                 QualityConverter.Singleton,
                 AlgConverter.Singleton,
+                TrustKindConverter.Singleton,
                 new DateOnlyConverter(),
                 new TimeOnlyConverter(),
                 IsoDateTimeOffsetConverter.Singleton
@@ -1493,6 +1652,45 @@ namespace ContentAuthenticity.Schema.Settings
         }
 
         public static readonly AlgConverter Singleton = new AlgConverter();
+    }
+
+    internal class TrustKindConverter : JsonConverter<TrustKind>
+    {
+        public override bool CanConvert(Type t) => t == typeof(TrustKind);
+
+        public override TrustKind Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var value = reader.GetString();
+            switch (value)
+            {
+                case "cawg":
+                    return TrustKind.Cawg;
+                case "manifest":
+                    return TrustKind.Manifest;
+                case "tsa":
+                    return TrustKind.Tsa;
+            }
+            throw new Exception("Cannot unmarshal type TrustKind");
+        }
+
+        public override void Write(Utf8JsonWriter writer, TrustKind value, JsonSerializerOptions options)
+        {
+            switch (value)
+            {
+                case TrustKind.Cawg:
+                    JsonSerializer.Serialize(writer, "cawg", options);
+                    return;
+                case TrustKind.Manifest:
+                    JsonSerializer.Serialize(writer, "manifest", options);
+                    return;
+                case TrustKind.Tsa:
+                    JsonSerializer.Serialize(writer, "tsa", options);
+                    return;
+            }
+            throw new Exception("Cannot marshal type TrustKind");
+        }
+
+        public static readonly TrustKindConverter Singleton = new TrustKindConverter();
     }
     
     public class DateOnlyConverter : JsonConverter<DateOnly>

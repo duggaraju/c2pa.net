@@ -197,6 +197,12 @@ namespace ContentAuthenticity.Schema.Builder
         public string? OperatingSystem { get; set; }
 
         /// <summary>
+        /// The version of the specification used to produce this manifest (SemVer)
+        /// </summary>
+        [JsonPropertyName("specVersion")]
+        public string? SpecVersion { get; set; }
+
+        /// <summary>
         /// A human readable string of the product's version
         /// </summary>
         [JsonPropertyName("version")]
@@ -310,6 +316,13 @@ namespace ContentAuthenticity.Schema.Builder
         /// </summary>
         [JsonPropertyName("description")]
         public string? Description { get; set; }
+
+        /// <summary>
+        /// One of the source types defined at &lt;https://cv.iptc.org/newscodes/digitalsourcetype/&gt;
+        /// or in this specification. Cannot be combined with `activeManifest`.
+        /// </summary>
+        [JsonPropertyName("digital_source_type")]
+        public string? DigitalSourceType { get; set; }
 
         /// <summary>
         /// Document ID from `xmpMM:DocumentID` in XMP metadata.
@@ -896,6 +909,25 @@ namespace ContentAuthenticity.Schema.Builder
         /// </summary>
         [JsonPropertyName("ingredientDeltas")]
         public IngredientDeltaElement[]? IngredientDeltas { get; set; }
+
+        /// <summary>
+        /// The version of the specification against which the validation was performed (SemVer
+        /// formatted string).
+        /// </summary>
+        [JsonPropertyName("specVersion")]
+        public string? SpecVersion { get; set; }
+
+        /// <summary>
+        /// URI to the trust list use to validate the time-stamp.
+        /// </summary>
+        [JsonPropertyName("timestampTrustListUri")]
+        public string? TimestampTrustListUri { get; set; }
+
+        /// <summary>
+        /// URI to the trust list that was used to validate manifests signing certificate.
+        /// </summary>
+        [JsonPropertyName("trustListUri")]
+        public string? TrustListUri { get; set; }
 
         /// <summary>
         /// Time when the validation was performed (RFC 3339 date-time). Used only for document-level

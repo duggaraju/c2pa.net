@@ -229,6 +229,12 @@ namespace ContentAuthenticity.Schema.Reader
         public string? OperatingSystem { get; set; }
 
         /// <summary>
+        /// The version of the specification used to produce this manifest (SemVer)
+        /// </summary>
+        [JsonPropertyName("specVersion")]
+        public string? SpecVersion { get; set; }
+
+        /// <summary>
         /// A human readable string of the product's version
         /// </summary>
         [JsonPropertyName("version")]
@@ -342,6 +348,13 @@ namespace ContentAuthenticity.Schema.Reader
         /// </summary>
         [JsonPropertyName("description")]
         public string? Description { get; set; }
+
+        /// <summary>
+        /// One of the source types defined at &lt;https://cv.iptc.org/newscodes/digitalsourcetype/&gt;
+        /// or in this specification. Cannot be combined with `activeManifest`.
+        /// </summary>
+        [JsonPropertyName("digital_source_type")]
+        public string? DigitalSourceType { get; set; }
 
         /// <summary>
         /// Document ID from `xmpMM:DocumentID` in XMP metadata.
@@ -930,6 +943,25 @@ namespace ContentAuthenticity.Schema.Reader
         public IngredientDeltaElement[]? IngredientDeltas { get; set; }
 
         /// <summary>
+        /// The version of the specification against which the validation was performed (SemVer
+        /// formatted string).
+        /// </summary>
+        [JsonPropertyName("specVersion")]
+        public string? SpecVersion { get; set; }
+
+        /// <summary>
+        /// URI to the trust list use to validate the time-stamp.
+        /// </summary>
+        [JsonPropertyName("timestampTrustListUri")]
+        public string? TimestampTrustListUri { get; set; }
+
+        /// <summary>
+        /// URI to the trust list that was used to validate manifests signing certificate.
+        /// </summary>
+        [JsonPropertyName("trustListUri")]
+        public string? TrustListUri { get; set; }
+
+        /// <summary>
         /// Time when the validation was performed (RFC 3339 date-time). Used only for document-level
         /// validationInfo; not serialized in validationResults (e.g. ingredient assertions).
         /// </summary>
@@ -1137,19 +1169,12 @@ namespace ContentAuthenticity.Schema.Reader
     public enum Relationship { ComponentOf, InputTo, ParentOf };
 
     /// <summary>
-    /// ECDSA with SHA-256
+    /// JSON Schema proxy for [`SigningAlg`].
     ///
-    /// ECDSA with SHA-384
-    ///
-    /// ECDSA with SHA-512
-    ///
-    /// RSASSA-PSS using SHA-256 and MGF1 with SHA-256
-    ///
-    /// RSASSA-PSS using SHA-384 and MGF1 with SHA-384
-    ///
-    /// RSASSA-PSS using SHA-512 and MGF1 with SHA-512
-    ///
-    /// Edwards-Curve DSA (Ed25519 instance only)
+    /// `c2pa_raw_crypto::SigningAlg` intentionally does not depend on `schemars`,
+    /// so it does not implement [`schemars::JsonSchema`]. SDK types that expose a
+    /// `SigningAlg` in their JSON schema reference this mirror (whose variants match
+    /// `SigningAlg`'s serialized form) via `#[schemars(with = "...")]`.
     /// </summary>
     public enum AlgEnum { Ed25519, Es256, Es384, Es512, Ps256, Ps384, Ps512 };
 
