@@ -194,7 +194,7 @@
       <CargoTarget>%(FirstArch.CargoTarget)</CargoTarget>
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
     </PropertyGroup>
-    <Exec Command="cargo run $(CargoArgs) --no-default-features --features c2pa/rust_native_crypto,c2pa/json_schema --target $(CargoTarget) -p export_schema" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs" />
+    <Exec Command="cargo run $(CargoArgs) --no-default-features --features rust_native_crypto --target $(CargoTarget) -p export_schema" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs" />
   </Target>
 
   <Target Name="GenerateSchemaModels" DependsOnTargets="GenerateSchema" Inputs="%(SchemaFile.FullPath)" Outputs="$(MSBuildProjectDirectory)/Schema/%(SchemaFile.GeneratedFile)">
