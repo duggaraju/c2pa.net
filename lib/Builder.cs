@@ -1,5 +1,7 @@
 // Copyright (c) All Contributors. All Rights Reserved. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace ContentAuthenticity;
 
 public partial class Builder : IDisposable
@@ -221,6 +223,44 @@ public partial class Builder : IDisposable
                 var ret = C2paBindings.builder_set_remote_url(handle, (sbyte*)urlBytes);
                 if (ret == -1)
                     C2pa.CheckError();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the builder's manifest label. Returns <see langword="null"/> if none is set.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">The assigned label is <see langword="null"/>.</exception>
+    [DisallowNull]
+    public string? Label
+    {
+        get
+        {
+            unsafe
+            {
+                sbyte* label = null;
+                var ret = C2paBindings.builder_label(handle, &label);
+                if (ret == -1)
+                    C2pa.CheckError();
+                if (ret == 0)
+                    return null;
+                if (ret != 1 || label == null)
+                    throw new InvalidOperationException("The native builder returned an invalid manifest label.");
+                return Utils.FromCString(label);
+            }
+        }
+
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            unsafe
+            {
+                fixed (byte* labelBytes = Encoding.UTF8.GetBytes(value))
+                {
+                    var ret = C2paBindings.builder_set_label(handle, (sbyte*)labelBytes);
+                    if (ret == -1)
+                        C2pa.CheckError();
+                }
             }
         }
     }

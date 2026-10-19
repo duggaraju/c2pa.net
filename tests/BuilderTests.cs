@@ -189,4 +189,18 @@ public class BuilderTests
             Action = "c2pa.created"
         });
     }
+
+    [Fact]
+    public void Label_ShouldRoundTripAndReturnNullWhenUnset()
+    {
+        using var context = new Context();
+        using var builder = new Builder(context);
+        const string label = "urn:c2pa:00000000-0000-4000-8000-000000000000";
+
+        Assert.Null(builder.Label);
+
+        builder.Label = label;
+
+        Assert.Equal(label, builder.Label);
+    }
 }
