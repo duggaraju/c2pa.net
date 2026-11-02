@@ -38,5 +38,7 @@ repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$repo_root/c2pa-rs"
 # TODO: Add musl ARM64 with its matching toolchain and native Alpine consumer gate.
 # The upstream submodule does not track Cargo.lock; allow creation on a clean checkout.
+# Temporary: keep in sync with PinnedC2paRawCryptoVersion in lib/ContentAuthenticity.csproj.
+cargo update -p c2pa_raw_crypto --precise 0.2.1
 cargo build "${cargo_args[@]}" --target-dir target --target x86_64-unknown-linux-musl \
     --no-default-features --features rust_native_crypto,http,add_thumbnails -p c2pa-c-ffi
