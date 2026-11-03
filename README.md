@@ -251,8 +251,9 @@ git submodule update --init --recursive
 The c2pa-rs submodule is automatically updated by a GitHub Actions workflow that monitors the upstream repository for new C FFI release tags matching the pattern `c2pa-c-ffi-vx.x.x`. When a new tag is detected, the workflow:
 
 1. Updates the submodule to point to the new tag
-2. Creates a pull request with the update details
-3. Includes the tag information and release notes link in the PR description
+2. Refreshes `lib/Cargo.lock` for the new submodule manifests
+3. Creates a pull request with the update details
+4. Includes the tag information and release notes link in the PR description
 
 The workflow runs automatically every 6 hours, but can also be triggered manually:
 
@@ -283,10 +284,21 @@ git checkout c2pa-c-ffi-v0.75.21
 # Return to the root directory
 cd ..
 
+# Refresh the locked Rust dependency versions for the new submodule
+dotnet msbuild lib/ContentAuthenticity.csproj -t:UpdateCargoLockFile
+
 # Commit the submodule update
-git add c2pa-rs
+git add c2pa-rs lib/Cargo.lock
 git commit -m "Update c2pa-rs submodule to c2pa-c-ffi-v0.75.21"
 ```
+
+The upstream `c2pa-rs` submodule does not track `Cargo.lock`, so this repository
+commits `lib/Cargo.lock`. Native builds copy it into the submodule and run Cargo
+with `--locked`, so every platform builds the same dependency versions.
+`UpdateCargoLockFile` keeps existing versions that still satisfy the updated
+manifests; run `cargo update` in `c2pa-rs` and copy its `Cargo.lock` back to
+`lib/Cargo.lock` to intentionally move all dependencies to their latest
+compatible versions.
 
 ### 2a. Update Schemas and Regenerate Models
 
@@ -415,9 +427,8 @@ compiles Rust; it requires the existing output for the selected configuration
 under `c2pa-rs/target/x86_64-unknown-linux-musl/`. Missing artifacts or unsupported
 build hosts fail explicitly. Ordinary builds do not need any musl tooling.
 
-The upstream `c2pa-rs` submodule does not track `Cargo.lock`. Like the normal
-native build, the musl build lets Cargo create it on the first build and reuse
-it on subsequent builds.
+The musl build uses the same committed `lib/Cargo.lock` and Cargo `--locked`
+mode as the normal native build.
 
 The cross-build invokes Cargo separately with `-C target-feature=-crt-static`,
 preserving existing `RUSTFLAGS` (or `CARGO_ENCODED_RUSTFLAGS`). Target-specific

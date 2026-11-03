@@ -19,8 +19,8 @@
     <IncludeLinuxMusl Condition="'$(IncludeLinuxMusl)' == ''">$(BuildLinuxMusl)</IncludeLinuxMusl>
     <LinuxMuslLibraryPath Condition="'$(LinuxMuslLibraryPath)' == ''">$(MSBuildThisFileDirectory)../c2pa-rs/target/x86_64-unknown-linux-musl/$(Configuration.ToLower())/libc2pa_c.so</LinuxMuslLibraryPath>
     <EnableCargoReleaseOptimizations Condition="'$(EnableCargoReleaseOptimizations)' == ''">false</EnableCargoReleaseOptimizations>
-    <!-- Temporary: c2pa_raw_crypto 0.2.2 gates Serde behind a default feature that c2pa-rs disables. Keep in sync with .github/scripts/build-musl.sh. -->
-    <PinnedC2paRawCryptoVersion>0.2.1</PinnedC2paRawCryptoVersion>
+    <!-- c2pa-rs does not track Cargo.lock, so native builds use this committed lockfile with cargo locked mode. -->
+    <CargoLockFile>$(MSBuildThisFileDirectory)Cargo.lock</CargoLockFile>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddNativeRuntimesToPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
@@ -176,15 +176,17 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="PinCargoDependencies">
-    <PropertyGroup>
-      <CargoLockFile>$(MSBuildThisFileDirectory)../c2pa-rs/Cargo.lock</CargoLockFile>
-      <C2paRawCryptoPinned Condition="Exists('$(CargoLockFile)')">$([System.Text.RegularExpressions.Regex]::IsMatch($([System.IO.File]::ReadAllText('$(CargoLockFile)')), 'name = "c2pa_raw_crypto"\r?\nversion = "$(PinnedC2paRawCryptoVersion)"'))</C2paRawCryptoPinned>
-    </PropertyGroup>
-    <Exec Condition="'$(C2paRawCryptoPinned)' != 'true'" Command="cargo update -p c2pa_raw_crypto --precise $(PinnedC2paRawCryptoVersion)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/" />
+  <Target Name="RestoreCargoLockFile">
+    <Copy SourceFiles="$(CargoLockFile)" DestinationFiles="$(MSBuildThisFileDirectory)../c2pa-rs/Cargo.lock" SkipUnchangedFiles="true" />
   </Target>
 
-  <Target Name="Cargo" DependsOnTargets="ComputeHostArchitecture;PinCargoDependencies" Outputs="@(NativeLibrary)" Inputs="../c2pa-rs/c2pa_c_ffi/Cargo.toml">
+  <!-- Run after changing the c2pa-rs submodule. Keeps existing locked versions where they still satisfy the manifests. -->
+  <Target Name="UpdateCargoLockFile" DependsOnTargets="RestoreCargoLockFile">
+    <Exec Command="cargo update --workspace" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)../c2pa-rs/Cargo.lock" DestinationFiles="$(CargoLockFile)" />
+  </Target>
+
+  <Target Name="Cargo" DependsOnTargets="ComputeHostArchitecture;RestoreCargoLockFile" Outputs="@(NativeLibrary)" Inputs="../c2pa-rs/c2pa_c_ffi/Cargo.toml;$(CargoLockFile)">
     <Message Text="Building native c2pa_c library for host architectures: @(HostArchitecture->'%(Identity) ')" Importance="high" />
     <PropertyGroup>
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
@@ -193,7 +195,7 @@
       <!-- Pass all targets in a single cargo invocation; cargo builds them in parallel internally -->
       <CargoTargetArgs>@(HostArchitecture->'--target %(CargoTarget)', ' ')</CargoTargetArgs>
     </PropertyGroup>
-    <Exec Command="cargo build $(CargoArgs) --no-default-features --features rust_native_crypto,http,add_thumbnails $(CargoTargetArgs) -p c2pa-c-ffi" EnvironmentVariables="$(CargoEnvironmentVariables)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/" />
+    <Exec Command="cargo build $(CargoArgs) --locked --no-default-features --features rust_native_crypto,http,add_thumbnails $(CargoTargetArgs) -p c2pa-c-ffi" EnvironmentVariables="$(CargoEnvironmentVariables)" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs/" />
   </Target>
 
   <Target Name="GenerateSchema" DependsOnTargets="Cargo" Inputs="../c2pa-rs/export_schema/Cargo.toml" Outputs="@(SchemaFile)">
@@ -204,7 +206,7 @@
       <CargoTarget>%(FirstArch.CargoTarget)</CargoTarget>
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
     </PropertyGroup>
-    <Exec Command="cargo run $(CargoArgs) --no-default-features --features rust_native_crypto --target $(CargoTarget) -p export_schema" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs" />
+    <Exec Command="cargo run $(CargoArgs) --locked --no-default-features --features rust_native_crypto --target $(CargoTarget) -p export_schema" WorkingDirectory="$(MSBuildThisFileDirectory)../c2pa-rs" />
   </Target>
 
   <Target Name="GenerateSchemaModels" DependsOnTargets="GenerateSchema" Inputs="%(SchemaFile.FullPath)" Outputs="$(MSBuildProjectDirectory)/Schema/%(SchemaFile.GeneratedFile)">

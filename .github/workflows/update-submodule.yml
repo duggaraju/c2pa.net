@@ -160,6 +160,10 @@ jobs:
           git -C c2pa-rs fetch --tags origin
           git -C c2pa-rs checkout "$TARGET_TAG"
 
+      - name: Update Cargo lockfile
+        if: steps.check.outputs.needed == 'true'
+        run: dotnet msbuild lib/ContentAuthenticity.csproj /t:UpdateCargoLockFile /nodeReuse:false
+
       - name: Update c2pa-rs badge
         if: steps.check.outputs.needed == 'true'
         env:
@@ -180,6 +184,7 @@ jobs:
           BRANCH_NAME: ${{ steps.update.outputs.branch }}
         run: |
           git add README.md
+          git add lib/Cargo.lock
           git add lib/Schema
           git add -f c2pa-rs
 
@@ -188,7 +193,7 @@ jobs:
             exit 1
           fi
 
-          if git diff --cached --ignore-submodules=none --quiet -- README.md lib/Schema c2pa-rs; then
+          if git diff --cached --ignore-submodules=none --quiet -- README.md lib/Cargo.lock lib/Schema c2pa-rs; then
             echo "No changes to commit"
             exit 0
           fi
