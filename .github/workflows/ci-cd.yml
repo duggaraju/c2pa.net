@@ -295,6 +295,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
+      id-token: write
 
     steps:
       - name: Download NuGet packages
@@ -388,8 +389,16 @@ jobs:
 
           echo "MERGED_NUPKG=$PWD/merged/$base_name" >> "$GITHUB_ENV"
 
+      - name: NuGet login (Trusted Publishing)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: duggaraju
+
       - name: Publish to NuGet.org
         shell: bash
+        env:
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         run: |
           if [ -z "${MERGED_NUPKG:-}" ]; then
             echo "MERGED_NUPKG env var not set"
@@ -397,7 +406,7 @@ jobs:
           fi
 
           echo "Publishing merged package to NuGet.org: $MERGED_NUPKG"
-          dotnet nuget push "$MERGED_NUPKG" --api-key "${{ secrets.NUGET_API_KEY }}" --source "https://api.nuget.org/v3/index.json" --skip-duplicate
+          dotnet nuget push "$MERGED_NUPKG" --api-key "$NUGET_API_KEY" --source "https://api.nuget.org/v3/index.json" --skip-duplicate
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3

@@ -62,14 +62,20 @@ The following secrets need to be configured in your GitHub repository:
 
 ### Required Secrets
 
-1. **`NUGET_API_KEY`**
-   - Description: API key for publishing to NuGet.org
-   - How to get: Visit [NuGet.org API Keys](https://www.nuget.org/account/apikeys)
-   - Scope: Push new packages and package versions
-
-2. **`GITHUB_TOKEN`**
+1. **`GITHUB_TOKEN`**
    - Description: Automatically provided by GitHub Actions
    - Used for: GitHub Packages, creating releases, API access
+
+### NuGet Trusted Publishing
+
+NuGet.org publishing uses [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) instead of a long-lived API key. The publish job requests a GitHub OIDC token and exchanges it for a short-lived NuGet API key with `NuGet/login`.
+
+Configure this policy on NuGet.org under **Trusted Publishing**:
+
+- **Repository Owner:** `duggaraju`
+- **Repository:** `c2pa.net`
+- **Workflow File:** `ci-cd.yml`
+- **Environment:** leave empty
 
 ## Package Publishing Strategy
 
@@ -206,7 +212,7 @@ Review security scanning results in the "Security" tab and address any vulnerabi
 
 1. **Build failures**: Check that all required secrets are configured
 2. **Test failures**: Ensure tests pass locally before pushing
-3. **Publishing failures**: Verify NuGet API key permissions and package name conflicts
+3. **Publishing failures**: Verify the NuGet.org Trusted Publishing policy and package name conflicts
 4. **Submodule issues**: Ensure submodules are properly initialized and updated
 
 ### Getting Help
