@@ -782,18 +782,26 @@ namespace ContentAuthenticity.Schema.Settings
         /// - `false`: redirects are not followed at all; a redirect response is surfaced as
         /// [`HttpResolverError::RedirectDisallowed`].
         ///
-        /// This applies to redirect *targets*, not the initial request: a URL that *directly* names
-        /// an
-        /// internal host (for example an enterprise OCSP responder on a private address, or a
-        /// `localhost` development server) is still fetched. Use [`allowed_network_hosts`] to
-        /// restrict
-        /// which hosts may be contacted at all.
+        /// This applies to redirect *targets*, not the initial request. Independently of this
+        /// setting,
+        /// the initial request is rejected by default when it directly names a link-local or
+        /// cloud-metadata address (e.g. `169.254.169.254`), reported as
+        /// [`HttpResolverError::MetadataOrLinkLocalUriDisallowed`] (SSRF –
+        /// &lt;https://github.com/contentauth/c2pa-rs/issues/2430&gt;). A URL that
+        /// directly names a loopback or private (RFC 1918) host (for example an enterprise OCSP
+        /// responder on a private address, or a `localhost` development server) is not covered by
+        /// that
+        /// guard and is still fetched. Use [`allowed_network_hosts`] to restrict which hosts —
+        /// including
+        /// loopback/private ones — may be contacted at all.
         ///
         /// [`allowed_network_hosts`]: Core::allowed_network_hosts
         /// [`HttpResolverError::RedirectTargetDisallowed`]:
         /// crate::http::HttpResolverError::RedirectTargetDisallowed
         /// [`HttpResolverError::RedirectDisallowed`]:
         /// crate::http::HttpResolverError::RedirectDisallowed
+        /// [`HttpResolverError::MetadataOrLinkLocalUriDisallowed`]:
+        /// crate::http::HttpResolverError::MetadataOrLinkLocalUriDisallowed
         /// </summary>
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("allow_redirects")]
@@ -823,9 +831,16 @@ namespace ContentAuthenticity.Schema.Settings
         ///
         /// The behavior is as follows:
         /// - `None` (default): no host allow-list is applied. Redirect handling is governed
-        /// independently by [`allow_redirects`] (which rejects redirects to internal addresses).
+        /// independently by [`allow_redirects`] (which rejects redirects to internal addresses),
+        /// and
+        /// the initial request is still rejected if it directly names a link-local/cloud-metadata
+        /// address (SSRF – &lt;https://github.com/contentauth/c2pa-rs/issues/2430&gt;); see
+        /// [`allow_redirects`] for the full initial-request policy.
         /// - `Some(vec)` where `vec` is empty, all traffic is blocked.
         /// - `Some(vec)` with at least one pattern, filtering enabled for only those patterns.
+        /// Setting
+        /// this takes over the initial-request policy entirely, superseding the default
+        /// link-local/cloud-metadata guard described above.
         ///
         /// When an allow-list is set it is enforced on every request, including each redirect hop
         /// the
