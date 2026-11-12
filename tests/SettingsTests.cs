@@ -50,8 +50,6 @@ public class SettingsTests
         const string json = """
             {
                 "trust": {
-                    "user_anchors": null,
-                    "trust_anchors": null,
                     "trust_config": null,
                     "anchors": [
                         {

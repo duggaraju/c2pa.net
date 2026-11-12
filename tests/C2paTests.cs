@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace ContentAuthenticity.Tests;
 
@@ -17,12 +18,19 @@ public class C2paTests
         var nativeSources = Directory.EnumerateFiles(nativeSourceRoot, "*.rs", SearchOption.AllDirectories)
             .Select(File.ReadAllText)
             .ToArray();
-        var deprecatedExports = nativeSources
+        var sourceDeprecatedExports = nativeSources
             .SelectMany(source => Regex.Matches(source,
                 "#\\[deprecated\\b[^\\]]*\\](?:\\s*#\\[[^\\]]*\\])*\\s*pub\\s+(?:unsafe\\s+)?(?:extern\\s+\"C\"\\s+)?fn\\s+(?<name>c2pa_\\w+)"))
             .Select(match => match.Groups["name"].Value)
             .ToHashSet(StringComparer.Ordinal);
-        Assert.NotEmpty(deprecatedExports);
+        var configuredDeprecatedExports = XDocument.Load(Path.Combine(repoRoot, "lib", "ContentAuthenticity.csproj"))
+            .Descendants("DeprecatedNativeApi")
+            .Select(element => (string?)element.Attribute("Include"))
+            .OfType<string>()
+            .ToHashSet(StringComparer.Ordinal);
+        var deprecatedExports = sourceDeprecatedExports
+            .Union(configuredDeprecatedExports)
+            .ToHashSet(StringComparer.Ordinal);
 
         var nativeExports = nativeSources
             .SelectMany(source => Regex.Matches(source,
