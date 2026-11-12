@@ -113,6 +113,11 @@ var output = "./my-image.signed.jpg";
 builder.Sign(input, output);
 ```
 
+To staple OCSP responses, set `OcspResponses` on `SignerInfo` or implement it
+on `ICallbackSigner`. Supply DER-encoded responses in certificate-chain order,
+starting with the signing certificate. Fetch and refresh the responses yourself;
+create a new signer/context when they expire.
+
 ### Advanced: Sign with an identity credential holder
 
 Implement `ICredentialHolder` for callback-backed CAWG identity credentials, such

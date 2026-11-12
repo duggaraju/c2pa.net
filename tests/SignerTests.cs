@@ -89,6 +89,64 @@ public sealed class SignerTests
         Assert.True(signer.ReserveSize >= 0);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OcspResponses_AreStapledInOrder_WhenSigning(bool useCallback)
+    {
+        byte[] leafResponse = [0x30, 0x06, 0x04, 0x04, 0x11, 0x22, 0x33, 0x44];
+        byte[] issuerResponse = [0x30, 0x06, 0x04, 0x04, 0x55, 0x66, 0x77, 0x88];
+        byte[][] responses = [leafResponse, issuerResponse];
+        using var callbackSigner = new CountingRsaSigner { OcspResponses = responses };
+        ISigner signer = useCallback
+            ? callbackSigner
+            : new SignerInfo(
+                SigningAlg.Ps256,
+                File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "certs", "rs256.pub")),
+                File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "certs", "rs256.pem")))
+                { OcspResponses = responses };
+        using var contextBuilder = new ContextBuilder();
+        contextBuilder.SetSigner(signer);
+        using var context = contextBuilder.Build();
+        using var builder = new Builder(context).WithDefinition(new ManifestDefinition
+        {
+            ClaimGeneratorInfo = [new ClaimGeneratorInfo { Name = "c2pa.net tests" }],
+        });
+        builder.SetIntent(C2paBuilderIntent.Create, C2paDigitalSourceType.DigitalCapture);
+        using var source = File.OpenRead(Path.Combine(AppContext.BaseDirectory, "no_manifest.jpg"));
+        using var destination = new MemoryStream();
+
+        var manifest = builder.Sign(source, destination, "image/jpeg");
+
+        var leafIndex = manifest.AsSpan().IndexOf(leafResponse);
+        var issuerIndex = manifest.AsSpan().IndexOf(issuerResponse);
+        Assert.True(leafIndex >= 0);
+        Assert.True(issuerIndex > leafIndex);
+        if (useCallback)
+            Assert.True(callbackSigner.CallCount > 0);
+    }
+
+    [Fact]
+    public void OcspResponses_WithEmptyResponse_ThrowsAfterEarlierResponse()
+    {
+        using var signer = new CountingRsaSigner { OcspResponses = [[1], []] };
+
+        Assert.Throws<ArgumentException>(() => new Signer(signer));
+    }
+
+    [Fact]
+    public void IdentitySigner_WithInvalidOcspResponse_Throws()
+    {
+        using var c2paSigner = new CountingRsaSigner { OcspResponses = [[1]] };
+        using var identitySigner = new CountingRsaSigner { OcspResponses = [[]] };
+
+        Assert.Throws<ArgumentException>(() => new Signer(new SigningOptions
+        {
+            C2paSigner = c2paSigner,
+            IdentitySigner = identitySigner
+        }));
+    }
+
     [Fact]
     public void FromIdentity_WithManagedSigners_CreatesCombinedSignerOrThrowsNativeException()
     {
@@ -321,6 +379,8 @@ public sealed class SignerTests
         public string Certs { get; }
 
         public Uri? TimeAuthorityUrl => null;
+
+        public IReadOnlyList<byte[]>? OcspResponses { get; init; }
 
         public int Sign(ReadOnlySpan<byte> data, Span<byte> hash)
         {
