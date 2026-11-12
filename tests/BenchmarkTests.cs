@@ -1,4 +1,5 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System.Runtime.InteropServices;
+using BenchmarkDotNet.Attributes;
 
 namespace ContentAuthenticity.Tests;
 
@@ -80,11 +81,7 @@ public class C2paPerformanceBenchmarks
 [Collection("PerformanceTests")]
 public class BenchmarkTests
 {
-#if DEBUG
-    [Fact(Skip = "Benchmarks are skipped in debug mode.")]
-#else
-    [Fact]
-#endif
+    [BenchmarkFact]
     public void RunBenchmarks()
     {
         // This test can be run separately to execute BenchmarkDotNet benchmarks
@@ -92,5 +89,18 @@ public class BenchmarkTests
         var summary = BenchmarkDotNet.Running.BenchmarkRunner.Run<C2paPerformanceBenchmarks>();
         Console.WriteLine(summary);
         Assert.NotNull(summary);
+    }
+}
+
+public sealed class BenchmarkFactAttribute : FactAttribute
+{
+    public BenchmarkFactAttribute()
+    {
+#if DEBUG
+        Skip = "Benchmarks are skipped in debug mode.";
+#else
+        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            Skip = "Benchmarks are skipped on ARM64.";
+#endif
     }
 }

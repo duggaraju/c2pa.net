@@ -170,6 +170,8 @@ jobs:
 
       - name: Run tests
         if: matrix.test
+        env:
+          VSTEST_DISABLE_ARTIFACTS_DIRECTORY_VERIFICATION: ${{ matrix.platform == 'linux' && matrix.arch == 'arm64' && '1' || '' }}
         run: |
           dotnet test --configuration Release --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage"
 
