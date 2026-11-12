@@ -1,5 +1,5 @@
-﻿using System.Runtime.InteropServices;
-using BenchmarkDotNet.Attributes;
+﻿using BenchmarkDotNet.Attributes;
+using System.Runtime.InteropServices;
 
 namespace ContentAuthenticity.Tests;
 
