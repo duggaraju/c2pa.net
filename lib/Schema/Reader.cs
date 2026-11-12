@@ -387,6 +387,14 @@ namespace ContentAuthenticity.Schema.Reader
         public string? InstanceId { get; set; }
 
         /// <summary>
+        /// If true, the ingredient assertion is added to created_assertions, rather than to
+        /// gathered_assertions, which is the default.
+        /// ParentOf ingredients are always created assertions, and this field is ignored for them.
+        /// </summary>
+        [JsonPropertyName("is_created")]
+        public bool? IsCreated { get; set; }
+
+        /// <summary>
         /// The ingredient's label as assigned in the manifest.
         /// </summary>
         [JsonPropertyName("label")]
@@ -538,14 +546,6 @@ namespace ContentAuthenticity.Schema.Reader
         /// </summary>
         [JsonPropertyName("region")]
         public RegionElement[] Region { get; set; }
-
-        /// <summary>
-        /// A value from our controlled vocabulary or an entity-specific value (e.g.,
-        /// com.litware.coolArea) that represents
-        /// the role of a region among other regions.
-        /// </summary>
-        [JsonPropertyName("role")]
-        public RoleEnum? Role { get; set; }
 
         /// <summary>
         /// A value from a controlled vocabulary such as
@@ -1132,27 +1132,6 @@ namespace ContentAuthenticity.Schema.Reader
     public enum RegionType { Frame, Identified, Spatial, Temporal, Textual };
 
     /// <summary>
-    /// Arbitrary area worth identifying.
-    ///
-    /// This area is all that is left after a crop action.
-    ///
-    /// This area has had edits applied to it.
-    ///
-    /// The area where an ingredient was placed/added.
-    ///
-    /// Something in this area was redacted.
-    ///
-    /// Area specific to a subject (human or not).
-    ///
-    /// A range of information was removed/deleted.
-    ///
-    /// Styling was applied to this area.
-    ///
-    /// Invisible watermarking was applied to this area for the purpose of soft binding.
-    /// </summary>
-    public enum RoleEnum { C2PaAreaOfInterest, C2PaCropped, C2PaDeleted, C2PaEdited, C2PaPlaced, C2PaRedacted, C2PaStyled, C2PaSubjectArea, C2PaWatermarked };
-
-    /// <summary>
     /// Set to `ParentOf` if this is the parent ingredient.
     ///
     /// There can only be one parent ingredient in the ingredients.
@@ -1231,7 +1210,6 @@ namespace ContentAuthenticity.Schema.Reader
                 UnitConverter.Singleton,
                 TimeTypeConverter.Singleton,
                 RegionTypeConverter.Singleton,
-                RoleEnumConverter.Singleton,
                 RelationshipConverter.Singleton,
                 AlgEnumConverter.Singleton,
                 ValidationStateEnumConverter.Singleton,
@@ -1476,75 +1454,6 @@ namespace ContentAuthenticity.Schema.Reader
         }
 
         public static readonly RegionTypeConverter Singleton = new RegionTypeConverter();
-    }
-
-    internal class RoleEnumConverter : JsonConverter<RoleEnum>
-    {
-        public override bool CanConvert(Type t) => t == typeof(RoleEnum);
-
-        public override RoleEnum Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        {
-            var value = reader.GetString();
-            switch (value)
-            {
-                case "c2pa.areaOfInterest":
-                    return RoleEnum.C2PaAreaOfInterest;
-                case "c2pa.cropped":
-                    return RoleEnum.C2PaCropped;
-                case "c2pa.deleted":
-                    return RoleEnum.C2PaDeleted;
-                case "c2pa.edited":
-                    return RoleEnum.C2PaEdited;
-                case "c2pa.placed":
-                    return RoleEnum.C2PaPlaced;
-                case "c2pa.redacted":
-                    return RoleEnum.C2PaRedacted;
-                case "c2pa.styled":
-                    return RoleEnum.C2PaStyled;
-                case "c2pa.subjectArea":
-                    return RoleEnum.C2PaSubjectArea;
-                case "c2pa.watermarked":
-                    return RoleEnum.C2PaWatermarked;
-            }
-            throw new Exception("Cannot unmarshal type RoleEnum");
-        }
-
-        public override void Write(Utf8JsonWriter writer, RoleEnum value, JsonSerializerOptions options)
-        {
-            switch (value)
-            {
-                case RoleEnum.C2PaAreaOfInterest:
-                    JsonSerializer.Serialize(writer, "c2pa.areaOfInterest", options);
-                    return;
-                case RoleEnum.C2PaCropped:
-                    JsonSerializer.Serialize(writer, "c2pa.cropped", options);
-                    return;
-                case RoleEnum.C2PaDeleted:
-                    JsonSerializer.Serialize(writer, "c2pa.deleted", options);
-                    return;
-                case RoleEnum.C2PaEdited:
-                    JsonSerializer.Serialize(writer, "c2pa.edited", options);
-                    return;
-                case RoleEnum.C2PaPlaced:
-                    JsonSerializer.Serialize(writer, "c2pa.placed", options);
-                    return;
-                case RoleEnum.C2PaRedacted:
-                    JsonSerializer.Serialize(writer, "c2pa.redacted", options);
-                    return;
-                case RoleEnum.C2PaStyled:
-                    JsonSerializer.Serialize(writer, "c2pa.styled", options);
-                    return;
-                case RoleEnum.C2PaSubjectArea:
-                    JsonSerializer.Serialize(writer, "c2pa.subjectArea", options);
-                    return;
-                case RoleEnum.C2PaWatermarked:
-                    JsonSerializer.Serialize(writer, "c2pa.watermarked", options);
-                    return;
-            }
-            throw new Exception("Cannot marshal type RoleEnum");
-        }
-
-        public static readonly RoleEnumConverter Singleton = new RoleEnumConverter();
     }
 
     internal class RelationshipConverter : JsonConverter<Relationship>
