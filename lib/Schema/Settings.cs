@@ -42,7 +42,7 @@ namespace ContentAuthenticity.Schema.Settings
         public Builder? Builder { get; set; }
 
         /// <summary>
-        /// Settings for configuring the CAWG x509 signer, accessible via [`Settings::signer`].
+        /// Settings for configuring the CAWG x509 signer, used by [`crate::Context::signer`].
         /// </summary>
         [JsonPropertyName("cawg_x509_signer")]
         public CawgX509SignerClass? CawgX509Signer { get; set; }
@@ -55,7 +55,7 @@ namespace ContentAuthenticity.Schema.Settings
         public Core? Core { get; set; }
 
         /// <summary>
-        /// Settings for configuring the base C2PA signer, accessible via [`Settings::signer`].
+        /// Settings for configuring the base C2PA signer, accessible via [`crate::Context::signer`].
         /// </summary>
         [JsonPropertyName("signer")]
         public CawgX509SignerClass? Signer { get; set; }
@@ -956,6 +956,39 @@ namespace ContentAuthenticity.Schema.Settings
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("prefer_compress_manifests")]
         public bool? PreferCompressManifests { get; set; }
+
+        /// <summary>
+        /// Number of times a blocking time-stamp request is sent before its last error is
+        /// returned. A new attempt is made only after a transient failure: no answer, a
+        /// timeout, or an HTTP 408, 429, 500, 502, 503 or 504 response. `1` disables retries.
+        ///
+        /// The default is 3. The value must be at least 1. Async time-stamp requests are sent
+        /// once, as are blocking requests on browser WASM (which cannot sleep between attempts).
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("time_stamp_request_attempts")]
+        public long? TimeStampRequestAttempts { get; set; }
+
+        /// <summary>
+        /// Time limit of each time-stamp request attempt, in milliseconds, applied by the
+        /// SDK's built-in HTTP resolvers. A time-stamp service answers in well under a second;
+        /// without a limit an attempt that hangs would wait for the HTTP client's default.
+        ///
+        /// The default is 10,000 (10 seconds). The value must be positive.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("time_stamp_request_timeout_in_ms")]
+        public long? TimeStampRequestTimeoutInMs { get; set; }
+
+        /// <summary>
+        /// Pause before the second time-stamp request attempt, in milliseconds, doubled before
+        /// each later one.
+        ///
+        /// The default is 500.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("time_stamp_retry_delay_in_ms")]
+        public long? TimeStampRetryDelayInMs { get; set; }
     }
 
     /// <summary>
@@ -981,18 +1014,33 @@ namespace ContentAuthenticity.Schema.Settings
         [JsonPropertyName("anchors")]
         public AnchorElement[]? Anchors { get; set; }
 
-        [JsonPropertyName("trust_anchors")]
-        public string? TrustAnchors { get; set; }
-
         /// <summary>
         /// List of allowed extended key usage (EKU) object identifiers (OID) that
         /// certificates must have.
+        ///
+        /// When [`Trust::use_default_ekus`] is true (the default), the EKUs defined by
+        /// the C2PA specification are always accepted and any OIDs listed here are
+        /// added to that set rather than replacing it.
         /// </summary>
         [JsonPropertyName("trust_config")]
         public string? TrustConfig { get; set; }
 
-        [JsonPropertyName("user_anchors")]
-        public string? UserAnchors { get; set; }
+        /// <summary>
+        /// Whether to accept the built-in set of extended key usage (EKU) OIDs defined
+        /// by the C2PA specification in addition to those listed in [`Trust::trust_config`].
+        ///
+        /// When false, only the EKUs listed in [`Trust::trust_config`] (and any
+        /// [`TrustAnchor::trust_config`]) are accepted for claim signing.
+        /// For legacy compatibility, `id-kp-emailProtection` is also accepted when
+        /// no valid EKUs are loaded. `id-kp-timeStamping` and `id-kp-OCSPSigning`
+        /// remain accepted by the general profile check; TSA and OCSP responder
+        /// profiles additionally require their respective EKU.
+        ///
+        /// The default value is true.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("use_default_ekus")]
+        public bool? UseDefaultEkus { get; set; }
     }
 
     public partial class AnchorElement
@@ -1049,6 +1097,24 @@ namespace ContentAuthenticity.Schema.Settings
         /// sponsor-validated (2.23.140.1.5.3.2 / 2.23.140.1.5.3.3), or
         /// individual-validated (2.23.140.1.5.4.2 / 2.23.140.1.5.4.3). Mailbox-validated
         /// and legacy certificate purposes are not accepted.
+        ///
+        /// These six policy OIDs are enforced by CAWG X.509 validation, not parsed
+        /// from this EKU-only setting. An emailProtection certificate is trusted
+        /// under the interim model only through 31 March 2027 (inclusive, UTC), or
+        /// when a trusted, associated timestamp attests to issuance by that date.
+        /// Assertion-local timestamps must be v2 (`sigTst2`). Manifest timestamps
+        /// and timestamp assertions are accepted only after checking their binding
+        /// to the containing claim's signature and this assertion's signed hash.
+        /// Timestamp signature, imprint, TSA profile, and TSA trust are checked even
+        /// if claim timestamp trust checking is disabled.
+        ///
+        /// `id-kp-documentSigning` is a separate, non-interim acceptance path. If
+        /// that purpose is accepted by the effective EKU policy, a certificate
+        /// containing both documentSigning and emailProtection does not need an
+        /// interim S/MIME policy or cutoff check. Existing certificate-profile and
+        /// configured CAWG trust-anchor/allowed-list checks still apply. Claim
+        /// signers, TSA certificates, and OCSP responders do not acquire these CAWG
+        /// interim restrictions.
         /// </summary>
         [JsonPropertyName("trust_config")]
         public string? TrustConfig { get; set; }
