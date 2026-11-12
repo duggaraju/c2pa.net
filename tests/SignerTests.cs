@@ -90,6 +90,22 @@ public sealed class SignerTests
     }
 
     [Fact]
+    public void From_WithOcspResponses_ReservesSpaceForStapledResponses()
+    {
+        using var signerImpl = new CountingRsaSigner();
+        using var originalSigner = new Signer(signerImpl);
+        var response = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "ocsp_good.data"));
+
+        using var stapledSigner = new Signer(new SigningOptions
+        {
+            C2paSigner = signerImpl,
+            OcspResponses = [response]
+        });
+
+        Assert.Equal(originalSigner.ReserveSize + response.Length, stapledSigner.ReserveSize);
+    }
+
+    [Fact]
     public void FromIdentity_WithManagedSigners_CreatesCombinedSignerOrThrowsNativeException()
     {
         using var c2paSigner = new CountingRsaSigner();

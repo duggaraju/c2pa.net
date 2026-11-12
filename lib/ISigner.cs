@@ -47,7 +47,7 @@ public readonly record struct SignerInfo(
     string PrivateKey,
     Uri? TimeAuthorityUrl = null) : ISigner;
 
-/// <summary>Configures C2PA claim signing and optional CAWG identity assertions.</summary>
+/// <summary>Configures C2PA claim signing, optional CAWG identity assertions, and OCSP responses.</summary>
 public readonly record struct SigningOptions
 {
     /// <summary>The signer for the C2PA claim.</summary>
@@ -55,6 +55,9 @@ public readonly record struct SigningOptions
 
     /// <summary>An optional signer for a CAWG X.509 identity assertion.</summary>
     public ISigner? IdentitySigner { get; init; }
+
+    /// <summary>DER-encoded OCSP responses, ordered from the signing certificate up the chain.</summary>
+    public IReadOnlyList<byte[]>? OcspResponses { get; init; }
 
     /// <summary>Assertion labels referenced by the identity assertions.</summary>
     public IReadOnlyList<string>? ReferencedAssertions { get; init; }

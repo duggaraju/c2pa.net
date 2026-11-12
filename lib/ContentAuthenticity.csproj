@@ -13,6 +13,7 @@
     <BindingsFolder>Bindings</BindingsFolder>
     <QuicktypeVersion Condition="'$(QuicktypeVersion)' == ''">26.0.0</QuicktypeVersion>
     <BuildArm64 Condition="'$(BuildArm64)' == ''">false</BuildArm64>
+    <HostArchitectureName Condition="'$(HostArchitectureName)' == '' and $([System.String]::Copy('$(NETCoreSdkRuntimeIdentifier)').EndsWith('-arm64'))">arm64</HostArchitectureName>
     <HostArchitectureName Condition="'$(HostArchitectureName)' == '' and !$([MSBuild]::IsOSPlatform('OSX'))">x64</HostArchitectureName>
     <HostArchitectureName Condition="'$(HostArchitectureName)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">arm64</HostArchitectureName>
     <BuildLinuxMusl Condition="'$(BuildLinuxMusl)' == ''">false</BuildLinuxMusl>

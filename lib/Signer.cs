@@ -34,6 +34,16 @@ internal sealed class Signer : IDisposable
             }
         }
 
+        try
+        {
+            AddOcspResponses(options.OcspResponses);
+        }
+        catch
+        {
+            Dispose();
+            throw;
+        }
+
         if (options.CredentialHolder != null)
         {
             try
@@ -44,6 +54,24 @@ internal sealed class Signer : IDisposable
             {
                 Dispose();
                 throw;
+            }
+        }
+    }
+
+    private unsafe void AddOcspResponses(IReadOnlyList<byte[]>? responses)
+    {
+        if (responses == null)
+            return;
+
+        foreach (var response in responses)
+        {
+            ArgumentNullException.ThrowIfNull(response);
+            fixed (byte* responseBytes = response)
+            {
+                var stapledSigner = C2paBindings.signer_with_ocsp_response(signer, responseBytes, (nuint)response.Length);
+                if (stapledSigner == null)
+                    C2pa.CheckError();
+                signer = stapledSigner;
             }
         }
     }
