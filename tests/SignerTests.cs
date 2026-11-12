@@ -104,7 +104,7 @@ public sealed class SignerTests
                 SigningAlg.Ps256,
                 File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "certs", "rs256.pub")),
                 File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "certs", "rs256.pem")))
-                { OcspResponses = responses };
+            { OcspResponses = responses };
         using var contextBuilder = new ContextBuilder();
         contextBuilder.SetSigner(signer);
         using var context = contextBuilder.Build();
