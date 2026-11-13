@@ -125,7 +125,13 @@
     <ItemGroup>
       <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == '$(HostPlatformName)-$(HostArchitectureName)'" />
       <HostArchitecture Include="@(BindingsPlatform)" Condition="'%(BindingsPlatform.Identity)' == '$(HostPlatformName)-arm64' and '$(HostArchitectureName)' == 'x64' and '$(BuildArm64)' == 'true'" />
+      <PrimaryHostArchitecture Remove="@(PrimaryHostArchitecture)" />
+      <PrimaryHostArchitecture Include="@(HostArchitecture)" Condition="'%(Identity)' == '$(HostPlatformName)-$(HostArchitectureName)'" />
     </ItemGroup>
+    <PropertyGroup>
+      <!-- c2pa.h is target-independent. Cargo 1.100 moved build-script OUT_DIR, so pass build.rs an explicit header dir (the pre-1.100 location). -->
+      <C2paHeaderDir>@(PrimaryHostArchitecture->'$(MSBuildThisFileDirectory)../c2pa-rs/target/%(CargoTarget)/$(Configuration.ToLower())/')</C2paHeaderDir>
+    </PropertyGroup>
     <ItemGroup>
       <NativeLibrary Include="@(HostArchitecture->'$(MSBuildThisFileDirectory)../c2pa-rs/target/%(CargoTarget)/$(Configuration.ToLower())/%(NativeLibrary)')" />
       <GeneratedFile Include="$(BindingsFolder)/C2paBindings.cs" />
@@ -147,12 +153,9 @@
   </Target>
 
   <Target Name="GenerateBindings" DependsOnTargets="Cargo" Inputs="@(NativeLibrary);$(MSBuildProjectFullPath)" Outputs="@(GeneratedFile)">
-    <ItemGroup>
-      <FirstArch Include="@(HostArchitecture->Reverse())" />
-    </ItemGroup>
+    <Error Condition="!Exists('$(C2paHeaderDir)c2pa.h')" Text="Missing $(C2paHeaderDir)c2pa.h. Run 'cargo clean -p c2pa-c-ffi' in c2pa-rs and rebuild so its build script regenerates the header." />
 
     <PropertyGroup>
-      <CargoOutputForBindings>$(MSBuildThisFileDirectory)../c2pa-rs/target/%(FirstArch.CargoTarget)/$(Configuration.ToLower())/</CargoOutputForBindings>
       <ConfigOptions>-c latest-codegen multi-file generate-file-scoped-namespaces generate-helper-types -hf header</ConfigOptions>
       <InteropArgsCommon>-n ContentAuthenticity.Bindings -l c2pa_c -p c2pa_ -r C2paSigningAlg=SigningAlg uint64_t=ulong char=sbyte -e @(DeprecatedNativeApi, ' ') -x c -a -DC2PA_DYNAMIC_LOADING=1</InteropArgsCommon>
     </PropertyGroup>
@@ -167,7 +170,7 @@
       <EnvironmentVariables>DYLD_LIBRARY_PATH=$(PkglibClangSharp_runtime_osx-arm64)/runtimes/osx-arm64/native:$(Pkglibclang_runtime_osx-arm64)/runtimes/osx-arm64/native</EnvironmentVariables>
     </PropertyGroup>
 
-    <Exec Command="$(EnvironmentVariables) dotnet tool run clangsharppinvokegenerator -- -f $(CargoOutputForBindings)c2pa.h -o $(BindingsFolder) $(InteropArgsCommon) -m C2paBindings $(ConfigOptions) $(PlatformArgs)" IgnoreStandardErrorWarningFormat="true" EnvironmentVariables="$(EnvironmentVariables)" />
+    <Exec Command="$(EnvironmentVariables) dotnet tool run clangsharppinvokegenerator -- -f $(C2paHeaderDir)c2pa.h -o $(BindingsFolder) $(InteropArgsCommon) -m C2paBindings $(ConfigOptions) $(PlatformArgs)" IgnoreStandardErrorWarningFormat="true" EnvironmentVariables="$(EnvironmentVariables)" />
   </Target>
 
   <Target Name="IncludeGeneratedBindings" DependsOnTargets="Cargo;GenerateBindings" BeforeTargets="CoreCompile">
@@ -192,6 +195,7 @@
       <CargoArgs Condition="'$(Configuration)' == 'Release'">--release</CargoArgs>
       <!-- Opt-in: Release-only Cargo profile tuning. -->
       <CargoEnvironmentVariables Condition="'$(Configuration)' == 'Release' and '$(EnableCargoReleaseOptimizations)' == 'true'">CARGO_PROFILE_RELEASE_OPT_LEVEL=z;CARGO_PROFILE_RELEASE_STRIP=symbols;CARGO_PROFILE_RELEASE_LTO=thin</CargoEnvironmentVariables>
+      <CargoEnvironmentVariables Condition="'$(C2paHeaderDir)' != ''">$(CargoEnvironmentVariables);C2PA_HEADER_DIR=$(C2paHeaderDir)</CargoEnvironmentVariables>
       <!-- Pass all targets in a single cargo invocation; cargo builds them in parallel internally -->
       <CargoTargetArgs>@(HostArchitecture->'--target %(CargoTarget)', ' ')</CargoTargetArgs>
     </PropertyGroup>
