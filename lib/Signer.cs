@@ -34,17 +34,15 @@ internal sealed class Signer : IDisposable
             }
         }
 
-        if (options.CredentialHolder != null)
+        try
         {
-            try
-            {
+            if (options.CredentialHolder != null)
                 AddCredentialHolder(options.CredentialHolder, options.ReferencedAssertions, options.Roles);
-            }
-            catch
-            {
-                Dispose();
-                throw;
-            }
+        }
+        catch
+        {
+            Dispose();
+            throw;
         }
     }
 
@@ -163,24 +161,32 @@ internal sealed class Signer : IDisposable
 
         combinedHandles = new GCHandleCollection();
 
-        var c2paSigner = CreateNativeSigner(options.C2paSigner, out var c2paHandle);
-        if (c2paHandle.IsAllocated)
-            combinedHandles.Add(c2paHandle);
-
-        var identitySigner = CreateNativeSigner(options.IdentitySigner!, out var identityHandle);
-        if (identityHandle.IsAllocated)
-            combinedHandles.Add(identityHandle);
-
+        C2paSigner* c2paSigner = null;
+        C2paSigner* identitySigner = null;
         try
         {
-            return CreateIdentitySigner(
+            c2paSigner = CreateNativeSigner(options.C2paSigner, out var c2paHandle);
+            if (c2paHandle.IsAllocated)
+                combinedHandles.Add(c2paHandle);
+            identitySigner = CreateNativeSigner(options.IdentitySigner!, out var identityHandle);
+            if (identityHandle.IsAllocated)
+                combinedHandles.Add(identityHandle);
+
+            var combinedSigner = CreateIdentitySigner(
                 c2paSigner,
                 identitySigner,
                 options.ReferencedAssertions,
                 options.Roles);
+            c2paSigner = null;
+            identitySigner = null;
+            return combinedSigner;
         }
         catch
         {
+            if (c2paSigner != null)
+                C2paBindings.free(c2paSigner);
+            if (identitySigner != null)
+                C2paBindings.free(identitySigner);
             combinedHandles.Dispose();
             combinedHandles = new GCHandleCollection();
             throw;
@@ -190,12 +196,47 @@ internal sealed class Signer : IDisposable
     private static unsafe C2paSigner* CreateNativeSigner(ISigner signer, out GCHandle handle)
     {
         handle = default;
-        return signer switch
+        var nativeSigner = signer switch
         {
             ICallbackSigner callbackSigner => CreateSigner(callbackSigner, out handle),
             SignerInfo signerInfo => CreateSignerFromInfo(signerInfo),
             _ => throw new ArgumentException($"Unsupported signer type: {signer.GetType().FullName}", nameof(signer)),
         };
+
+        try
+        {
+            var ocspResponses = signer.OcspResponses;
+            if (ocspResponses != null)
+            {
+                foreach (var response in ocspResponses)
+                {
+                    if (response == null || response.Length == 0)
+                        throw new ArgumentException("OCSP responses must not be null or empty.", nameof(signer));
+
+                    fixed (byte* responseBytes = response)
+                    {
+                        var stapledSigner = C2paBindings.signer_with_ocsp_response(
+                            nativeSigner, responseBytes, (nuint)response.Length);
+                        if (stapledSigner == null)
+                        {
+                            C2pa.CheckError();
+                            throw new InvalidOperationException("Failed to add OCSP response to signer.");
+                        }
+                        nativeSigner = stapledSigner;
+                    }
+                }
+            }
+
+            return nativeSigner;
+        }
+        catch
+        {
+            C2paBindings.free(nativeSigner);
+            if (handle.IsAllocated)
+                handle.Free();
+            handle = default;
+            throw;
+        }
     }
 
     /// <summary>

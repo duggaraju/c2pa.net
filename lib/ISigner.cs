@@ -11,6 +11,12 @@ public interface ISigner
     public string Certs { get; }
 
     public Uri? TimeAuthorityUrl { get; }
+
+    /// <summary>
+    /// DER-encoded OCSP responses in certificate-chain order, starting with the
+    /// signing certificate. Callers are responsible for fetching and refreshing them.
+    /// </summary>
+    public IReadOnlyList<byte[]>? OcspResponses => null;
 }
 
 public interface ICallbackSigner : ISigner
@@ -45,7 +51,11 @@ public readonly record struct SignerInfo(
     SigningAlg Alg,
     string Certs,
     string PrivateKey,
-    Uri? TimeAuthorityUrl = null) : ISigner;
+    Uri? TimeAuthorityUrl = null) : ISigner
+{
+    /// <inheritdoc />
+    public IReadOnlyList<byte[]>? OcspResponses { get; init; }
+}
 
 /// <summary>Configures C2PA claim signing and optional CAWG identity assertions.</summary>
 public readonly record struct SigningOptions

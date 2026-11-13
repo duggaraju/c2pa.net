@@ -76,6 +76,7 @@ public class ISignerTests
         Assert.Equal(SigningAlg.Es384, testSigner.Alg);
         Assert.Equal("custom-cert", testSigner.Certs);
         Assert.Equal(tsa, testSigner.TimeAuthorityUrl);
+        Assert.Null(((ISigner)testSigner).OcspResponses);
     }
 }
 

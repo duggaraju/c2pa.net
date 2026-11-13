@@ -89,6 +89,117 @@ public sealed class SignerTests
         Assert.True(signer.ReserveSize >= 0);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OcspResponses_ReservesSpace_AndPreservesCallbackOwnership(bool useCallback)
+    {
+        var first = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "ocsp_good.data"));
+        var second = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "ocsp_revoked.data"));
+        using var callback = new CountingRsaSigner { OcspResponses = [first, second] };
+        using var baselineCallback = new CountingRsaSigner();
+        ISigner implementation = useCallback
+            ? callback
+            : new SignerInfo(SigningAlg.Ps256, callback.Certs,
+                File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "certs", "rs256.pem")))
+            {
+                OcspResponses = [first, second]
+            };
+        ISigner implementationWithoutOcsp = useCallback
+            ? baselineCallback
+            : ((SignerInfo)implementation) with { OcspResponses = null };
+        using var original = new Signer(implementationWithoutOcsp);
+        using var signer = new Signer(implementation);
+
+        Assert.Equal(original.ReserveSize + first.Length + second.Length, signer.ReserveSize);
+        var handles = GetHandles(signer);
+        if (useCallback)
+            Assert.Same(callback, Assert.Single(handles).Target);
+        else
+            Assert.Empty(handles);
+
+        signer.Dispose();
+        Assert.Empty(handles);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OcspResponses_WithContext_ShouldStapleInOrder_AndPreserveIdentityAssertions(bool withIdentityAssertions)
+    {
+        using var c2paSigner = new CountingRsaSigner
+        {
+            OcspResponses =
+            [
+                File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "ocsp_good.data")),
+                File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "ocsp_revoked.data"))
+            ]
+        };
+        using var identitySigner = new CountingRsaSigner();
+        var holder = new TestCredentialHolder();
+        var first = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "ocsp_good.data"));
+        var second = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "ocsp_revoked.data"));
+        var options = new SigningOptions
+        {
+            C2paSigner = c2paSigner,
+            IdentitySigner = withIdentityAssertions ? identitySigner : null,
+            CredentialHolder = withIdentityAssertions ? holder : null
+        };
+        Context context;
+        using (var contextBuilder = new ContextBuilder())
+        {
+            contextBuilder.SetSigner(options);
+            context = contextBuilder.Build();
+        }
+        using var ownedContext = context;
+        using var builder = new Builder(context).WithDefinition(new ManifestDefinition
+        {
+            ClaimGeneratorInfo = [new ClaimGeneratorInfo { Name = "c2pa.net tests" }],
+        });
+        builder.SetIntent(C2paBuilderIntent.Create, C2paDigitalSourceType.DigitalCapture);
+        using var source = File.OpenRead(Path.Combine(AppContext.BaseDirectory, "no_manifest.jpg"));
+        using var destination = new MemoryStream();
+
+        var manifest = builder.Sign(source, destination, "image/jpeg");
+
+        var firstPosition = manifest.AsSpan().IndexOf(first);
+        var secondPosition = manifest.AsSpan().IndexOf(second);
+        Assert.True(firstPosition >= 0);
+        Assert.True(secondPosition > firstPosition);
+        Assert.True(c2paSigner.CallCount > 0);
+        destination.Position = 0;
+        using var reader = new Reader(context).WithStream(destination, "image/jpeg");
+        Assert.Contains("claimSignature.validated", reader.Json);
+        Assert.Contains("dataHash.match", reader.Json);
+        if (withIdentityAssertions)
+        {
+            Assert.True(identitySigner.CallCount > 0);
+            Assert.True(holder.CallCount > 0);
+            Assert.Contains("cawg.identity", reader.Json);
+            Assert.Contains(holder.SignatureType, reader.Json);
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OcspResponses_WithEmptyResponse_ShouldThrowArgumentException(bool afterValidResponse)
+    {
+        var response = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "ocsp_good.data"));
+        using var c2paSigner = new CountingRsaSigner
+        {
+            OcspResponses = afterValidResponse
+                ? [response, []]
+                : [[]]
+        };
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+        {
+            using var signer = new Signer(c2paSigner);
+        });
+        Assert.Contains("OCSP responses", exception.Message);
+    }
+
     [Fact]
     public void FromIdentity_WithManagedSigners_CreatesCombinedSignerOrThrowsNativeException()
     {
@@ -321,6 +432,8 @@ public sealed class SignerTests
         public string Certs { get; }
 
         public Uri? TimeAuthorityUrl => null;
+
+        public IReadOnlyList<byte[]>? OcspResponses { get; init; }
 
         public int Sign(ReadOnlySpan<byte> data, Span<byte> hash)
         {

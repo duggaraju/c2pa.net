@@ -113,6 +113,34 @@ var output = "./my-image.signed.jpg";
 builder.Sign(input, output);
 ```
 
+### Advanced: Staple OCSP responses
+
+Set `ISigner.OcspResponses` to embed pre-fetched, DER-encoded OCSP responses
+in the signature. Supply them in certificate-chain order, with the signing
+certificate's response first:
+
+```csharp
+using var contextBuilder = new ContextBuilder();
+contextBuilder.SetSigner(new SignerInfo(
+    SigningAlg.Ps256,
+    File.ReadAllText("./certs/rs256.pub"),
+    File.ReadAllText("./certs/rs256.pem"))
+{
+    OcspResponses =
+    [
+        File.ReadAllBytes("./signing-certificate-ocsp.der"),
+        File.ReadAllBytes("./intermediate-ca-ocsp.der")
+    ]
+});
+using var context = contextBuilder.Build();
+```
+
+Existing `ISigner` implementations default to no OCSP responses. A custom
+`ICallbackSigner` can provide the same property. Each response must be non-empty;
+an empty response throws `ArgumentException`. Fetch and refresh responses yourself,
+creating a new context when they expire. When using `SigningOptions`, set
+`OcspResponses` on `C2paSigner`.
+
 ### Advanced: Sign with an identity credential holder
 
 Implement `ICredentialHolder` for callback-backed CAWG identity credentials, such
