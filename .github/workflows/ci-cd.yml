@@ -170,6 +170,9 @@ jobs:
 
       - name: Run tests
         if: matrix.test
+        env:
+          # The Linux ARM64 runner's session directory under /run/user fails VSTest's owner-only permission check after a successful run.
+          VSTEST_DISABLE_ARTIFACTS_DIRECTORY_VERIFICATION: ${{ (matrix.platform == 'linux' && matrix.arch == 'arm64') && '1' || '' }}
         run: |
           dotnet test --configuration Release --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage"
 
