@@ -13,8 +13,8 @@
     <BindingsFolder>Bindings</BindingsFolder>
     <QuicktypeVersion Condition="'$(QuicktypeVersion)' == ''">26.0.0</QuicktypeVersion>
     <BuildArm64 Condition="'$(BuildArm64)' == ''">false</BuildArm64>
-    <HostArchitectureName Condition="'$(HostArchitectureName)' == '' and !$([MSBuild]::IsOSPlatform('OSX'))">x64</HostArchitectureName>
-    <HostArchitectureName Condition="'$(HostArchitectureName)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">arm64</HostArchitectureName>
+    <!-- Default to the architecture of the running build so nested builds (e.g. BenchmarkDotNet) match the process; set explicitly to cross-compile. -->
+    <HostArchitectureName Condition="'$(HostArchitectureName)' == ''">$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</HostArchitectureName>
     <BuildLinuxMusl Condition="'$(BuildLinuxMusl)' == ''">false</BuildLinuxMusl>
     <IncludeLinuxMusl Condition="'$(IncludeLinuxMusl)' == ''">$(BuildLinuxMusl)</IncludeLinuxMusl>
     <LinuxMuslLibraryPath Condition="'$(LinuxMuslLibraryPath)' == ''">$(MSBuildThisFileDirectory)../c2pa-rs/target/x86_64-unknown-linux-musl/$(Configuration.ToLower())/libc2pa_c.so</LinuxMuslLibraryPath>

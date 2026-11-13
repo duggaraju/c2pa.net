@@ -91,6 +91,16 @@ public class BenchmarkTests
         // Comment out the Skip attribute to run benchmarks
         var summary = BenchmarkDotNet.Running.BenchmarkRunner.Run<C2paPerformanceBenchmarks>();
         Console.WriteLine(summary);
-        Assert.NotNull(summary);
+
+        // BenchmarkDotNet reports build and run failures in the summary instead of throwing.
+        Assert.False(summary.HasCriticalValidationErrors, string.Join(Environment.NewLine, summary.ValidationErrors.Select(error => error.Message)));
+        Assert.NotEmpty(summary.Reports);
+        Assert.Equal(summary.BenchmarksCases.Length, summary.Reports.Length);
+        Assert.All(summary.Reports, report =>
+        {
+            Assert.True(report.BuildResult.IsBuildSuccess, $"{report.BenchmarkCase.DisplayInfo} failed to build: {report.BuildResult.ErrorMessage}");
+            Assert.True(report.Success, $"{report.BenchmarkCase.DisplayInfo} failed to run.");
+            Assert.NotNull(report.ResultStatistics);
+        });
     }
 }

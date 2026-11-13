@@ -42,6 +42,7 @@ Key design patterns:
 - Native memory is managed via `IDisposable` wrappers around raw `C2pa*` pointers
 - `C2pa.CheckError()` reads the last native error string and throws `C2paException`
 - `NativeLibraryResolver` uses a `[ModuleInitializer]` to resolve the correct platform-specific native binary at runtime
+- `HostArchitectureName` (native target) defaults to the build process architecture so nested builds such as BenchmarkDotNet's match the test host. Pass it explicitly only to cross-compile (e.g. Windows x64 → arm64); cross-compiled CI jobs build/package only, and tests/benchmarks run on native runners.
 - musl x64 cross-compilation is opt-in (`BuildLinuxMusl=true`, off locally/on in Ubuntu x64 CI). Install the pinned toolchain using `.github/scripts/install-musl-toolchain.sh` and the Rust musl target first. A separate Cargo invocation keeps musl flags out of host builds and binding generation; `--no-build` packaging requires the existing artifact. CI runs `tests/PackageSmoke` against the package in Alpine. musl ARM64 is deferred.
 
 ## Conventions
