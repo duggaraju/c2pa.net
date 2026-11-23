@@ -66,6 +66,10 @@ if (store.Manifests.TryGetValue(store.ActiveManifest, out var manifest))
 string roundTripped = store.ToJson();
 ```
 
+If configuring a reader with an asset or a builder with a definition or archive
+throws `C2paException`, the native call has consumed its handle. Dispose the
+wrapper as usual (including with `using`), and create a new one to retry.
+
 ### Create a typed manifest definition and sign an asset
 
 ```csharp

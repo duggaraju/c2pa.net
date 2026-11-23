@@ -4,7 +4,10 @@ namespace ContentAuthenticity;
 
 public sealed partial class Reader : IDisposable
 {
+    // Native reader_with_* calls consume this handle, even when they return null.
     private unsafe C2paReader* handle;
+
+    internal unsafe bool IsDisposed => handle == null;
 
     /// <summary>
     /// Creates a new <see cref="Reader"/> bound to the given <see cref="Context"/>.
@@ -53,7 +56,11 @@ public sealed partial class Reader : IDisposable
     {
         unsafe
         {
-            C2paBindings.free(handle);
+            if (!IsDisposed)
+            {
+                C2paBindings.free(handle);
+                handle = null;
+            }
         }
     }
 
@@ -70,10 +77,9 @@ public sealed partial class Reader : IDisposable
             using var fragmentStream = new StreamAdapter(fragment);
             fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
             {
-                var reader = C2paBindings.reader_with_fragment(handle, (sbyte*)formatBytes, c2paStream, fragmentStream);
-                if (reader == null)
+                handle = C2paBindings.reader_with_fragment(handle, (sbyte*)formatBytes, c2paStream, fragmentStream);
+                if (handle == null)
                     C2pa.CheckError();
-                this.handle = reader;
             }
         }
         return this;
@@ -89,10 +95,9 @@ public sealed partial class Reader : IDisposable
             using var c2paStream = new StreamAdapter(stream);
             fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
             {
-                var reader = C2paBindings.reader_with_stream(handle, (sbyte*)formatBytes, c2paStream);
-                if (reader == null)
+                handle = C2paBindings.reader_with_stream(handle, (sbyte*)formatBytes, c2paStream);
+                if (handle == null)
                     C2pa.CheckError();
-                this.handle = reader;
             }
         }
         return this;
@@ -120,10 +125,9 @@ public sealed partial class Reader : IDisposable
             fixed (byte* formatBytes = Encoding.UTF8.GetBytes(format))
             fixed (byte* manifestBytes = manifest)
             {
-                var reader = C2paBindings.reader_with_manifest_data_and_stream(handle, (sbyte*)formatBytes, c2paStream, manifestBytes, (nuint)manifest.Length);
-                if (reader == null)
+                handle = C2paBindings.reader_with_manifest_data_and_stream(handle, (sbyte*)formatBytes, c2paStream, manifestBytes, (nuint)manifest.Length);
+                if (handle == null)
                     C2pa.CheckError();
-                this.handle = reader;
             }
         }
         return this;

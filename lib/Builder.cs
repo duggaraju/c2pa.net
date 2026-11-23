@@ -6,7 +6,10 @@ namespace ContentAuthenticity;
 
 public partial class Builder : IDisposable
 {
+    // Native builder_with_* calls consume this handle, even when they return null.
     private unsafe C2paBuilder* handle;
+
+    internal unsafe bool IsDisposed => handle == null;
 
     /// <summary>
     /// Creates a new <see cref="Builder"/> bound to the given <see cref="Context"/>.
@@ -31,7 +34,11 @@ public partial class Builder : IDisposable
     {
         unsafe
         {
-            C2paBindings.free(handle);
+            if (!IsDisposed)
+            {
+                C2paBindings.free(handle);
+                handle = null;
+            }
         }
     }
 
@@ -61,10 +68,9 @@ public partial class Builder : IDisposable
         {
             fixed (byte* p = bytes)
             {
-                var builder = C2paBindings.builder_with_definition(this, (sbyte*)p);
-                if (builder == null)
+                handle = C2paBindings.builder_with_definition(handle, (sbyte*)p);
+                if (handle == null)
                     C2pa.CheckError();
-                this.handle = builder;
                 return this;
             }
         }
@@ -81,10 +87,9 @@ public partial class Builder : IDisposable
         using var c2paStream = new StreamAdapter(stream);
         unsafe
         {
-            var builder = C2paBindings.builder_with_archive(handle, c2paStream);
-            if (builder == null)
+            handle = C2paBindings.builder_with_archive(handle, c2paStream);
+            if (handle == null)
                 C2pa.CheckError();
-            handle = builder;
             return this;
         }
     }

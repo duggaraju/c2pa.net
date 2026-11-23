@@ -6,6 +6,45 @@ using Xunit.Abstractions;
 public class ReaderTests(ITestOutputHelper output)
 {
     [Fact]
+    public void WithStream_UnsignedAsset_ConsumesReader()
+    {
+        using var asset = File.OpenRead(Path.Combine(AppContext.BaseDirectory, "no_manifest.jpg"));
+        using var context = new Context();
+        var reader = new Reader(context);
+
+        var error = Assert.Throws<C2paException>(() => reader.WithStream(asset, "image/jpeg"));
+
+        Assert.StartsWith("ManifestNotFound:", error.Message);
+        Assert.True(reader.IsDisposed);
+        reader.Dispose();
+    }
+
+    [Fact]
+    public void WithFragment_InvalidFragment_ConsumesReader()
+    {
+        using var asset = new MemoryStream();
+        using var fragment = new MemoryStream();
+        var reader = new Reader();
+
+        Assert.Throws<C2paException>(() => reader.WithFragment(asset, fragment, "video/mp4"));
+
+        Assert.True(reader.IsDisposed);
+        reader.Dispose();
+    }
+
+    [Fact]
+    public void WithStreamAndManifest_InvalidManifest_ConsumesReader()
+    {
+        using var asset = File.OpenRead(Path.Combine(AppContext.BaseDirectory, "no_manifest.jpg"));
+        var reader = new Reader();
+
+        Assert.Throws<C2paException>(() => reader.WithStreamAndManifest(asset, "image/jpeg", [1]));
+
+        Assert.True(reader.IsDisposed);
+        reader.Dispose();
+    }
+
+    [Fact]
     public void FromStream_WithValidParameters_ShouldNotThrowDuringCreation()
     {
         // Arrange

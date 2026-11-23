@@ -3,6 +3,31 @@ namespace ContentAuthenticity.Tests;
 public class BuilderTests
 {
     [Fact]
+    public void WithDefinition_InvalidJson_ConsumesBuilder()
+    {
+        using var context = new Context();
+        var builder = new Builder(context);
+
+        Assert.Throws<C2paException>(() => builder.WithDefinition("{"));
+
+        Assert.True(builder.IsDisposed);
+        builder.Dispose();
+    }
+
+    [Fact]
+    public void WithArchive_InvalidArchive_ConsumesBuilder()
+    {
+        using var context = new Context();
+        using var archive = new MemoryStream();
+        var builder = new Builder(context);
+
+        Assert.Throws<C2paException>(() => builder.WithArchive(archive));
+
+        Assert.True(builder.IsDisposed);
+        builder.Dispose();
+    }
+
+    [Fact]
     public void ComposeManifest_WithSignedManifest_ShouldProduceJpegSegments()
     {
         var signer = new SignerInfo(
