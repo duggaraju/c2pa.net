@@ -498,7 +498,7 @@ dependencies = [
 
 [[package]]
 name = "c2pa"
-version = "0.92.2"
+version = "0.92.3"
 dependencies = [
  "anyhow",
  "asn1-rs",
@@ -598,7 +598,7 @@ dependencies = [
 
 [[package]]
 name = "c2pa-c-ffi"
-version = "0.92.2"
+version = "0.92.3"
 dependencies = [
  "c2pa",
  "c2pa_cbor",
@@ -624,7 +624,7 @@ dependencies = [
 
 [[package]]
 name = "c2pa_macros"
-version = "0.92.2"
+version = "0.92.3"
 dependencies = [
  "quote",
  "syn 2.0.119",
@@ -935,6 +935,15 @@ name = "const-oid"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
+
+[[package]]
+name = "constant_time_eq"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "144e7f1de087984240b7816d47f698b414979faa6f40839c5b86d6bd47db57b7"
+dependencies = [
+ "rustversion",
+]
 
 [[package]]
 name = "core-foundation"
@@ -1491,7 +1500,7 @@ dependencies = [
 
 [[package]]
 name = "export_schema"
-version = "0.92.2"
+version = "0.92.3"
 dependencies = [
  "anyhow",
  "c2pa",
@@ -2561,7 +2570,7 @@ checksum = "4050469837a6ff301cd14c1f8f24f88549e6d548f24f64e2148eb0f72cebc51f"
 
 [[package]]
 name = "make_test_images"
-version = "0.92.2"
+version = "0.92.3"
 dependencies = [
  "anyhow",
  "c2pa",
@@ -5533,10 +5542,11 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "9.3.0"
+version = "9.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eaeb7f16d2605b49aef586996ded29e65642fab7259a3077e537351df6d80426"
+checksum = "2d8dbe089cf6b0448b78f5fc50139ab5aaa40d08ac07cdc1baf2c13add35fcce"
 dependencies = [
+ "constant_time_eq",
  "crc32fast",
  "getrandom 0.4.3",
  "indexmap 2.14.2",
@@ -5545,6 +5555,7 @@ dependencies = [
  "nix",
  "typed-path",
  "windows-sys 0.61.2",
+ "zeroize",
 ]
 
 [[package]]
